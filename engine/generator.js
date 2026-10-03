@@ -316,6 +316,30 @@
       return Array.isArray(t) ? t : t.notes;
     }
 
+    _setTrackNotes(tracks, key, arr) {
+      if (Array.isArray(tracks[key])) tracks[key] = arr;
+      else if (tracks[key]) tracks[key].notes = arr;
+    }
+
+    _applyLeadThinning(tracks, leadNotes, stepsPerBar) {
+      if (!leadNotes || !leadNotes.length) return;
+      const spb = stepsPerBar || 16;
+      const perBar = {};
+      for (const n of leadNotes) {
+        const b = Math.floor(n.step / spb);
+        perBar[b] = (perBar[b] || 0) + 1;
+      }
+      for (const k of ['chords', 'arp']) {
+        const arr = this._trackNotes(tracks[k]);
+        if (!arr) continue;
+        this._setTrackNotes(tracks, k, arr.filter(n => {
+          const b = Math.floor(n.step / spb);
+          if ((perBar[b] || 0) < 5) return true;
+          return (n.step % spb) === 0;
+        }));
+      }
+    }
+
     _applyZoneArrangement(tracks, progression, zoneMap, stepsPerBar) {
       if (!zoneMap || !zoneMap.length || !progression || !progression.length) return;
       const spb = stepsPerBar || 16;
@@ -514,6 +538,9 @@
         { lead: leadTrack, chords: chordTrack, arp: arpTrack, bass: bassTrack, drums: drumTrack },
         progression, zoneMap, stepsPerBar
       );
+      this._applyLeadThinning(
+        { chords: chordTrack, arp: arpTrack }, leadTrack.notes, stepsPerBar
+      );
       this._applyZoneVelocity([leadTrack, chordTrack, arpTrack, bassTrack, drumTrack], zoneMap, stepsPerBar);
 
       const arrangedSong = {
@@ -688,6 +715,8 @@
       }
 
       this._applyZoneArrangement(out, song.progression, zoneMap, stepsPerBar);
+      const leadRef = out.lead || (song.tracks.lead ? song.tracks.lead.notes : null);
+      this._applyLeadThinning(out, leadRef, stepsPerBar);
       this._applyZoneVelocity(Object.values(out).map(notes => ({ notes })), zoneMap, stepsPerBar);
 
       const fadeInBars = md.fadeInBars || 0;
