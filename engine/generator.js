@@ -343,8 +343,11 @@
     _applyZoneArrangement(tracks, progression, zoneMap, stepsPerBar) {
       if (!zoneMap || !zoneMap.length || !progression || !progression.length) return;
       const spb = stepsPerBar || 16;
+      const totalBars = zoneMap.reduce((a, z) => a + z.bars, 0);
+      const finalBar = totalBars - 1;
       const barOf = s => Math.floor(s / spb);
       const gated = (bar, k) => {
+        if (bar >= finalBar) return false;
         const z = this._zoneAt(bar, zoneMap);
         return !!(z.tracks && z.tracks[k] === false);
       };
@@ -359,30 +362,7 @@
         const t = tracks[k];
         const arr = this._trackNotes(t);
         if (!arr) continue;
-        const touched = new Set();
-        const kept = arr.filter(n => {
-          const b = barOf(n.step);
-          if (gated(b, k)) { touched.add(b); return false; }
-          return true;
-        });
-        for (const b of touched) {
-          const chord = progression[b] || progression[0];
-          if (!chord) continue;
-          const bs = b * spb;
-          if (k === 'bass') {
-            const root = (chord.rootMidi != null ? chord.rootMidi : 48) % 12;
-            kept.push({ step: bs, duration: spb, midi: 36 + root, velocity: 85, pan: 0 });
-          } else {
-            const tones = (chord.voicedNotes || chord.notes || []).map(m => {
-              let x = m;
-              while (x < 48) x += 12;
-              while (x > 72) x -= 12;
-              return x;
-            });
-            for (const m of tones) kept.push({ step: bs, duration: spb, midi: m, velocity: 78, pan: -15 });
-          }
-        }
-        kept.sort((a, b2) => a.step - b2.step);
+        const kept = arr.filter(n => !gated(barOf(n.step), k));
         if (Array.isArray(t)) tracks[k] = kept;
         else t.notes = kept;
       }
@@ -534,15 +514,6 @@
         zoneMap
       }) : { name: 'Drums & Percussion', type: 'drum_kit', instrument: 'standard_kit', color: '#e74c3c', notes: [] };
 
-      this._applyZoneArrangement(
-        { lead: leadTrack, chords: chordTrack, arp: arpTrack, bass: bassTrack, drums: drumTrack },
-        progression, zoneMap, stepsPerBar
-      );
-      this._applyLeadThinning(
-        { chords: chordTrack, arp: arpTrack }, leadTrack.notes, stepsPerBar
-      );
-      this._applyZoneVelocity([leadTrack, chordTrack, arpTrack, bassTrack, drumTrack], zoneMap, stepsPerBar);
-
       const arrangedSong = {
         metadata: {
           lengthBars, stepsPerBar, section, key, genre: genreDef.id, scale: scaleKey,
@@ -558,6 +529,15 @@
         }
       };
       this._arrangeEnsemble(arrangedSong, { finalHit: !this.options.skipFinalHit && this.options.finalHit !== false });
+
+      this._applyZoneArrangement(
+        { lead: leadTrack, chords: chordTrack, arp: arpTrack, bass: bassTrack, drums: drumTrack },
+        progression, zoneMap, stepsPerBar
+      );
+      this._applyLeadThinning(
+        { chords: chordTrack, arp: arpTrack }, leadTrack.notes, stepsPerBar
+      );
+      this._applyZoneVelocity([leadTrack, chordTrack, arpTrack, bassTrack, drumTrack], zoneMap, stepsPerBar);
 
       this._applyFadeDynamics([leadTrack, chordTrack, arpTrack, bassTrack, drumTrack], lengthBars, fadeInBars, fadeOutBars, stepsPerBar);
 

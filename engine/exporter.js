@@ -174,19 +174,56 @@
         }
         xml += `        </instrumenttrack>\n`;
 
-        xml += `        <pattern pos="0" steps="16" name="${def.name} Clip" muted="0" type="1">\n`;
+        const clips = Array.isArray(songData.clips) && songData.clips.length ? songData.clips : null;
+        const spb = metadata.stepsPerBar || 16;
+        const finalStart = Math.max(0, ((metadata.lengthBars || 8) - 1)) * spb;
+        if (clips) {
+          let emitted = 0;
+          let startBar = 0;
+          for (const c of clips) {
+            const clipBars = Math.max(1, c.lengthBars | 0 || 1);
+            let cNotes = (c.notes && c.notes[def.key]) || [];
+            if (c.muted || c.rest) {
+              cNotes = [];
+            } else if (c.tracks && c.tracks[def.key] === false) {
+              const base = startBar * spb;
+              cNotes = cNotes.filter(n => (n.step + base) >= finalStart);
+            }
+            if (cNotes.length > 0) {
+              const posBase = startBar * (metadata.stepsPerBar || 16) * ticksPerStep;
+              xml += `        <pattern pos="${posBase}" steps="${clipBars * (metadata.stepsPerBar || 16)}" name="${def.name} - ${String(c.name || 'Part').replace(/"/g, '')}" muted="0" type="1">\n`;
+              for (const note of cNotes) {
+                const posTicks = Math.round(note.step * ticksPerStep) + Exporter._swingTicks(note.step, swing, ticksPerStep);
+                const lenTicks = Math.max(ticksPerStep, Math.round(note.duration * ticksPerStep));
+                const key = note.midi;
+                const vol = Math.min(100, Math.round((note.velocity || 90) * (100 / 127)));
+                const pan = note.pan || 0;
+                xml += `          <note pos="${posTicks}" len="${lenTicks}" key="${key}" vol="${vol}" pan="${pan}"/>\n`;
+              }
+              xml += `        </pattern>\n`;
+              emitted++;
+            }
+            startBar += clipBars;
+          }
+          if (!emitted) {
+            xml += `        <pattern pos="0" steps="16" name="${def.name} Clip" muted="0" type="1">\n`;
+            xml += `        </pattern>\n`;
+          }
+        } else {
+          xml += `        <pattern pos="0" steps="16" name="${def.name} Clip" muted="0" type="1">\n`;
 
-        for (const note of track.notes) {
-          const posTicks = Math.round(note.step * ticksPerStep) + Exporter._swingTicks(note.step, swing, ticksPerStep);
-          const lenTicks = Math.max(ticksPerStep, Math.round(note.duration * ticksPerStep));
-          const key = note.midi;
-          const vol = Math.min(100, Math.round((note.velocity || 90) * (100 / 127)));
-          const pan = note.pan || 0;
+          for (const note of track.notes) {
+            const posTicks = Math.round(note.step * ticksPerStep) + Exporter._swingTicks(note.step, swing, ticksPerStep);
+            const lenTicks = Math.max(ticksPerStep, Math.round(note.duration * ticksPerStep));
+            const key = note.midi;
+            const vol = Math.min(100, Math.round((note.velocity || 90) * (100 / 127)));
+            const pan = note.pan || 0;
 
-          xml += `          <note pos="${posTicks}" len="${lenTicks}" key="${key}" vol="${vol}" pan="${pan}"/>\n`;
+            xml += `          <note pos="${posTicks}" len="${lenTicks}" key="${key}" vol="${vol}" pan="${pan}"/>\n`;
+          }
+
+          xml += `        </pattern>\n`;
         }
-
-        xml += `        </pattern>\n`;
         xml += `      </track>\n`;
       }
 

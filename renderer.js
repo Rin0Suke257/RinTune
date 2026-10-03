@@ -2431,6 +2431,7 @@
     const isMidi = kind === 'midi';
     const fileName = sanitizeFileName(state.currentSong.metadata.title) + (isMidi ? '.mid' : '.mmp');
     const sf2 = isMidi ? null : await resolveSf2();
+    if (!isMidi) syncClipsFromFlat(state.currentSong);
     try {
       if (window.rmgAPI && window.rmgAPI.saveFileDirect) {
         const data = isMidi
@@ -2534,6 +2535,7 @@
     renderHistory();
     const base = sanitizeFileName(song.metadata.title);
     const sf2 = await resolveSf2();
+    syncClipsFromFlat(song);
     try {
       if (window.rmgAPI && window.rmgAPI.saveFileDirect) {
         const done = [];
@@ -5261,6 +5263,7 @@
   async function handleSaveMmp() {
     if (!state.currentSong) return;
     const sf2 = await resolveSf2();
+    syncClipsFromFlat(state.currentSong);
     const mmpXml = Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2);
     const defaultName = `${state.currentSong.metadata.title}.mmp`;
 
@@ -5289,6 +5292,7 @@
   async function handleLaunchLmms() {
     if (!state.currentSong) return;
     const sf2 = await resolveSf2();
+    syncClipsFromFlat(state.currentSong);
     const mmpXml = Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2);
     const leadClip = Exporter.generateLmmsMidiClip(state.currentSong, 'lead');
 

@@ -1,5 +1,9 @@
 # RinTune Changelog
 
+## Unreleased - Xuat MMP theo sections
+- Moi doan thanh 1 clip rieng dung vi tri (pos), cho tat/be nghi thi trong;
+  bar cuoi luon giu hit ket; flat/app/lane/export khop 100% so not
+
 ## Unreleased - Q3: Ky luat thua
 - Lead hat day (>=5 not/bar) thi chords/arp chi giu downbeat (pad/note tru);
   bass + drums giu lam nen
