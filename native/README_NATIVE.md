@@ -74,6 +74,7 @@ Copy ca thu muc `out\RMG` la chay duoc (portable, khong can cai dat).
 - Tabs nhieu bai + A/B compare; swing toan cuc + render WAV demo.
 - Menu bar File/Edit/View/Tools/Help + themes (Neon/Midnight/Sakura/custom full
   palette tu sinh + anh nen sau app) + sidebar gap + dock tabs + layout chong tran.
+- Custom theme dong bo that: dao ca bo bien + canvas piano-roll/contour theo sang/toi.
 - Phim tat day du (Ctrl+N/O/E/B/L/T/Tab/1-5/S, Home, Del...) hien trong menu + Help.
 - Project `.rmg` (Ctrl+S) + SoundFont export (GeneralUser GS, Sf2 player)
   + So Seed + version 2.1.0.

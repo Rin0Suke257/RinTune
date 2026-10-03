@@ -1356,6 +1356,42 @@
     }
   }
 
+  let uiIsLight = false;
+
+  function luminance(hex) {
+    const h = String(hex || '').replace('#', '');
+    const v = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+    const n = parseInt(v, 16);
+    if (isNaN(n)) return 0;
+    const f = c => {
+      const x = c / 255;
+      return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * f((n >> 16) & 255) + 0.7152 * f((n >> 8) & 255) + 0.0722 * f(n & 255);
+  }
+
+  function pianoPalette() {
+    if (uiIsLight) return {
+      bg: '#f1ecf7', ruler: '#ddd3ea',
+      bar: 'rgba(70,45,110,0.30)', beat: 'rgba(70,45,110,0.12)', faint: 'rgba(70,45,110,0.05)',
+      laneBlack: 'rgba(70,45,110,0.07)', laneC: 'rgba(0,150,170,0.25)',
+      labelBar: '#0a7a88', rulerLine: 'rgba(70,45,110,0.20)', barTick: 'rgba(0,150,170,0.5)',
+      playhead: '#333333'
+    };
+    return {
+      bg: '#0a0b12', ruler: '#0f111c',
+      bar: 'rgba(255,255,255,0.22)', beat: 'rgba(255,255,255,0.08)', faint: 'rgba(255,255,255,0.02)',
+      laneBlack: 'rgba(0,0,0,0.25)', laneC: 'rgba(0,242,254,0.12)',
+      labelBar: '#00f2fe', rulerLine: 'rgba(255,255,255,0.15)', barTick: 'rgba(0,242,254,0.4)',
+      playhead: '#ffffff'
+    };
+  }
+
+  function contourPalette() {
+    if (uiIsLight) return { grid: 'rgba(70,45,110,0.15)', barLabel: '#0a7a88', curve: '#0a7a88', area: 'rgba(0,150,170,0.18)' };
+    return { grid: 'rgba(255,255,255,0.1)', barLabel: 'rgba(0,242,254,0.4)', curve: '#00f2fe', area: 'rgba(0,242,254,0.25)' };
+  }
+
   function hexToHsl(hex) {
     let h = String(hex || '').replace('#', '');
     if (h.length === 3) h = h.split('').map(c => c + c).join('');
@@ -1401,11 +1437,20 @@
     root.style.removeProperty('--accent-touhou');
     root.style.removeProperty('--border-glow');
     root.style.removeProperty('--bg-primary');
+    root.style.removeProperty('--bg-secondary');
+    root.style.removeProperty('--bg-input');
+    root.style.removeProperty('--bg-canvas');
     root.style.removeProperty('--bg-card');
+    root.style.removeProperty('--border-color');
+    root.style.removeProperty('--text-main');
+    root.style.removeProperty('--text-muted');
+    root.style.removeProperty('--text-dim');
     root.style.removeProperty('--bg-scrim');
     if (t && (t.name === 'midnight' || t.name === 'sakura')) {
       root.setAttribute('data-theme', t.name);
+      uiIsLight = (t.name === 'sakura');
     } else if (t && t.name === 'custom') {
+      uiIsLight = false;
       if (t.accent) {
         // Sinh full palette tu accent (do/vang/xanh la giu nguyen vi mang nghia)
         root.style.setProperty('--accent-cyan', t.accent);
@@ -1414,9 +1459,34 @@
         root.style.setProperty('--accent-touhou', rotateHue(t.accent, -45) || '#ff2a6d');
         root.style.setProperty('--border-glow', hexToRgba(t.accent, 0.25));
       }
-      if (t.bgPrimary) root.style.setProperty('--bg-primary', t.bgPrimary);
+      const bgP = (t.bgPrimary && /^#[0-9a-fA-F]{6}$/.test(t.bgPrimary)) ? t.bgPrimary : null;
+      if (bgP) {
+        root.style.setProperty('--bg-primary', bgP);
+        // Sinh ca bo tu do sang nen: nen sang -> chu toi + panel sang
+        if (luminance(bgP) > 0.45) {
+          uiIsLight = true;
+          root.style.setProperty('--bg-secondary', '#ffffff');
+          root.style.setProperty('--bg-input', '#efe9f2');
+          root.style.setProperty('--bg-canvas', '#f2edf7');
+          root.style.setProperty('--border-color', 'rgba(70,30,80,0.18)');
+          root.style.setProperty('--text-main', '#2b2333');
+          root.style.setProperty('--text-muted', '#6f5f6e');
+          root.style.setProperty('--text-dim', '#a08ea0');
+        } else {
+          root.style.setProperty('--bg-secondary', '#10121a');
+          root.style.setProperty('--bg-input', '#151824');
+          root.style.setProperty('--bg-canvas', '#0b0c14');
+          root.style.removeProperty('--border-color');
+          root.style.removeProperty('--text-main');
+          root.style.removeProperty('--text-muted');
+          root.style.removeProperty('--text-dim');
+        }
+      }
       if (t.bgCard) root.style.setProperty('--bg-card', t.bgCard);
+      else if (uiIsLight) root.style.setProperty('--bg-card', 'rgba(255,255,255,0.92)');
       if (t.scrim != null) root.style.setProperty('--bg-scrim', Math.max(0.3, Math.min(0.92, t.scrim)));
+    } else {
+      uiIsLight = false;
     }
     document.body.classList.toggle('has-bg', !!(t && t.bg));
     const bg = document.getElementById('bgLayer');
@@ -4651,6 +4721,7 @@
     const w = contourCanvas.width;
     const h = contourCanvas.height;
     if (w === 0 || h === 0) return;
+    const cpal = contourPalette();
 
     contourCtx.clearRect(0, 0, w, h);
 
@@ -4658,7 +4729,7 @@
     const totalBars = state.lengthBars;
     for (let b = 0; b <= totalBars; b++) {
       const bx = (b / totalBars) * w;
-      contourCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      contourCtx.strokeStyle = cpal.grid;
       contourCtx.lineWidth = 1;
       contourCtx.beginPath();
       contourCtx.moveTo(bx, 0);
@@ -4666,7 +4737,7 @@
       contourCtx.stroke();
 
       if (b < totalBars && totalBars <= 32) {
-        contourCtx.fillStyle = 'rgba(0, 242, 254, 0.4)';
+        contourCtx.fillStyle = cpal.barLabel;
         contourCtx.font = '9px sans-serif';
         contourCtx.fillText(`B${b + 1}`, bx + 4, 12);
       }
@@ -4675,7 +4746,7 @@
     // Horizontal Pitch Guidelines (25%, 50%, 75%)
     for (let yPct of [0.25, 0.5, 0.75]) {
       const py = (1 - yPct) * h;
-      contourCtx.strokeStyle = 'rgba(0, 242, 254, 0.08)';
+      contourCtx.strokeStyle = cpal.grid;
       contourCtx.lineWidth = 0.8;
       contourCtx.setLineDash([4, 4]);
       contourCtx.beginPath();
@@ -4700,7 +4771,7 @@
     contourCtx.closePath();
 
     const fillGrad = contourCtx.createLinearGradient(0, 0, 0, h);
-    fillGrad.addColorStop(0, 'rgba(0, 242, 254, 0.25)');
+    fillGrad.addColorStop(0, cpal.area);
     fillGrad.addColorStop(1, 'rgba(155, 81, 224, 0.05)');
     contourCtx.fillStyle = fillGrad;
     contourCtx.fill();
@@ -4711,9 +4782,9 @@
     for (let i = 1; i < sorted.length; i++) {
       contourCtx.lineTo(sorted[i].x * w, (1 - sorted[i].y) * h);
     }
-    contourCtx.strokeStyle = '#00f2fe';
+    contourCtx.strokeStyle = cpal.curve;
     contourCtx.lineWidth = 2.5;
-    contourCtx.shadowColor = '#00f2fe';
+    contourCtx.shadowColor = cpal.curve;
     contourCtx.shadowBlur = 8;
     contourCtx.stroke();
     contourCtx.shadowBlur = 0;
@@ -4757,8 +4828,9 @@
     const maxMidi = 96;
     const totalPitches = maxMidi - minMidi + 1;
     const noteHeight = gridHeight / totalPitches;
+    const pal = pianoPalette();
 
-    prCtx.fillStyle = '#0a0b12';
+    prCtx.fillStyle = pal.bg;
     prCtx.fillRect(0, 0, width, height);
 
     // 1. Grid Lines
@@ -4768,13 +4840,13 @@
       const isBeat = (stepsPerBar === 14 ? (s % 2 === 0) : (stepsPerBar === 12 ? (s % 3 === 0) : (stepsPerBar === 10 ? (s % 2 === 0) : (s % 4 === 0))));
 
       if (isBar) {
-        prCtx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+        prCtx.strokeStyle = pal.bar;
         prCtx.lineWidth = 1.5;
       } else if (isBeat) {
-        prCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        prCtx.strokeStyle = pal.beat;
         prCtx.lineWidth = 1;
       } else {
-        prCtx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+        prCtx.strokeStyle = pal.faint;
         prCtx.lineWidth = 0.5;
       }
 
@@ -4791,11 +4863,11 @@
       const y = height - ((m - minMidi + 1) * noteHeight);
 
       if (isBlackKey) {
-        prCtx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+        prCtx.fillStyle = pal.laneBlack;
         prCtx.fillRect(0, y, width, noteHeight);
       }
       if (pc === 0) {
-        prCtx.strokeStyle = 'rgba(0, 242, 254, 0.12)';
+        prCtx.strokeStyle = pal.laneC;
         prCtx.lineWidth = 1;
         prCtx.beginPath();
         prCtx.moveTo(0, y);
@@ -4900,10 +4972,10 @@
     }
 
     // 4. Timeline Ruler Bar (Top 20px)
-    prCtx.fillStyle = '#0f111c';
+    prCtx.fillStyle = pal.ruler;
     prCtx.fillRect(0, 0, width, rulerHeight);
 
-    prCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    prCtx.strokeStyle = pal.rulerLine;
     prCtx.lineWidth = 1;
     prCtx.beginPath();
     prCtx.moveTo(0, rulerHeight);
@@ -4912,13 +4984,13 @@
 
     for (let b = 0; b < state.lengthBars; b++) {
       const bx = b * stepsPerBar * stepWidth;
-      prCtx.strokeStyle = 'rgba(0, 242, 254, 0.4)';
+      prCtx.strokeStyle = pal.barTick;
       prCtx.beginPath();
       prCtx.moveTo(bx, 4);
       prCtx.lineTo(bx, rulerHeight);
       prCtx.stroke();
 
-      prCtx.fillStyle = '#00f2fe';
+      prCtx.fillStyle = pal.labelBar;
       prCtx.font = 'bold 9px sans-serif';
       prCtx.textBaseline = 'top';
       prCtx.fillText(`B${b + 1}`, bx + 4, 4);
@@ -4926,8 +4998,8 @@
 
     // 5. Playhead Bar & Pointer
     const playheadX = currentStep * stepWidth;
-    prCtx.strokeStyle = '#ffffff';
-    prCtx.shadowColor = '#00f2fe';
+    prCtx.strokeStyle = pal.playhead;
+    prCtx.shadowColor = pal.labelBar;
     prCtx.shadowBlur = 10;
     prCtx.lineWidth = 2.0;
     prCtx.beginPath();
@@ -4937,7 +5009,7 @@
     prCtx.shadowBlur = 0;
 
     // Playhead triangle in ruler
-    prCtx.fillStyle = '#00f2fe';
+    prCtx.fillStyle = pal.labelBar;
     prCtx.beginPath();
     prCtx.moveTo(playheadX - 5, 0);
     prCtx.lineTo(playheadX + 5, 0);
