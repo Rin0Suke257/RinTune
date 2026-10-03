@@ -920,18 +920,17 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .menu-top:hover > span, .menu-top.open > span { color: var(--accent-cyan); background: rgba(0, 242, 254, 0.08); }
 .menu-drop { display: none; position: absolute; top: 100%; left: 0; min-width: 250px; background: var(--bg-secondary); border: 1px solid var(--accent-cyan); border-radius: 8px; padding: 5px; z-index: 9000; box-shadow: 0 12px 32px rgba(0,0,0,0.6); }
 .menu-top.open .menu-drop { display: block; }
-.menu-drop button { display: block; width: 100%; text-align: left; background: transparent; border: none; color: var(--text-main); font-size: 0.76rem; padding: 6px 10px; border-radius: 5px; cursor: pointer; }
+.menu-drop button { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; text-align: left; background: transparent; border: none; color: var(--text-main); font-size: 0.76rem; padding: 6px 10px; border-radius: 5px; cursor: pointer; }
 .menu-drop button:hover { background: rgba(0, 242, 254, 0.12); color: var(--accent-cyan); }
+.menu-shortcut { color: var(--text-dim); font-size: 0.66rem; white-space: nowrap; }
 .menu-sep { height: 1px; background: var(--border-color); margin: 4px 6px; }
 .menubar-title { margin-left: auto; align-self: center; font-size: 0.68rem; color: var(--text-dim); letter-spacing: 1px; }
 
 /* ===== Themes ===== */
 [data-theme="midnight"] { --bg-primary: #040814; --bg-secondary: #0a1230; --bg-card: rgba(16, 28, 64, 0.8); --bg-card-hover: rgba(24, 40, 88, 0.92); --bg-input: #0d1530; --accent-cyan: #4facfe; --border-glow: rgba(79, 172, 254, 0.3); }
 [data-theme="sakura"] { --bg-primary: #f6f1f7; --bg-secondary: #ffffff; --bg-card: rgba(255, 255, 255, 0.92); --bg-card-hover: rgba(255, 240, 246, 0.98); --bg-input: #f3ecf5; --border-color: rgba(120, 40, 90, 0.16); --border-glow: rgba(255, 42, 109, 0.25); --accent-cyan: #c2145b; --accent-blue: #7b5cff; --accent-purple: #9b51e0; --text-main: #33222e; --text-muted: #7a5f74; --text-dim: #a98fa2; }
-#bgLayer { position: fixed; inset: 0; z-index: 0; background-size: cover; background-position: center; background-image: linear-gradient(rgba(5,6,10,var(--bg-scrim,0.62)), rgba(5,6,10,var(--bg-scrim,0.62))), var(--bg-img, none); filter: blur(18px) brightness(0.6) saturate(0.85); transform: scale(1.06); pointer-events: none; display: none; }
+#bgLayer { position: fixed; inset: 0; z-index: -1; background-size: cover; background-position: center; background-image: linear-gradient(rgba(5,6,10,var(--bg-scrim,0.62)), rgba(5,6,10,var(--bg-scrim,0.62))), var(--bg-img, none); filter: blur(18px) brightness(0.6) saturate(0.85); transform: scale(1.06); pointer-events: none; display: none; }
 body.has-bg #bgLayer { display: block; }
-body.has-bg { --bg-card: rgba(17, 21, 33, 0.94); --bg-secondary: rgba(13, 16, 24, 0.96); }
-body.has-bg .app-container { background: transparent; }
 body.has-bg { background-color: #05060a; }
 
 /* ===== Dock tabs (Lich su / File / Seed) ===== */

@@ -3567,6 +3567,36 @@
       } else if ((e.ctrlKey || e.metaKey) && e.code === 'KeyV' && copyBuffer && copyBuffer.length) {
         e.preventDefault();
         pasteSelection();
+      } else if ((e.ctrlKey || e.metaKey) && e.code === 'KeyN') {
+        e.preventDefault();
+        newBlankSong();
+      } else if ((e.ctrlKey || e.metaKey) && e.code === 'KeyO') {
+        e.preventDefault();
+        requestOpenMidi();
+      } else if ((e.ctrlKey || e.metaKey) && e.code === 'KeyE') {
+        e.preventDefault();
+        quickExport('midi');
+      } else if ((e.ctrlKey || e.metaKey) && e.code === 'KeyB') {
+        e.preventDefault();
+        arrangeSong();
+      } else if ((e.ctrlKey || e.metaKey) && e.code === 'KeyL') {
+        e.preventDefault();
+        handleLaunchLmms();
+      } else if ((e.ctrlKey || e.metaKey) && e.code === 'KeyT') {
+        e.preventDefault();
+        newTab();
+      } else if ((e.ctrlKey || e.metaKey) && e.code === 'Tab') {
+        e.preventDefault();
+        cycleTab(e.shiftKey ? -1 : 1);
+      } else if ((e.ctrlKey || e.metaKey) && ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad4', 'Numpad5'].includes(e.code)) {
+        e.preventDefault();
+        selectEditingTrackByIndex(['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad4', 'Numpad5'].indexOf(e.code) % 5);
+      } else if (e.code === 'Home') {
+        e.preventDefault();
+        if (state.currentSong) {
+          Synth.seek(0);
+          renderPianoRoll(0);
+        }
       } else if ((e.code === 'Delete' || e.code === 'Backspace') && selectedNotes.size > 0) {
         e.preventDefault();
         deleteSelection();
@@ -3762,6 +3792,23 @@
     wireMenus();
     wireDockTabs();
     wireCollapsibleCards();
+
+    // Hien shortcut trong menu
+    const MENU_SHORTCUTS = {
+      'new-blank': 'Ctrl+N', 'open-midi': 'Ctrl+O', 'save-project': 'Ctrl+S',
+      'exp-midi': 'Ctrl+E', 'launch-lmms': 'Ctrl+L', 'arrange': 'Ctrl+B',
+      'undo': 'Ctrl+Z', 'redo': 'Ctrl+Y', 'sel-delete': 'Del',
+      'sel-dup': 'Ctrl+D', 'sel-copy': 'Ctrl+C', 'sel-paste': 'Ctrl+V'
+    };
+    for (const [act, key] of Object.entries(MENU_SHORTCUTS)) {
+      const btn = document.querySelector(`.menu-drop [data-act="${act}"]`);
+      if (btn && !btn.querySelector('.menu-shortcut')) {
+        const s = document.createElement('span');
+        s.className = 'menu-shortcut';
+        s.textContent = key;
+        btn.appendChild(s);
+      }
+    }
 
     // Studio Track Tabs Selection
     if (studioTrackTabs) {
@@ -4141,6 +4188,23 @@
       handled = true;
     }
     return handled;
+  }
+
+  function cycleTab(dir) {
+    if (songTabs.length < 2) {
+      showToast('⚠️ Chỉ có 1 tab (Ctrl+T để mở tab mới)');
+      return;
+    }
+    const ix = songTabs.findIndex(t => t.id === activeTabId);
+    const next = songTabs[(ix + dir + songTabs.length) % songTabs.length];
+    switchTab(next.id);
+  }
+
+  function selectEditingTrackByIndex(i) {
+    const keys = ['lead', 'chords', 'arp', 'bass', 'drums'];
+    if (i < 0 || i >= keys.length || !studioTrackTabs) return;
+    const tab = studioTrackTabs.querySelector(`[data-track="${keys[i]}"]`);
+    if (tab) tab.click();
   }
 
   function setTool(t) {
