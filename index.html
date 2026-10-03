@@ -432,6 +432,25 @@
             <input type="range" id="sliderDensity" min="20" max="100" value="75">
           </div>
 
+          <!-- Bien tau / Variation: ti le gieo lai khac nhau moi take -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>🎲 Biến Tấu (Variation %)</span>
+              <span class="control-value" id="valVariation">70%</span>
+            </div>
+            <input type="range" id="sliderVariation" min="0" max="100" value="70" title="0% = gieo lại gần như giữ nguyên khung, 100% = đảo mạnh mỗi take">
+            <details style="margin-top:4px; font-size:0.7rem; color:var(--text-muted);">
+              <summary style="cursor:pointer;">Tỉ lệ từng bè (× với slider tổng)</summary>
+              <div style="display:grid; grid-template-columns:1fr auto; gap:2px 8px; align-items:center; margin-top:4px;">
+                <span>Lead</span><span><input type="range" id="sliderVar_lead" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_lead">100%</b></span>
+                <span>Chords</span><span><input type="range" id="sliderVar_chords" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_chords">100%</b></span>
+                <span>Arp</span><span><input type="range" id="sliderVar_arp" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_arp">100%</b></span>
+                <span>Bass</span><span><input type="range" id="sliderVar_bass" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_bass">100%</b></span>
+                <span>Drums</span><span><input type="range" id="sliderVar_drums" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_drums">100%</b></span>
+              </div>
+            </details>
+          </div>
+
           <!-- Swing Slider -->
           <div class="control-row">
             <div class="control-label">

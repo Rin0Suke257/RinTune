@@ -23,7 +23,6 @@
       }
       return (Math.abs(hash) % 1000000) / 1000000;
     }
-
     next() {
       this.seed = (this.seed * 9301 + 49297) % 233280;
       return this.seed / 233280;
@@ -78,6 +77,129 @@
   };
 
   class MusicGenerator {
+    /**
+     * Xac suat co ti le bien tau V (0..1, mac dinh 0.7 = hanh vi cu).
+     * V=0 gan nhu giu nguyen, V=1 dao manh. Deterministic theo seed.
+     */
+    _vChance(base, V) {
+      const v = (V == null ? 0.7 : V);
+      return this.rng.chance(Math.max(0, Math.min(0.95, base * (v / 0.7))));
+    }
+
+    /**
+     * Chon bien the 0..n-1: V=0 luon 0 (goc), V cang cao cang nga nhien.
+     */
+    _variant(n, V) {
+      const v = (V == null ? 0.7 : V);
+      if (n <= 1 || v <= 0) return 0;
+      if (this.rng.range(0, 1) > v) return 0;
+      return this.rng.rangeInt(0, n - 1);
+    }
+
+    /**
+     * Chuan hoa variation thanh {lead,chords,arp,bass,drums} moi kenh 0..1.
+     * Nhan: number -> ap dung tat ca; object thieu kenh -> 0.7; global nhan tracks.
+     */
+    _resolveVariation(src) {
+      const norm = (v) => {
+        if (v == null || isNaN(v)) return 0.7;
+        return Math.max(0, Math.min(1, v));
+      };
+      if (src == null) {
+        const g = norm(this.options.variation);
+        return { lead: g, chords: g, arp: g, bass: g, drums: g };
+      }
+      if (typeof src === 'number') {
+        const g = norm(src);
+        return { lead: g, chords: g, arp: g, bass: g, drums: g };
+      }
+      const g = (src.global != null) ? norm(src.global) : 1;
+      const ch = (k) => (src[k] != null ? norm(src[k]) * g : 0.7 * g);
+      return { lead: ch('lead'), chords: ch('chords'), arp: ch('arp'), bass: ch('bass'), drums: ch('drums') };
+    }
+
+    /**
+     * Bien tau arp sau sinh: dich octave giu pitch-class (an toan hoa am)
+     * + tia thua not yeu. Downbeat giu nguyen.
+     */
+    _varyArp(track, spb, V) {
+      if (!track || !track.notes) return track;
+      for (const n of track.notes) {
+        const isDown = (n.step % spb) === 0;
+        if (isDown) {
+          if (n.midi - 12 >= 42 && this._vChance(0.30, V)) n.midi -= 12;
+        } else {
+          if (this._vChance(0.35, V)) {
+            if (this.rng.chance(0.5) && n.midi + 12 <= 93) n.midi += 12;
+            else if (n.midi - 12 >= 40) n.midi -= 12;
+          } else if (this._vChance(0.12, V)) {
+            n._dropMe = true;
+          }
+        }
+      }
+      if (track.notes.some(n => n._dropMe)) {
+        track.notes = track.notes.filter(n => !n._dropMe);
+      } else {
+        for (const n of track.notes) delete n._dropMe;
+      }
+      return track;
+    }
+
+    /**
+     * Bien tau drums sau sinh: pickup kick + anticipation (giu groove goc).
+     * Them: rot 1 kick phu + them kick offbeat (thay doi step that su).
+     */
+    _varyDrums(track, spb, V, startBar, endBar) {
+      if (!track || !track.notes) return track;
+      const at = (step, midi) => track.notes.some(n => n.step === step && n.midi === midi);
+      const KICK = 36, SNARE = 38;
+      for (let bar = startBar; bar <= endBar; bar++) {
+        const bs = bar * spb;
+        // Rot 1 kick phu (tru downbeat) cho groove thoang hon
+        if (this._vChance(0.5, V)) {
+          const cands = track.notes.filter(n => n.midi === KICK && n.step >= bs && n.step < bs + spb && (n.step % spb) !== 0);
+          if (cands.length) {
+            const victim = cands[this.rng.rangeInt(0, cands.length - 1)];
+            track.notes.splice(track.notes.indexOf(victim), 1);
+          }
+        }
+        // Them kick offbeat vao o trong (syncopation moi)
+        if (this._vChance(0.4, V)) {
+          const slots = [2, 6, 7, 10, 11, 14].filter(s => s < spb);
+          const free = slots.filter(s => !at(bs + s, KICK) && !at(bs + s, SNARE));
+          if (free.length) {
+            const s = free[this.rng.rangeInt(0, free.length - 1)];
+            track.notes.push({ step: bs + s, duration: 1, midi: KICK, velocity: 100, pan: 0 });
+          }
+        }
+        // Hat bien tau nhe: mo/ dong + rot 1 hat (giu skeleton groove)
+        if (this._vChance(0.5, V)) {
+          const hats = track.notes.filter(n => (n.midi === 42 || n.midi === 46) && n.step >= bs && n.step < bs + spb && (n.step % spb) !== 0);
+          if (hats.length) {
+            const h = hats[this.rng.rangeInt(0, hats.length - 1)];
+            const r = this.rng.range(0, 1);
+            if (r < 0.45) h.midi = (h.midi === 42 ? 46 : 42); // doi mo/dong
+            else track.notes.splice(track.notes.indexOf(h), 1); // rot 1 hat
+          }
+        }
+        // Pickup kick truoc downbeat bar sau
+        if (this._vChance(0.45, V)) {
+          const ps = bs + spb - 2;
+          if (!at(ps, 36) && !at(ps, 38)) {
+            track.notes.push({ step: ps, duration: 1, midi: 36, velocity: 95, pan: 0 });
+          }
+        }
+        if (this._vChance(0.35, V)) {
+          const cands = track.notes.filter(n => n.midi === 36 && n.step >= bs && n.step < bs + spb && (n.step % spb) !== 0 && !at(n.step - 1, 36));
+          if (cands.length) {
+            cands[this.rng.rangeInt(0, cands.length - 1)].step -= 1;
+          }
+        }
+      }
+      track.notes.sort((a, b) => a.step - b.step);
+      return track;
+    }
+
     constructor(options = {}) {
       this.options = Object.assign({
         genre: 'touhou',
@@ -147,6 +269,7 @@
 
       // 3. Generate Individual Tracks (vai tro + mat do theo DNA tung genre)
       const isPurePiano = (trackTarget === 'pure_piano');
+      const VV = this._resolveVariation(this.options.variation);
       const prof = genreDef.trackProfile || {};
       const profW = k => {
         if (isPurePiano) return 1;
@@ -177,7 +300,8 @@
         density: Math.max(0, Math.min(100, densityMod * profW('lead'))),
         velocityBoost,
         humanize,
-        grammar
+        grammar,
+        variation: VV
       }) : { name: 'Lead Melody', type: 'synth_lead', instrument: genreDef.leadStyle, color: '#00f2fe', notes: [] };
 
       if (isPurePiano) {
@@ -196,7 +320,8 @@
         climaxCurve,
         density: Math.max(0, Math.min(100, densityMod * profW('chords'))),
         velocityBoost,
-        humanize
+        humanize,
+        variation: VV
       }) : { name: 'Harmony & Chords', type: 'poly_synth', instrument: 'analog_pad', color: '#9b51e0', notes: [] };
 
       const arpTrack = (trackTarget === 'all' || trackTarget === 'arp' || isPurePiano) ? this._generateArpTrack({
@@ -210,7 +335,8 @@
         climaxCurve,
         density: Math.max(0, Math.min(100, densityMod * profW('arp'))),
         velocityBoost,
-        humanize
+        humanize,
+        variation: VV
       }) : { name: 'Arpeggio Ostinato', type: 'pluck_synth', instrument: 'sparkle_arp', color: '#4facfe', notes: [] };
 
       if (isPurePiano) {
@@ -231,7 +357,8 @@
         density: Math.max(0, Math.min(100, densityMod * profW('bass'))),
         chaosLevel,
         velocityBoost,
-        humanize
+        humanize,
+        variation: VV
       }) : { name: 'Bassline', type: 'mono_bass', instrument: 'sub_saw_bass', color: '#f39c12', notes: [] };
 
       if (isPurePiano) {
@@ -250,7 +377,8 @@
         density: Math.max(0, Math.min(100, densityMod * profW('drums'))),
         chaosLevel,
         velocityBoost,
-        humanize
+        humanize,
+        variation: VV
       }) : { name: 'Drums & Percussion', type: 'drum_kit', instrument: 'standard_kit', color: '#e74c3c', notes: [] };
 
       // 4. Ensemble Arrangement Pass: crash/fill, kick-bass lock, lead nghi, final hit.
@@ -296,6 +424,7 @@
           density,
           fadeInBars,
           fadeOutBars,
+          variation: VV,
           useContour: !!useContour,
           contourPoints: contourPoints || null,
           loopMode: !!this.options.loopMode,
@@ -382,6 +511,8 @@
       else if (section === 'intro') { velocityBoost = -12; densityMod = Math.max(30, densityMod - 20); }
       else if (section === 'outro') { velocityBoost = -15; densityMod = Math.max(30, densityMod - 25); }
 
+      const VV = this._resolveVariation(spec.variation != null ? spec.variation : (md.variation != null ? md.variation : this.options.variation));
+
       const baseCtx = {
         progression: song.progression,
         genreDef,
@@ -403,6 +534,7 @@
         velocityBoost,
         humanize: true,
         grammar: Object.assign({ rest: 0, leapSemis: 9, chromatic: true }, genreDef.leadGrammar || {}),
+        variation: VV,
         barStart: fromBar,
         barEnd: toBar
       };
@@ -771,6 +903,7 @@
       const isFieryPiano = (genreDef.id === 'fiery_piano' || genreDef.id === 'touhou' || genreDef.id === 'sasakure_uk');
       const isSasakure = (genreDef.id === 'sasakure_uk');
       const mutationChance = chaosLevel / 100; // 0.0 to 1.0
+      const Vl = (ctx.variation && ctx.variation.lead != null) ? ctx.variation.lead : 0.7;
 
       let currentBar = Math.max(0, ctx.barStart || 0);
       const endBar = (ctx.barEnd == null || ctx.barEnd < 0) ? (lengthBars - 1) : Math.min(lengthBars - 1, ctx.barEnd);
@@ -826,7 +959,7 @@
         }
 
         // sasakure.UK / Virtuoso Piano Cascading Arpeggio Sweep in Climax Bars
-        if ((isFieryPiano || isSasakure) && isPeakClimax && (density > 50) && this.rng.chance(0.65)) {
+        if ((isFieryPiano || isSasakure) && isPeakClimax && (density > 50) && this._vChance(0.65, Vl)) {
           const sweepLength = density >= 80 ? Math.min(8, stepsPerBar / 2) : 4;
           for (let sw = 0; sw < sweepLength; sw++) {
             const swStep = phraseStartStep + sw;
@@ -843,7 +976,7 @@
 
         // Touhou triplet burst vao climax (3 not chia deu tren 2 steps)
         // Nguong 0.75 de phrase nao nong cung no (khong chi dinh 0.88)
-        if ((genreDef.id === 'touhou' || isSasakure) && climaxFactor >= 0.75 && density >= 60 && this.rng.chance(0.5)) {
+        if ((genreDef.id === 'touhou' || isSasakure) && climaxFactor >= 0.75 && density >= 60 && this._vChance(0.5, Vl)) {
           const tBase = scaleNotes[Math.min(scaleNotes.length - 1, 6)];
           for (let t = 0; t < 3; t++) {
             notes.push({
@@ -857,7 +990,7 @@
         }
 
         // Fiery piano trill truoc ket phrase (luyen ngon chromatic)
-        if (genreDef.id === 'fiery_piano' && climaxFactor >= 0.75 && this.rng.chance(0.4)) {
+        if (genreDef.id === 'fiery_piano' && climaxFactor >= 0.75 && this._vChance(0.4, Vl)) {
           const trillEnd = phraseStartStep + currentPhraseBars * stepsPerBar;
           const trillBase = rootMidi + 12;
           for (let k = 0; k < 4; k++) {
@@ -1015,7 +1148,7 @@
           prevLeadMidi = targetMidi;
 
           // 2. sasakure.UK Chiptune Rapid 16th Grace Note & Passing Flurry
-          if (isSasakure && density >= 70 && noteDef.durationSteps >= 3 && this.rng.chance(0.45)) {
+          if (isSasakure && density >= 70 && noteDef.durationSteps >= 3 && this._vChance(0.45, Vl)) {
             const flurryMidi = scaleNotes[Math.min(scaleNotes.length - 1, baseDegreeIndex + 2)] || (targetMidi + 4);
             notes.push({
               step: globalStep + 1,
@@ -1196,7 +1329,21 @@
       const endBar = (ctx.barEnd == null || ctx.barEnd < 0) ? (lengthBars - 1) : Math.min(lengthBars - 1, ctx.barEnd);
       for (let bar = startBar; bar <= endBar; bar++) {
         const chord = voicedProgression[bar] || voicedProgression[0];
-        const voicedNotes = chord.voicedNotes || chord.notes;
+        const Vch = (ctx.variation && ctx.variation.chords != null) ? ctx.variation.chords : 0.7;
+        let chordTones = (chord.voicedNotes || chord.notes).slice();
+        // Dao inversion moi take (0 goc, 1 dao 1, 2 bo five mo voicing)
+        const inv = this._variant(3, Vch);
+        if (inv === 1 && chordTones.length >= 2) {
+          chordTones[0] += 12;
+          chordTones.sort((a, b) => a - b);
+        } else if (inv === 2 && chordTones.length >= 3) {
+          chordTones.splice(1, 1);
+        }
+        // Tension 9th them mau
+        if (this._vChance(0.3, Vch) && chord.notes.length >= 3) {
+          const ninth = chord.rootMidi + 14;
+          if (ninth <= 84) chordTones = chordTones.concat([ninth]);
+        }
         const barStartStep = bar * stepsPerBar;
         const climaxFactor = this._getClimaxFactor(bar, lengthBars, climaxCurve);
         const phrasePos = bar % 4; // 4-bar phrase structure
@@ -1232,16 +1379,30 @@
           chopSteps = [0];
         }
 
-        for (const stepOffset of chopSteps) {
+        // Rhythm bien tau moi take (0 goc, 1 day tre, 2 half-time)
+        let chops = chopSteps;
+        const chPat = this._variant(3, Vch);
+        if (chPat === 1) {
+          chops = chopSteps.map(s => s + 1).filter(s => s < stepsPerBar);
+          if (!chops.length) chops = chopSteps;
+        } else if (chPat === 2) {
+          chops = chopSteps.filter((_, i) => i % 2 === 0);
+          if (!chops.length) chops = chopSteps;
+        }
+        // Chieu strum dao
+        const downStrum = !(chordTones.length > 2 && this._vChance(0.4, Vch));
+        const ordered = downStrum ? chordTones : chordTones.slice().reverse();
+
+        for (const stepOffset of chops) {
           if (stepOffset >= stepsPerBar) continue;
           // Mat do theo DNA genre (chiptune thua, pad day du)
           if (stepOffset !== 0 && this.rng.range(0, 100) > density) continue;
           let strumOffset = 0;
 
-          for (const midi of voicedNotes) {
+          for (const midi of ordered) {
             const isAccented = (stepOffset === 0 || stepOffset === Math.floor(stepsPerBar / 2));
             const baseVel = Math.round((isAccented ? 92 : 80) * (0.7 + 0.35 * climaxFactor)) + velocityBoost;
-            const dur = (chopSteps.length > 2) ? 2 : (stepsPerBar - stepOffset);
+            const dur = (chops.length > 2) ? 2 : (stepsPerBar - stepOffset);
 
             notes.push({
               step: barStartStep + stepOffset,
@@ -1489,14 +1650,16 @@
       const gid = genreDef.id;
       const arpStart = Math.max(0, ctx.barStart || 0);
       const arpEnd = (ctx.barEnd == null || ctx.barEnd < 0) ? (lengthBars - 1) : Math.min(lengthBars - 1, ctx.barEnd);
-      if (gid === 'chiptune') return this._fitArp(this._generateArpChiptune(ctx, arpStart, arpEnd, 'sparkle_arp'), progression, stepsPerBar);
-      if (gid === 'sasakure_uk') return this._fitArp(this._generateArpChiptune(ctx, arpStart, arpEnd, 'grand_piano_lead'), progression, stepsPerBar);
-      if (gid === 'lofi') return this._fitArp(this._generateArpLofi(ctx, arpStart, arpEnd), progression, stepsPerBar);
-      if (gid === 'synthwave') return this._fitArp(this._generateArpSynthwave(ctx, arpStart, arpEnd), progression, stepsPerBar);
-      if (gid === 'dark_fantasy') return this._fitArp(this._generateArpDoom(ctx, arpStart, arpEnd), progression, stepsPerBar);
-      if (gid === 'epic' || gid === 'cinematic') return this._fitArp(this._generateArpEpic(ctx, arpStart, arpEnd), progression, stepsPerBar);
-      if (gid === 'cyberpunk') return this._fitArp(this._generateArpCyber(ctx, arpStart, arpEnd), progression, stepsPerBar);
-      if (gid === 'anime') return this._fitArp(this._generateArpAnime(ctx, arpStart, arpEnd), progression, stepsPerBar);
+      const VV = (ctx.variation && ctx.variation.arp != null) ? ctx.variation.arp : 0.7;
+      const fitVary = (t) => this._varyArp(this._fitArp(t, progression, stepsPerBar), stepsPerBar, VV);
+      if (gid === 'chiptune') return fitVary(this._generateArpChiptune(ctx, arpStart, arpEnd, 'sparkle_arp'));
+      if (gid === 'sasakure_uk') return fitVary(this._generateArpChiptune(ctx, arpStart, arpEnd, 'grand_piano_lead'));
+      if (gid === 'lofi') return fitVary(this._generateArpLofi(ctx, arpStart, arpEnd));
+      if (gid === 'synthwave') return fitVary(this._generateArpSynthwave(ctx, arpStart, arpEnd));
+      if (gid === 'dark_fantasy') return fitVary(this._generateArpDoom(ctx, arpStart, arpEnd));
+      if (gid === 'epic' || gid === 'cinematic') return fitVary(this._generateArpEpic(ctx, arpStart, arpEnd));
+      if (gid === 'cyberpunk') return fitVary(this._generateArpCyber(ctx, arpStart, arpEnd));
+      if (gid === 'anime') return fitVary(this._generateArpAnime(ctx, arpStart, arpEnd));
 
       const startBar = Math.max(0, ctx.barStart || 0);
       const endBar = (ctx.barEnd == null || ctx.barEnd < 0) ? (lengthBars - 1) : Math.min(lengthBars - 1, ctx.barEnd);
@@ -1587,13 +1750,13 @@
         }
       }
 
-      return this._fitArp({
+      return this._varyArp(this._fitArp({
         name: 'Arpeggio Ostinato',
         type: 'pluck_synth',
         instrument: isSasakure ? 'grand_piano_lead' : 'sparkle_arp',
         color: '#4facfe',
         notes
-      }, progression, stepsPerBar);
+      }, progression, stepsPerBar), stepsPerBar, VV);
     }
 
     /**
@@ -1601,6 +1764,7 @@
      */
     _generateBassTrack(ctx) {
       const { progression, scaleNotes, genreDef, lengthBars, timeSignature = '4/4', stepsPerBar = 16, section, climaxCurve, density = 75, chaosLevel = 25, velocityBoost, humanize } = ctx;
+      const Vb = (ctx.variation && ctx.variation.bass != null) ? ctx.variation.bass : 0.7;
       const notes = [];
       const chaosFactor = chaosLevel / 100;
 
@@ -1615,7 +1779,7 @@
         let rootMidi = 36 + rootPitchClass; // Sub-bass root (C2 range)
         
         // Chaos: Inversion bass note selection (1st/2nd inversion)
-        if (this.rng.chance(chaosFactor * 0.6) && chord.notes.length >= 3) {
+        if (this._vChance(chaosFactor * 0.6, Vb) && chord.notes.length >= 3) {
           const invChoice = this.rng.choice([chord.notes[1], chord.notes[2]]);
           rootMidi = 36 + (invChoice % 12);
         }
@@ -1842,18 +2006,21 @@
         }
 
         // Bien tau moi take: octave pop + rut ngan + syncopation (tru downbeat)
-        // Khung pattern giu nguyen theo genre, chi ornament thay doi theo chaos
+        // Khung pattern giu nguyen theo genre, chi ornament thay doi theo bien tau
         for (const ev of bassEvents) {
-          if (ev.s !== 0 && this.rng.chance(chaosFactor * 0.5)) {
+          if (ev.s !== 0 && this._vChance(chaosFactor * 0.5, Vb)) {
             const r = this.rng.range(0, 1);
             if (r < 0.4) ev.m = Math.min(72, ev.m + 12); // octave pop
             else if (r < 0.6 && ev.dur >= 2) ev.dur = Math.max(1, ev.dur - 1); // staccato dot bien
           }
         }
-        if (bassEvents.length > 3 && this.rng.chance(chaosFactor * 0.6)) {
+        if (bassEvents.length > 3 && this._vChance(chaosFactor * 0.6, Vb)) {
           const cands = bassEvents.filter(e => e.s !== 0 && e.s + 1 < stepsPerBar);
           if (cands.length) cands[this.rng.rangeInt(0, cands.length - 1)].s += 1; // day tre 1 step
         }
+        // Dich octave ca bar (giu pitch-class = an toan hoa am)
+        const barShift = this._variant(4, Vb);
+        const octShift = barShift === 1 ? 12 : (barShift === 2 ? -12 : 0);
 
         for (const ev of bassEvents) {
           if (ev.s >= stepsPerBar) continue;
@@ -1863,7 +2030,7 @@
           notes.push({
             step: barStartStep + ev.s,
             duration: Math.min(stepsPerBar - ev.s, ev.dur),
-            midi: ev.m,
+            midi: Math.max(24, Math.min(72, ev.m + octShift)),
             velocity: Math.max(30, Math.min(127, humanize ? baseVel + this.rng.rangeInt(-5, 5) : baseVel)),
             pan: 0
           });
@@ -1881,6 +2048,7 @@
 
     _generateDrumTrack(ctx) {
       const { genreDef, lengthBars, timeSignature = '4/4', stepsPerBar = 16, section, climaxCurve, density, chaosLevel, velocityBoost, humanize } = ctx;
+      const Vd = (ctx.variation && ctx.variation.drums != null) ? ctx.variation.drums : 0.7;
       const notes = [];
 
       const KICK = 36;
@@ -2001,7 +2169,7 @@
         }
 
         // Ghost notes: snare nhe giua backbeat (funkier genres)
-        if (density >= 50 && ['lofi', 'synthwave', 'anime', 'fiery_piano', 'touhou'].includes(genreDef.id) && this.rng.chance(0.6)) {
+        if (density >= 50 && ['lofi', 'synthwave', 'anime', 'fiery_piano', 'touhou'].includes(genreDef.id) && this._vChance(0.6, Vd)) {
           const gs = this.rng.choice([2, 6, 10, 14].filter(s => s < stepsPerBar));
           if (gs != null) {
             notes.push({ step: barStartStep + gs, duration: 1, midi: SNARE, velocity: Math.min(90, 48 + velocityBoost), pan: 0 });
@@ -2022,13 +2190,13 @@
         }
       }
 
-      return {
+      return this._varyDrums({
         name: 'Drums & Percussion',
         type: 'drum_kit',
         instrument: 'standard_kit',
         color: '#e74c3c',
         notes
-      };
+      }, stepsPerBar, Vd, startBar, endBar, density || 75);
     }
 
     /**

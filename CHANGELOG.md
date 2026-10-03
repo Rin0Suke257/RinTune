@@ -1,5 +1,15 @@
 # RMG Changelog
 
+## Unreleased - Variation (Biến tấu)
+- Gieo lại vùng/take dice giờ khác nhau thật: chords (đảo inversion +
+  rhythm + tension 9th + chiều strum), arp (dịch octave giữ pitch-class +
+  tỉa nốt yếu), bass (dịch octave cả bar + ornament), drums (rớt/thêm kick,
+  pickup, anticipation, hat mở/đóng)
+- Slider 🎲 Biến Tấu tổng 0-100% + tỉ lệ từng bè (Lead/Chords/Arp/Bass/
+  Drums): 0% giữ khung, 100% đảo mạnh; mặc định 70% = hành vi cũ
+- Variation lưu theo seed/project/history/undo — cùng seed + cùng variation
+  ra cùng bài
+
 ## v2.1.0 - Sound that + Projects
 - Project files `.rmg` (Save/Save-nhanh/Ctrl+S/Open, luu ca settings)
 - Export SoundFont GeneralUser GS (~30MB, tai 1 lan): `.mmp` dung Sf2 player

@@ -38,6 +38,8 @@
     trackTarget: 'pure_piano',
     chaosLevel: 25,
     density: 75,
+    variation: 70, // Bien tau tong 0..100 (0 = giu khung, 100 = dao manh)
+    variationTracks: { lead: 100, chords: 100, arp: 100, bass: 100, drums: 100 },
     currentSong: null,
     isPlaying: false,
     editingTrack: 'lead',
@@ -107,6 +109,8 @@
   const valChaos = document.getElementById('valChaos');
   const sliderDensity = document.getElementById('sliderDensity');
   const valDensity = document.getElementById('valDensity');
+  const sliderVariation = document.getElementById('sliderVariation');
+  const valVariation = document.getElementById('valVariation');
   const progressionDisplay = document.getElementById('progressionDisplay');
   const badgeSectionText = document.getElementById('badgeSectionText');
   const badgeScaleText = document.getElementById('badgeScaleText');
@@ -503,9 +507,21 @@
       trackTarget: 'all',
       chaosLevel: md.chaosLevel != null ? md.chaosLevel : 25,
       density: md.density != null ? md.density : 75,
+      variation: effectiveVariation(),
       humanize: true,
       seed: Math.random()
     });
+  }
+
+  /**
+   * Bien tau hieu dung moi be (0..1) = (tong% * ti le be%) / 10000.
+   * Mac dinh be = 100% nen keo slider tong la du.
+   */
+  function effectiveVariation() {
+    const g = Math.max(0, Math.min(100, state.variation != null ? state.variation : 70)) / 100;
+    const t = state.variationTracks || {};
+    const pk = (k) => Math.max(0, Math.min(1, g * (Math.max(0, Math.min(100, t[k] != null ? t[k] : 100)) / 100)));
+    return { lead: pk('lead'), chords: pk('chords'), arp: pk('arp'), bass: pk('bass'), drums: pk('drums') };
   }
 
   function getCheckedRegenTracks() {
@@ -995,7 +1011,8 @@
         section: state.section, motifStructure: state.motifStructure,
         articulation: state.articulation, climaxCurve: state.climaxCurve,
         trackTarget: state.trackTarget, chaosLevel: state.chaosLevel,
-        density: state.density, fadeInBars: state.fadeInBars, fadeOutBars: state.fadeOutBars
+        density: state.density, fadeInBars: state.fadeInBars, fadeOutBars: state.fadeOutBars,
+        variation: state.variation, variationTracks: Object.assign({}, state.variationTracks)
       },
       label: '', time: 0
     };
@@ -1025,8 +1042,10 @@
       section: snap.ui.section, motifStructure: snap.ui.motifStructure,
       articulation: snap.ui.articulation, climaxCurve: snap.ui.climaxCurve,
       trackTarget: snap.ui.trackTarget, chaosLevel: snap.ui.chaosLevel,
-      density: snap.ui.density, fadeInBars: snap.ui.fadeInBars, fadeOutBars: snap.ui.fadeOutBars
+      density: snap.ui.density, fadeInBars: snap.ui.fadeInBars, fadeOutBars: snap.ui.fadeOutBars,
+      variation: snap.ui.variation != null ? snap.ui.variation : 70
     });
+    if (snap.ui.variationTracks) state.variationTracks = Object.assign({ lead: 100, chords: 100, arp: 100, bass: 100, drums: 100 }, snap.ui.variationTracks);
     state.currentSong = cloneSong(snap.song);
     closeProgEditor();
     syncControlsFromState();
@@ -1265,10 +1284,25 @@
     if (valChaos) valChaos.textContent = `${state.chaosLevel}%`;
     if (sliderDensity) sliderDensity.value = state.density;
     if (valDensity) valDensity.textContent = `${state.density}%`;
+    syncVariationControls();
     genreGrid.querySelectorAll('.genre-card').forEach(c => {
       c.classList.toggle('active', c.dataset.genre === state.genre);
     });
     syncPurePianoButton();
+  }
+
+  /**
+   * Dong bo slider Bien tau tong + 5 slider tung be theo state
+   */
+  function syncVariationControls() {
+    if (sliderVariation) sliderVariation.value = state.variation;
+    if (valVariation) valVariation.textContent = `${state.variation}%`;
+    for (const k of ['lead', 'chords', 'arp', 'bass', 'drums']) {
+      const s = document.getElementById('sliderVar_' + k);
+      const v = document.getElementById('valVar_' + k);
+      if (s) s.value = (state.variationTracks && state.variationTracks[k] != null) ? state.variationTracks[k] : 100;
+      if (v) v.textContent = `${s ? s.value : 100}%`;
+    }
   }
 
   /**
@@ -1977,6 +2011,7 @@
       motifStructure: md.motifStructure, articulation: md.articulation,
       climaxCurve: md.climaxCurve, chaosLevel: md.chaosLevel, density: md.density,
       fadeInBars: md.fadeInBars, fadeOutBars: md.fadeOutBars,
+      variation: state.variation, variationTracks: Object.assign({}, state.variationTracks),
       trackTarget: md.trackTarget, seed: md.seed
     };
     const s = JSON.stringify(data);
@@ -2003,6 +2038,8 @@
     state.articulation = o.articulation || 'auto';
     state.climaxCurve = o.climaxCurve || 'none';
     state.chaosLevel = o.chaosLevel; state.density = o.density;
+    if (o.variation != null) state.variation = Math.max(0, Math.min(100, o.variation));
+    if (o.variationTracks) state.variationTracks = Object.assign({ lead: 100, chords: 100, arp: 100, bass: 100, drums: 100 }, o.variationTracks);
     state.fadeInBars = o.fadeInBars || 0; state.fadeOutBars = o.fadeOutBars || 0;
     if (o.trackTarget) state.trackTarget = o.trackTarget;
     syncControlsFromState();
@@ -2016,7 +2053,7 @@
       useContour: false, contourPoints: null,
       fadeInBars: state.fadeInBars, fadeOutBars: state.fadeOutBars,
       trackTarget: state.trackTarget, chaosLevel: state.chaosLevel,
-      density: state.density, humanize: true,
+      density: state.density, variation: effectiveVariation(), humanize: true,
       loopMode: state.loopMode, finalHit: state.finalHit, seed: o.seed
     });
     state.currentSong = gen.generate();
@@ -2077,7 +2114,8 @@
         section: state.section, motifStructure: state.motifStructure,
         articulation: state.articulation, climaxCurve: state.climaxCurve,
         trackTarget: state.trackTarget, chaosLevel: state.chaosLevel,
-        density: state.density, fadeInBars: state.fadeInBars, fadeOutBars: state.fadeOutBars
+        density: state.density, fadeInBars: state.fadeInBars, fadeOutBars: state.fadeOutBars,
+        variation: state.variation, variationTracks: Object.assign({}, state.variationTracks)
       },
       song: state.currentSong
     };
@@ -2145,6 +2183,8 @@
       if (ui.trackTarget) state.trackTarget = ui.trackTarget;
       if (ui.chaosLevel != null) state.chaosLevel = ui.chaosLevel;
       if (ui.density != null) state.density = ui.density;
+      if (ui.variation != null) state.variation = Math.max(0, Math.min(100, ui.variation));
+      if (ui.variationTracks) state.variationTracks = Object.assign({ lead: 100, chords: 100, arp: 100, bass: 100, drums: 100 }, ui.variationTracks);
       state.fadeInBars = ui.fadeInBars || 0;
       state.fadeOutBars = ui.fadeOutBars || 0;
       state.currentSong = song;
@@ -2242,6 +2282,7 @@
       motifStructure: md.motifStructure, articulation: md.articulation,
       climaxCurve: md.climaxCurve, chaosLevel: md.chaosLevel, density: md.density,
       fadeInBars: md.fadeInBars, fadeOutBars: md.fadeOutBars,
+      variation: state.variation, variationTracks: Object.assign({}, state.variationTracks),
       trackTarget: md.trackTarget, seed: md.seed
     };
     const arr = getSeedGallery();
@@ -2434,6 +2475,7 @@
       trackTarget: state.trackTarget,
       chaosLevel: state.chaosLevel,
       density: state.density,
+      variation: effectiveVariation(),
       humanize: true,
       loopMode: state.loopMode,
       finalHit: state.finalHit,
@@ -2694,8 +2736,16 @@
     state.climaxCurve = item.songData.metadata.climaxCurve || 'none';
     state.chaosLevel = item.songData.metadata.chaosLevel !== undefined ? item.songData.metadata.chaosLevel : 25;
     state.density = item.songData.metadata.density !== undefined ? item.songData.metadata.density : 75;
-    state.fadeInBars = item.songData.metadata.fadeInBars || 0;
-    state.fadeOutBars = item.songData.metadata.fadeOutBars || 0;
+    // Khoi phuc variation tu metadata (effective 0..1 moi be -> global + ti le be)
+    if (item.songData.metadata.variation && typeof item.songData.metadata.variation === 'object') {
+      const ev = item.songData.metadata.variation;
+      const mx = Math.max(ev.lead || 0, ev.chords || 0, ev.arp || 0, ev.bass || 0, ev.drums || 0, 0.01);
+      state.variation = Math.round(mx * 100);
+      for (const k of ['lead', 'chords', 'arp', 'bass', 'drums']) {
+        state.variationTracks[k] = Math.round(((ev[k] != null ? ev[k] : mx) / mx) * 100);
+      }
+    }
+    state.fadeInBars = item.songData.metadata.fadeInBars || 0;    state.fadeOutBars = item.songData.metadata.fadeOutBars || 0;
 
     // Sync UI controls
     selectKey.value = state.key;
@@ -2715,6 +2765,7 @@
     if (valChaos) valChaos.textContent = `${state.chaosLevel}%`;
     if (sliderDensity) sliderDensity.value = state.density;
     if (valDensity) valDensity.textContent = `${state.density}%`;
+    syncVariationControls();
     sliderBpm.value = state.bpm;
     if (inputCustomBpm) inputCustomBpm.value = state.bpm;
     valBpm.textContent = `${state.bpm} BPM`;
@@ -3144,6 +3195,7 @@
         trackTarget: state.trackTarget,
         chaosLevel: p.chaosLevel,
         density: p.density,
+        variation: effectiveVariation(),
         humanize: true,
         skipFinalHit: true,
         seed: Math.random()
@@ -3463,6 +3515,26 @@
       valDensity.textContent = `${state.density}%`;
       generateNewSong();
     });
+
+    // Bien tau tong: doi nhan thi gieo bai moi, keo chi doi so
+    if (sliderVariation) {
+      sliderVariation.addEventListener('input', (e) => {
+        state.variation = parseInt(e.target.value, 10);
+        if (valVariation) valVariation.textContent = `${state.variation}%`;
+      });
+      sliderVariation.addEventListener('change', () => generateNewSong());
+    }
+    // Bien tau tung be (ti le % so voi slider tong)
+    for (const k of ['lead', 'chords', 'arp', 'bass', 'drums']) {
+      const s = document.getElementById('sliderVar_' + k);
+      if (!s) continue;
+      s.addEventListener('input', (e) => {
+        state.variationTracks[k] = parseInt(e.target.value, 10);
+        const v = document.getElementById('valVar_' + k);
+        if (v) v.textContent = `${state.variationTracks[k]}%`;
+      });
+      s.addEventListener('change', () => generateNewSong());
+    }
 
     // Swing Slider (khong gieo lai - chi groove phat + xuat)
     if (sliderSwing) {
