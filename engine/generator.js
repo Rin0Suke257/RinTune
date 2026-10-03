@@ -91,17 +91,24 @@
         if (v == null || isNaN(v)) return 0.7;
         return Math.max(0, Math.min(1, v));
       };
+      const KEYS = ['lead', 'stab', 'chords', 'pad', 'arp', 'bass', 'drums', 'perc'];
       if (src == null) {
         const g = norm(this.options.variation);
-        return { lead: g, chords: g, arp: g, bass: g, drums: g };
+        const o = {};
+        for (const k of KEYS) o[k] = g;
+        return o;
       }
       if (typeof src === 'number') {
         const g = norm(src);
-        return { lead: g, chords: g, arp: g, bass: g, drums: g };
+        const o = {};
+        for (const k of KEYS) o[k] = g;
+        return o;
       }
       const g = (src.global != null) ? norm(src.global) : 1;
       const ch = (k) => (src[k] != null ? norm(src[k]) * g : 0.7 * g);
-      return { lead: ch('lead'), chords: ch('chords'), arp: ch('arp'), bass: ch('bass'), drums: ch('drums') };
+      const o = {};
+      for (const k of KEYS) o[k] = ch(k);
+      return o;
     }
 
 
@@ -256,17 +263,199 @@
       return zones.filter(z => z.bars > 0);
     }
 
+    _roleOf(key) {
+      return String(key || '').replace(/[0-9]+$/, '');
+    }
+
+    _resolveTrackRoles(trackTarget, isPurePiano) {
+      if (Array.isArray(this.options.trackRoles) && this.options.trackRoles.length) {
+        return this.options.trackRoles
+          .filter(d => d && d.role)
+          .slice(0, 12)
+          .map((d, i) => ({ key: String(d.key || d.role + (i || '')), role: String(d.role) }));
+      }
+      if (isPurePiano || trackTarget === 'pure_piano') {
+        return [{ key: 'lead', role: 'lead' }, { key: 'arp', role: 'arp' }, { key: 'bass', role: 'bass' }];
+      }
+      if (trackTarget === 'all' || !trackTarget) {
+        return ['lead', 'chords', 'arp', 'bass', 'drums'].map(r => ({ key: r, role: r }));
+      }
+      return [{ key: trackTarget, role: trackTarget }];
+    }
+
+    _roleMeta(role, key, genreDef, isPurePiano) {
+      if (isPurePiano && key === 'lead') return { name: 'Piano Tay Phải (RH Melody & Runs)', type: 'piano_track', instrument: 'grand_piano_lead', color: '#00f2fe' };
+      if (isPurePiano && key === 'arp') return { name: 'Piano Tay Trái (LH Sweeping Waves)', type: 'piano_track', instrument: 'grand_piano_lead', color: '#4facfe' };
+      if (isPurePiano && key === 'bass') return { name: 'Piano Tay Trái (LH Deep Bass & Octaves)', type: 'piano_track', instrument: 'grand_piano_lead', color: '#f39c12' };
+      const M = {
+        lead: { name: 'Lead Melody', type: 'synth_lead', instrument: genreDef.leadStyle, color: '#00f2fe' },
+        stab: { name: 'Stabs', type: 'stab_hit', instrument: genreDef.leadStyle, color: '#ff6b81' },
+        chords: { name: 'Harmony & Chords', type: 'poly_synth', instrument: 'analog_pad', color: '#9b51e0' },
+        pad: { name: 'Pad', type: 'soft_pad', instrument: 'analog_pad', color: '#a29bfe' },
+        arp: { name: 'Arpeggio Ostinato', type: 'pluck_synth', instrument: 'sparkle_arp', color: '#4facfe' },
+        bass: { name: 'Bassline', type: 'mono_bass', instrument: 'sub_saw_bass', color: '#f39c12' },
+        drums: { name: 'Drums & Percussion', type: 'drum_kit', instrument: 'standard_kit', color: '#e74c3c' },
+        perc: { name: 'Percussion', type: 'perc_kit', instrument: 'standard_kit', color: '#fdcb6e' }
+      };
+      const m = M[role] || { name: key, type: 'synth_lead', instrument: genreDef.leadStyle, color: '#00f2fe' };
+      return { name: key === role ? m.name : (m.name + ' ' + key.replace(role, '')), type: m.type, instrument: m.instrument, color: m.color };
+    }
+
+    _generateRoleTrack(role, key, o) {
+      const D = (r) => Math.max(0, Math.min(100, o.densityMod * o.profW(r)));
+      const base = {
+        progression: o.progression,
+        genreDef: o.genreDef,
+        lengthBars: o.lengthBars,
+        timeSignature: o.activeTimeSig,
+        stepsPerBar: o.stepsPerBar,
+        section: o.section,
+        climaxCurve: o.climaxCurve,
+        velocityBoost: o.velocityBoost,
+        humanize: o.humanize,
+        variation: o.VV,
+        zoneMap: o.zoneMap
+      };
+      switch (role) {
+        case 'lead':
+          return this._generatePhraseBasedLead(Object.assign({}, base, {
+            scaleNotes: o.leadScaleNotes, key: o.key, scaleKey: o.scaleKey,
+            motifStructure: o.motifStructure, articulation: o.articulation,
+            useContour: o.useContour, contourPoints: o.contourPoints,
+            chaosLevel: o.chaosLevel, density: D(role),
+            grammar: o.grammar, songSeed: o.songSeed
+          }));
+        case 'chords':
+          return this._generateChordTrack(Object.assign({}, base, { density: D(role) }));
+        case 'arp':
+          return this._generateArpTrack(Object.assign({}, base, {
+            scaleNotes: o.arpScaleNotes, density: D(role)
+          }));
+        case 'bass':
+          return this._generateBassTrack(Object.assign({}, base, {
+            scaleNotes: o.bassScaleNotes, chaosLevel: o.chaosLevel, density: D(role)
+          }));
+        case 'drums':
+          return this._generateDrumTrack(Object.assign({}, base, {
+            chaosLevel: o.chaosLevel, density: D(role)
+          }));
+        case 'stab':
+          return Object.assign(this._generateStabTrack(Object.assign({}, base, { density: D(role) })), this._roleMeta(role, key, o.genreDef, o.isPurePiano));
+        case 'pad':
+          return Object.assign(this._generatePadTrack(base), this._roleMeta(role, key, o.genreDef, o.isPurePiano));
+        case 'perc':
+          return Object.assign(this._generatePercTrack(Object.assign({}, base, { density: D(role) })), this._roleMeta(role, key, o.genreDef, o.isPurePiano));
+        default:
+          return Object.assign({ notes: [] }, this._roleMeta(role, key, o.genreDef, o.isPurePiano));
+      }
+    }
+
+    _generateStabTrack(ctx) {
+      const { progression, genreDef, lengthBars, stepsPerBar = 16, climaxCurve, velocityBoost, humanize } = ctx;
+      const notes = [];
+      const Vs = (ctx.variation && ctx.variation.stab != null) ? ctx.variation.stab : 0.7;
+      const startBar = Math.max(0, ctx.barStart || 0);
+      const endBar = (ctx.barEnd == null || ctx.barEnd < 0) ? (lengthBars - 1) : Math.min(lengthBars - 1, ctx.barEnd);
+      for (let bar = startBar; bar <= endBar; bar++) {
+        const chord = progression[bar] || progression[0];
+        if (!chord) continue;
+        const tones = (chord.voicedNotes || chord.notes || []).slice(0, 3).map(m => Math.min(96, m + 12));
+        if (!tones.length) continue;
+        const climaxFactor = this._getClimaxFactor(bar, lengthBars, climaxCurve);
+        const pat = this._variant(3, Vs);
+        const half = Math.floor(stepsPerBar / 2);
+        const hits = pat === 1 ? [0, Math.floor(stepsPerBar * 0.75)] : (pat === 2 ? [0] : [0, half]);
+        for (const s of hits) {
+          if (s >= stepsPerBar) continue;
+          const baseVel = Math.round(108 * (0.7 + 0.35 * climaxFactor)) + velocityBoost;
+          for (const m of tones) {
+            notes.push({
+              step: bar * stepsPerBar + s,
+              duration: 2,
+              midi: m,
+              velocity: Math.max(30, Math.min(127, humanize ? baseVel + this.rng.rangeInt(-4, 4) : baseVel)),
+              pan: 10
+            });
+          }
+        }
+      }
+      return Object.assign(this._roleMeta('stab', 'stab', genreDef, false), { notes });
+    }
+
+    _generatePadTrack(ctx) {
+      const { progression, genreDef, lengthBars, stepsPerBar = 16, climaxCurve, velocityBoost, humanize } = ctx;
+      const notes = [];
+      const Vp = (ctx.variation && ctx.variation.pad != null) ? ctx.variation.pad : 0.7;
+      const startBar = Math.max(0, ctx.barStart || 0);
+      const endBar = (ctx.barEnd == null || ctx.barEnd < 0) ? (lengthBars - 1) : Math.min(lengthBars - 1, ctx.barEnd);
+      for (let bar = startBar; bar <= endBar; bar++) {
+        const chord = progression[bar] || progression[0];
+        if (!chord) continue;
+        let tones = (chord.voicedNotes || chord.notes || []).map(m => {
+          let x = m;
+          while (x < 48) x += 12;
+          while (x > 64) x -= 12;
+          return x;
+        });
+        if (this._variant(2, Vp) === 1 && tones.length >= 3) tones = tones.slice(0, 2);
+        const climaxFactor = this._getClimaxFactor(bar, lengthBars, climaxCurve);
+        const baseVel = Math.round(62 * (0.7 + 0.35 * climaxFactor)) + velocityBoost;
+        for (const m of tones) {
+          notes.push({
+            step: bar * stepsPerBar,
+            duration: stepsPerBar,
+            midi: m,
+            velocity: Math.max(25, Math.min(127, humanize ? baseVel + this.rng.rangeInt(-3, 3) : baseVel)),
+            pan: -10
+          });
+        }
+      }
+      return Object.assign(this._roleMeta('pad', 'pad', genreDef, false), { notes });
+    }
+
+    _generatePercTrack(ctx) {
+      const { genreDef, lengthBars, stepsPerBar = 16, climaxCurve, density = 75, velocityBoost, humanize } = ctx;
+      const notes = [];
+      const Vp = (ctx.variation && ctx.variation.perc != null) ? ctx.variation.perc : 0.7;
+      const CHAT = 42, OHAT = 46, SNARE = 38, CLAP = 39;
+      const startBar = Math.max(0, ctx.barStart || 0);
+      const endBar = (ctx.barEnd == null || ctx.barEnd < 0) ? (lengthBars - 1) : Math.min(lengthBars - 1, ctx.barEnd);
+      for (let bar = startBar; bar <= endBar; bar++) {
+        const bs = bar * stepsPerBar;
+        const climaxFactor = this._getClimaxFactor(bar, lengthBars, climaxCurve);
+        for (let s = 0; s < stepsPerBar; s += 2) {
+          notes.push({
+            step: bs + s, duration: 1, midi: CHAT,
+            velocity: Math.max(25, Math.min(127, Math.round(70 * (0.7 + 0.35 * climaxFactor)) + velocityBoost)),
+            pan: -12
+          });
+        }
+        if (this._vChance(0.5, Vp)) {
+          const os = 2 * this.rng.rangeInt(0, Math.max(0, Math.floor(stepsPerBar / 2) - 1)) + 1;
+          if (os < stepsPerBar) {
+            notes.push({ step: bs + os, duration: 1, midi: OHAT, velocity: 75 + velocityBoost, pan: -12 });
+          }
+        }
+        if (density >= 50 && this._vChance(0.4, Vp)) {
+          const gs = this.rng.choice([2, 6, 10, 14].filter(x => x < stepsPerBar));
+          if (gs != null) notes.push({ step: bs + gs, duration: 1, midi: (humanize && this.rng.chance(0.3)) ? CLAP : SNARE, velocity: 52 + velocityBoost, pan: 8 });
+        }
+      }
+      return Object.assign(this._roleMeta('perc', 'perc', genreDef, false), { notes });
+    }
+
     _gateP(zoneName, trackKey) {
       const G = {
-        intro: { lead: 0.5, chords: 0.6, arp: 0, bass: 1, drums: 1 },
-        verse: { lead: 1, chords: 1, arp: 0.7, bass: 1, drums: 1 },
-        chorus: { lead: 1, chords: 1, arp: 1, bass: 1, drums: 1 },
-        bridge: { lead: 1, chords: 0.8, arp: 0.5, bass: 1, drums: 1 },
-        break: { lead: 1, chords: 0.6, arp: 0, bass: 0.4, drums: 0 },
-        outro: { lead: 0.7, chords: 0.8, arp: 0, bass: 0.8, drums: 0.5 }
+        intro: { lead: 0.5, stab: 0.3, chords: 0.6, pad: 0.5, arp: 0, bass: 1, drums: 1, perc: 0.3 },
+        verse: { lead: 1, stab: 0.7, chords: 1, pad: 0.7, arp: 0.7, bass: 1, drums: 1, perc: 0.8 },
+        chorus: { lead: 1, stab: 1, chords: 1, pad: 1, arp: 1, bass: 1, drums: 1, perc: 1 },
+        bridge: { lead: 1, stab: 0.8, chords: 0.8, pad: 0.8, arp: 0.5, bass: 1, drums: 1, perc: 0.8 },
+        break: { lead: 1, stab: 0.8, chords: 0.6, pad: 0.5, arp: 0, bass: 0.4, drums: 0, perc: 0 },
+        outro: { lead: 0.7, stab: 0.5, chords: 0.8, pad: 0.7, arp: 0, bass: 0.8, drums: 0.5, perc: 0.3 }
       };
       const z = G[zoneName] || G.verse;
-      return (z[trackKey] == null ? 1 : z[trackKey]);
+      const role = String(trackKey || '').replace(/[0-9]+$/, '') || 'verse';
+      return (z[role] == null ? 1 : z[role]);
     }
 
     _gateOpen(zoneName, trackKey, seed) {
@@ -285,10 +474,11 @@
       return (h >>> 0) / 4294967296;
     }
 
-    _resolveZoneGates(zoneMap, seed) {
+    _resolveZoneGates(zoneMap, seed, keys) {
+      const list = (keys && keys.length ? keys : ['lead', 'chords', 'arp', 'bass', 'drums']);
       for (const z of zoneMap) {
         z.tracks = {};
-        for (const k of ['lead', 'chords', 'arp', 'bass', 'drums']) {
+        for (const k of list) {
           z.tracks[k] = this._gateOpen(z.name, k, seed);
         }
       }
@@ -329,7 +519,8 @@
         const b = Math.floor(n.step / spb);
         perBar[b] = (perBar[b] || 0) + 1;
       }
-      for (const k of ['chords', 'arp']) {
+      for (const k of Object.keys(tracks)) {
+        if (!['chords', 'arp', 'pad'].includes(String(k || '').replace(/[0-9]+$/, ''))) continue;
         const arr = this._trackNotes(tracks[k]);
         if (!arr) continue;
         this._setTrackNotes(tracks, k, arr.filter(n => {
@@ -351,14 +542,17 @@
         const z = this._zoneAt(bar, zoneMap);
         return !!(z.tracks && z.tracks[k] === false);
       };
-      for (const k of ['lead', 'arp', 'drums']) {
+      const roleOf = (k) => String(k || '').replace(/[0-9]+$/, '');
+      for (const k of Object.keys(tracks)) {
+        if (!['lead', 'stab', 'arp', 'drums', 'perc'].includes(roleOf(k))) continue;
         const arr = this._trackNotes(tracks[k]);
         if (!arr) continue;
         const kept = arr.filter(n => !gated(barOf(n.step), k));
         if (Array.isArray(tracks[k])) tracks[k] = kept;
         else tracks[k].notes = kept;
       }
-      for (const k of ['bass', 'chords']) {
+      for (const k of Object.keys(tracks)) {
+        if (!['bass', 'chords', 'pad'].includes(roleOf(k))) continue;
         const t = tracks[k];
         const arr = this._trackNotes(t);
         if (!arr) continue;
@@ -377,7 +571,8 @@
 
       const isPurePiano = (trackTarget === 'pure_piano');
       const VV = this._resolveVariation(this.options.variation);
-      const zoneMap = this._resolveZoneGates(this._zoneMapFor(lengthBars, section, this.options.seed), this.options.seed);
+      const roleDefs = this._resolveTrackRoles(trackTarget, isPurePiano);
+      const zoneMap = this._resolveZoneGates(this._zoneMapFor(lengthBars, section, this.options.seed), this.options.seed, roleDefs.map(d => d.key));
       const progression = this._generateChordProgression(genreDef, key, scaleKey, lengthBars, section, zoneMap, this.options.seed);
 
       const leadScaleNotes = Theory.getScaleNotes(key, scaleKey, 4, 6);
@@ -408,7 +603,7 @@
         genreDef.leadGrammar || {}
       );
 
-      const leadTrack = (trackTarget === 'all' || trackTarget === 'lead' || isPurePiano) ? this._generatePhraseBasedLead({
+      const leadTrack = (roleDefs.some(d => d.key === 'lead')) ? this._generatePhraseBasedLead({
         progression,
         scaleNotes: leadScaleNotes,
         key,
@@ -433,13 +628,13 @@
         songSeed: this.options.seed
       }) : { name: 'Lead Melody', type: 'synth_lead', instrument: genreDef.leadStyle, color: '#00f2fe', notes: [] };
 
-      if (isPurePiano) {
+      if (isPurePiano && roleDefs.some(d => d.key === 'lead')) {
         leadTrack.name = 'Piano Tay Phải (RH Melody & Runs)';
         leadTrack.type = 'piano_track';
         leadTrack.instrument = 'grand_piano_lead';
       }
 
-      const chordTrack = (!isPurePiano && (trackTarget === 'all' || trackTarget === 'chords')) ? this._generateChordTrack({
+      const chordTrack = (roleDefs.some(d => d.key === 'chords')) ? this._generateChordTrack({
         progression,
         genreDef,
         lengthBars,
@@ -454,7 +649,7 @@
         zoneMap
       }) : { name: 'Harmony & Chords', type: 'poly_synth', instrument: 'analog_pad', color: '#9b51e0', notes: [] };
 
-      const arpTrack = (trackTarget === 'all' || trackTarget === 'arp' || isPurePiano) ? this._generateArpTrack({
+      const arpTrack = (roleDefs.some(d => d.key === 'arp')) ? this._generateArpTrack({
         progression,
         scaleNotes: arpScaleNotes,
         genreDef,
@@ -470,13 +665,13 @@
         zoneMap
       }) : { name: 'Arpeggio Ostinato', type: 'pluck_synth', instrument: 'sparkle_arp', color: '#4facfe', notes: [] };
 
-      if (isPurePiano) {
+      if (isPurePiano && roleDefs.some(d => d.key === 'arp')) {
         arpTrack.name = 'Piano Tay Trái (LH Sweeping Waves)';
         arpTrack.type = 'piano_track';
         arpTrack.instrument = 'grand_piano_lead';
       }
 
-      const bassTrack = (trackTarget === 'all' || trackTarget === 'bass' || isPurePiano) ? this._generateBassTrack({
+      const bassTrack = (roleDefs.some(d => d.key === 'bass')) ? this._generateBassTrack({
         progression,
         scaleNotes: bassScaleNotes,
         genreDef,
@@ -493,13 +688,13 @@
         zoneMap
       }) : { name: 'Bassline', type: 'mono_bass', instrument: 'sub_saw_bass', color: '#f39c12', notes: [] };
 
-      if (isPurePiano) {
+      if (isPurePiano && roleDefs.some(d => d.key === 'bass')) {
         bassTrack.name = 'Piano Tay Trái (LH Deep Bass & Octaves)';
         bassTrack.type = 'piano_track';
         bassTrack.instrument = 'grand_piano_lead';
       }
 
-      const drumTrack = (!isPurePiano && (trackTarget === 'all' || trackTarget === 'drums')) ? this._generateDrumTrack({
+      const drumTrack = (roleDefs.some(d => d.key === 'drums')) ? this._generateDrumTrack({
         genreDef,
         lengthBars,
         timeSignature: activeTimeSig,
@@ -514,34 +709,47 @@
         zoneMap
       }) : { name: 'Drums & Percussion', type: 'drum_kit', instrument: 'standard_kit', color: '#e74c3c', notes: [] };
 
+      const tracks = {
+        lead: leadTrack,
+        chords: chordTrack,
+        arp: arpTrack,
+        bass: bassTrack,
+        drums: drumTrack
+      };
+      const roleCtx = {
+        progression, genreDef, lengthBars, activeTimeSig, stepsPerBar,
+        section, motifStructure, articulation, climaxCurve, useContour, contourPoints,
+        chaosLevel, densityMod, profW, velocityBoost, humanize, grammar, VV, zoneMap,
+        leadScaleNotes, bassScaleNotes, arpScaleNotes, key, scaleKey,
+        songSeed: this.options.seed, isPurePiano
+      };
+      for (const def of roleDefs) {
+        if (tracks[def.key]) continue;
+        tracks[def.key] = this._generateRoleTrack(def.role, def.key, roleCtx);
+      }
+
       const arrangedSong = {
         metadata: {
           lengthBars, stepsPerBar, section, key, genre: genreDef.id, scale: scaleKey,
           loopMode: !!this.options.loopMode, isPurePiano, climaxCurve
         },
         progression,
-        tracks: {
-          lead: leadTrack,
-          chords: chordTrack,
-          arp: arpTrack,
-          bass: bassTrack,
-          drums: drumTrack
-        }
+        tracks
       };
       this._arrangeEnsemble(arrangedSong, { finalHit: !this.options.skipFinalHit && this.options.finalHit !== false });
 
-      this._applyZoneArrangement(
-        { lead: leadTrack, chords: chordTrack, arp: arpTrack, bass: bassTrack, drums: drumTrack },
-        progression, zoneMap, stepsPerBar
-      );
-      this._applyLeadThinning(
-        { chords: chordTrack, arp: arpTrack }, leadTrack.notes, stepsPerBar
-      );
-      this._applyZoneVelocity([leadTrack, chordTrack, arpTrack, bassTrack, drumTrack], zoneMap, stepsPerBar);
+      this._applyZoneArrangement(tracks, progression, zoneMap, stepsPerBar);
+      const leadKey = (roleDefs.find(d => this._roleOf(d.key) === 'lead') || {}).key;
+      const thinTargets = {};
+      for (const k of Object.keys(tracks)) {
+        if (['chords', 'arp', 'pad'].includes(this._roleOf(k))) thinTargets[k] = tracks[k];
+      }
+      this._applyLeadThinning(thinTargets, leadKey && tracks[leadKey] ? tracks[leadKey].notes : null, stepsPerBar);
+      this._applyZoneVelocity(Object.values(tracks), zoneMap, stepsPerBar);
 
-      this._applyFadeDynamics([leadTrack, chordTrack, arpTrack, bassTrack, drumTrack], lengthBars, fadeInBars, fadeOutBars, stepsPerBar);
+      this._applyFadeDynamics(Object.values(tracks), lengthBars, fadeInBars, fadeOutBars, stepsPerBar);
 
-      const totalNotesCount = leadTrack.notes.length + chordTrack.notes.length + arpTrack.notes.length + bassTrack.notes.length + drumTrack.notes.length;
+      const totalNotesCount = Object.values(tracks).reduce((a, t) => a + (t.notes ? t.notes.length : 0), 0);
 
       return {
         metadata: {
@@ -565,6 +773,7 @@
           fadeOutBars,
           variation: VV,
           sectionMap: zoneMap,
+          trackDefs: roleDefs,
           useContour: !!useContour,
           contourPoints: contourPoints || null,
           loopMode: !!this.options.loopMode,
@@ -575,13 +784,7 @@
           createdAt: new Date().toISOString()
         },
         progression,
-        tracks: {
-          lead: leadTrack,
-          chords: chordTrack,
-          arp: arpTrack,
-          bass: bassTrack,
-          drums: drumTrack
-        }
+        tracks
       };
     }
 
@@ -676,27 +879,36 @@
       const prevRng = this.rng;
       this.rng = new RandomContext(spec.seed !== undefined ? spec.seed : Math.random());
       const out = {};
+      const roleOfKey = (k) => {
+        const td = ((song.metadata && song.metadata.trackDefs) || []).find(d => d.key === k);
+        return td ? td.role : String(k).replace(/[0-9]+$/, '');
+      };
+      const fullCtx = Object.assign({}, baseCtx, {
+        activeTimeSig: baseCtx.timeSignature,
+        leadScaleNotes: baseCtx.scaleNotes,
+        arpScaleNotes: Theory.getScaleNotes(md.key || 'A', scaleKey, 4, 6),
+        bassScaleNotes: Theory.getScaleNotes(md.key || 'A', scaleKey, 2, 3),
+        densityMod: baseCtx.density,
+        profW: () => 1,
+        isPurePiano: !!md.isPurePiano
+      });
       try {
-        if (wanted.includes('lead')) out.lead = this._generatePhraseBasedLead(baseCtx).notes;
-        if (wanted.includes('chords')) out.chords = this._generateChordTrack(baseCtx).notes;
-        if (wanted.includes('arp')) {
-          out.arp = this._generateArpTrack(Object.assign({}, baseCtx, {
-            scaleNotes: Theory.getScaleNotes(md.key || 'A', scaleKey, 4, 6)
-          })).notes;
+        for (const k of wanted) {
+          const t = this._generateRoleTrack(roleOfKey(k), k, fullCtx);
+          out[k] = t.notes;
         }
-        if (wanted.includes('bass')) {
-          out.bass = this._generateBassTrack(Object.assign({}, baseCtx, {
-            scaleNotes: Theory.getScaleNotes(md.key || 'A', scaleKey, 2, 3)
-          })).notes;
-        }
-        if (wanted.includes('drums')) out.drums = this._generateDrumTrack(baseCtx).notes;
       } finally {
         this.rng = prevRng;
       }
 
       this._applyZoneArrangement(out, song.progression, zoneMap, stepsPerBar);
-      const leadRef = out.lead || (song.tracks.lead ? song.tracks.lead.notes : null);
-      this._applyLeadThinning(out, leadRef, stepsPerBar);
+      const leadKey = wanted.find(k => this._roleOf(k) === 'lead');
+      const leadRef = (leadKey && out[leadKey]) || (song.tracks.lead ? song.tracks.lead.notes : null);
+      const thinTargets = {};
+      for (const k of Object.keys(out)) {
+        if (['chords', 'arp', 'pad'].includes(this._roleOf(k))) thinTargets[k] = out[k];
+      }
+      this._applyLeadThinning(thinTargets, leadRef, stepsPerBar);
       this._applyZoneVelocity(Object.values(out).map(notes => ({ notes })), zoneMap, stepsPerBar);
 
       const fadeInBars = md.fadeInBars || 0;
@@ -720,8 +932,8 @@
       const section = md.section || 'none';
       const loopMode = !!md.loopMode;
       const isPiano = !!md.isPurePiano;
-      const drums = song.tracks.drums.notes;
-      const bass = song.tracks.bass.notes;
+      const drums = song.tracks.drums ? song.tracks.drums.notes : [];
+      const bass = song.tracks.bass ? song.tracks.bass.notes : [];
 
       for (let bar = 8; bar < totalBars; bar += 8) {
         const s = bar * spb;
@@ -747,7 +959,7 @@
         }
       }
 
-      if ((section === 'intro' || section === 'none') && !isPiano && !loopMode) {
+      if ((section === 'intro' || section === 'none') && !isPiano && !loopMode && song.tracks.lead) {
         const lead = song.tracks.lead.notes;
         for (let i = lead.length - 1; i >= 0; i--) {
           const n = lead[i];
@@ -779,11 +991,10 @@
           last.notes = tonic.notes;
           last.quality = tonic.quality;
         }
-        song.tracks.drums.notes = song.tracks.drums.notes.filter(n => {
+        if (song.tracks.drums) song.tracks.drums.notes = song.tracks.drums.notes.filter(n => {
           if (Math.floor(n.step / spb) !== lastBar) return true;
           return n.midi === 42 || n.midi === 46;
-        });
-      } else if (!opts.skipFinalHit && opts.finalHit !== false && totalBars >= 2) {
+        });      } else if (!opts.skipFinalHit && opts.finalHit !== false && totalBars >= 2) {
         const tonic = Theory.resolveChord('i', md.key || 'A', md.scale || 'natural_minor', 3);
         const lastEntry = song.progression[lastBar];
         if (lastEntry) {
@@ -797,20 +1008,27 @@
         const lastChord = song.progression[lastBar] || song.progression[0];
         const root = lastChord.rootMidi;
         const picardy = (md.genre === 'touhou');
-        const drums = song.tracks.drums.notes;
+        const drums = song.tracks.drums ? song.tracks.drums.notes : [];
+        const leadT = song.tracks.lead ? song.tracks.lead.notes : null;
+        const chordsT = song.tracks.chords ? song.tracks.chords.notes : null;
+        const bassT = song.tracks.bass ? song.tracks.bass.notes : null;
         const hasCrash = drums.some(n => n.midi === 49 && Math.abs(n.step - lastStep) <= 2);
-        const hasStab = song.tracks.lead.notes.some(n => n.locked && Math.abs(n.step - lastStep) <= 1 && n.velocity >= 115);
+        const hasStab = leadT && leadT.some(n => n.locked && Math.abs(n.step - lastStep) <= 1 && n.velocity >= 115);
         if (!hasStab) {
-          song.tracks.lead.notes.push({ step: lastStep, duration: spb, midi: root + 24, velocity: 120, pan: 0, locked: true });
-          if (picardy) {
-            song.tracks.lead.notes.push({ step: lastStep, duration: spb, midi: root + 16, velocity: 110, pan: 10, locked: true });
+          if (leadT) {
+            leadT.push({ step: lastStep, duration: spb, midi: root + 24, velocity: 120, pan: 0, locked: true });
+            if (picardy) {
+              leadT.push({ step: lastStep, duration: spb, midi: root + 16, velocity: 110, pan: 10, locked: true });
+            }
           }
-          for (const m of (lastChord.voicedNotes || lastChord.notes)) {
-            song.tracks.chords.notes.push({ step: lastStep, duration: spb, midi: m, velocity: 100, pan: -15, locked: true });
+          if (chordsT) {
+            for (const m of (lastChord.voicedNotes || lastChord.notes)) {
+              chordsT.push({ step: lastStep, duration: spb, midi: m, velocity: 100, pan: -15, locked: true });
+            }
           }
-          song.tracks.bass.notes.push({ step: lastStep, duration: spb, midi: root - 12, velocity: 115, pan: 0, locked: true });
+          if (bassT) bassT.push({ step: lastStep, duration: spb, midi: root - 12, velocity: 115, pan: 0, locked: true });
         }
-        if (!hasCrash) {
+        if (!hasCrash && song.tracks.drums) {
           drums.push({ step: lastStep, duration: 8, midi: 49, velocity: 120, pan: 15, locked: true });
           drums.push({ step: lastStep, duration: 2, midi: 36, velocity: 120, pan: 0, locked: true });
         }

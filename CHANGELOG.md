@@ -1,5 +1,9 @@
 # RinTune Changelog
 
+## Unreleased - Be dong (engine)
+- Sinh theo vai tro (lead/stab/chords/pad/arp/bass/drums/perc), toi da 12 be;
+  layout 5 be mac dinh bit-identical; gates/variation/thinning theo vai tro
+
 ## Unreleased - Mo truc tiep LMMS du 2 file
 - Nut mo truc tiep ghi ca `.mmp` (sections) + `.mid` (CC automation) canh
   nhau, toast bao duong dan ca 2
