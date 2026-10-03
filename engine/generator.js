@@ -1551,6 +1551,11 @@
         currentBar += currentPhraseBars;
       }
 
+      this._addLeadOrnaments(notes, {
+        scaleNotes, stepsPerBar, lengthBars, climaxCurve,
+        Vl, zoneMap: ctx.zoneMap
+      });
+
       return {
         name: 'Lead Melody',
         type: 'synth_lead',
@@ -1558,6 +1563,61 @@
         color: '#00f2fe',
         notes
       };
+    }
+
+    _addLeadOrnaments(notes, o) {
+      if (!notes || !notes.length || !o.scaleNotes || !o.scaleNotes.length) return notes;
+      const spb = o.stepsPerBar || 16;
+      const Vl = (o.Vl != null ? o.Vl : 0.7);
+      const scale = o.scaleNotes;
+      const degOf = (midi) => {
+        let best = 0, bd = 1e9;
+        scale.forEach((m, i) => {
+          const d = Math.abs(m - midi);
+          if (d < bd) { bd = d; best = i; }
+        });
+        return best;
+      };
+      const zoneStarts = new Set((o.zoneMap || []).map(z => z.from));
+      const extra = [];
+      for (const n of notes) {
+        if (n.step == null || n.midi == null) continue;
+        const isDown = (n.step % spb) === 0;
+        const bar = Math.floor(n.step / spb);
+        const climax = this._getClimaxFactor(bar, o.lengthBars || 8, o.climaxCurve);
+        const idx = degOf(n.midi);
+        if (!isDown && n.duration >= 2 && n.step >= 0.5 && this._vChance(0.22, Vl)) {
+          const gm = (idx > 0) ? scale[idx - 1] : n.midi - 1;
+          extra.push({
+            step: n.step - 0.5, duration: 0.5, midi: gm,
+            velocity: Math.max(35, (n.velocity || 90) - 20), pan: n.pan || 0
+          });
+        }
+        if (isDown && n.step >= 1.5 && (climax >= 0.6 || zoneStarts.has(bar)) && this._vChance(0.3, Vl)) {
+          for (let r = 3; r >= 1; r--) {
+            const rm = scale[Math.max(0, idx - r)];
+            if (rm == null || rm >= n.midi) continue;
+            extra.push({
+              step: n.step - r * 0.5, duration: 0.5, midi: rm,
+              velocity: Math.max(35, Math.min(127, (n.velocity || 90) - 24 + (3 - r) * 4)), pan: n.pan || 0
+            });
+          }
+        }
+        if (!isDown && n.duration >= 4 && this._vChance(0.2, Vl)) {
+          const um = scale[Math.min(scale.length - 1, idx + 1)];
+          if (um != null && um !== n.midi) {
+            extra.push({
+              step: n.step + 0.5, duration: 0.5, midi: um,
+              velocity: Math.max(35, (n.velocity || 90) - 14), pan: n.pan || 0
+            });
+          }
+        }
+      }
+      if (extra.length) {
+        for (const e of extra) notes.push(e);
+        notes.sort((a, b) => a.step - b.step);
+      }
+      return notes;
     }
 
     _developMotif(blueprint, kind, opt = {}) {
@@ -1657,7 +1717,20 @@
       let leapsUsed = 0;
 
       while (stepOffset < totalSteps) {
-        const chosenRhythm = this.rng.choice(rhythmPool) || [4, 4, 4, 4];
+        let chosenRhythm = this.rng.choice(rhythmPool) || [4, 4, 4, 4];
+        const dotted = (genreDef && genreDef.dottedBounce != null) ? genreDef.dottedBounce : 0.3;
+        if (dotted > 0 && chosenRhythm.length >= 2) {
+          const conv = [];
+          for (let i = 0; i < chosenRhythm.length; i++) {
+            if (chosenRhythm[i] === 2 && chosenRhythm[i + 1] === 2 && this.rng.chance(dotted)) {
+              conv.push(3, 1);
+              i++;
+            } else {
+              conv.push(chosenRhythm[i]);
+            }
+          }
+          chosenRhythm = conv;
+        }
         for (let i = 0; i < chosenRhythm.length; i++) {
           const dur = chosenRhythm[i];
           const isDownbeat = (stepOffset % stepsPerBar === 0 || stepOffset % (stepsPerBar / 2) === 0);

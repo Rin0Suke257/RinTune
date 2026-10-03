@@ -186,6 +186,7 @@
       defaultScale: 'touhou_yonanuki',
       allowedScales: ['touhou_yonanuki', 'lydian', 'dorian', 'lydian_augmented', 'harmonic_minor', 'natural_minor', 'jazz_neosoul'],
       drumGroove: 'math_breakbeat',
+      dottedBounce: 0.4,
       leadStyle: 'chiptune_fm_epiano',
       defaultTimeSignature: '7/8',
       progressions: [
@@ -213,6 +214,7 @@
       defaultScale: 'touhou_yonanuki',
       allowedScales: ['touhou_yonanuki', 'harmonic_minor', 'natural_minor', 'dorian', 'hirajoshi'],
       drumGroove: 'touhou_break',
+      dottedBounce: 0.4,
       leadStyle: 'grand_piano_lead',
       progressions: [
         ['VI', 'VII', 'i', 'III'],       // ZUN / Liszt Royal Epic
@@ -237,6 +239,7 @@
       defaultScale: 'phrygian_dominant',
       allowedScales: ['phrygian_dominant', 'gothic_harmonic_minor', 'byzantine', 'phrygian', 'natural_minor'],
       drumGroove: 'gothic_war_drums',
+      dottedBounce: 0.3,
       leadStyle: 'pipe_organ_lead',
       progressions: [
         ['i', 'bII', 'iv', 'V'],         // Bloodborne / Dark Souls Boss tension
@@ -261,6 +264,7 @@
       defaultScale: 'touhou_yonanuki',
       allowedScales: ['touhou_yonanuki', 'natural_minor', 'harmonic_minor', 'touhou_insen', 'hirajoshi'],
       drumGroove: 'touhou_break',
+      dottedBounce: 0.45,
       leadStyle: 'zun_trumpet',
       progressions: [
         ['VI', 'VII', 'i', 'III'],       // Classic Touhou Royal cadence (F - G - Am - C)
@@ -287,6 +291,7 @@
       defaultScale: 'dorian',
       allowedScales: ['dorian', 'natural_minor', 'pentatonic_minor', 'lydian'],
       drumGroove: 'synthwave_four',
+      dottedBounce: 0.2,
       leadStyle: 'synth_saw_lead',
       progressions: [
         ['i', 'VI', 'III', 'VII'],       // Outrun Anthem (Fm - Db - Ab - Eb)
@@ -311,6 +316,7 @@
       defaultScale: 'jazz_neosoul',
       allowedScales: ['jazz_neosoul', 'dorian', 'natural_minor', 'pentatonic_major', 'hirajoshi'],
       drumGroove: 'lofi_swing',
+      dottedBounce: 0.35,
       leadStyle: 'mellow_epiano',
       progressions: [
         ['ii7', 'V7', 'Imaj7', 'VI7'],   // Classic Jazz Turnaround
@@ -334,6 +340,7 @@
       defaultScale: 'major',
       allowedScales: ['major', 'natural_minor', 'harmonic_minor', 'pentatonic_minor'],
       drumGroove: 'chiptune_punch',
+      dottedBounce: 0.3,
       leadStyle: 'square_8bit',
       progressions: [
         ['I', 'vi', 'IV', 'V'],          // 50s / Classic RPG Town
@@ -358,6 +365,7 @@
       defaultScale: 'phrygian',
       allowedScales: ['phrygian', 'touhou_insen', 'natural_minor', 'harmonic_minor'],
       drumGroove: 'cyber_industrial',
+      dottedBounce: 0.3,
       leadStyle: 'distorted_lead',
       progressions: [
         ['i', 'bII', 'i', 'bVI'],        // Phrygian Tension (Em - F - Em - C)
@@ -381,6 +389,7 @@
       defaultScale: 'harmonic_minor',
       allowedScales: ['harmonic_minor', 'natural_minor', 'melodic_minor', 'dorian'],
       drumGroove: 'epic_taiko',
+      dottedBounce: 0.25,
       leadStyle: 'orchestral_strings',
       progressions: [
         ['i', 'VI', 'III', 'VII'],       // Hans Zimmer / Two Steps From Hell
@@ -404,6 +413,7 @@
       defaultScale: 'natural_minor',
       allowedScales: ['natural_minor', 'harmonic_minor', 'dorian'],
       drumGroove: 'epic_taiko',
+      dottedBounce: 0.25,
       leadStyle: 'orchestral_strings',
       progressions: [
         ['i', 'VI', 'III', 'VII'],       // Verse chua lanh (Hanh Trinh Ve Nha)
@@ -426,6 +436,7 @@
       defaultScale: 'major',
       allowedScales: ['major', 'pentatonic_major', 'touhou_yonanuki', 'lydian'],
       drumGroove: 'anime_pop_beat',
+      dottedBounce: 0.35,
       leadStyle: 'anime_bell_lead',
       progressions: [
         ['IV', 'V', 'iii', 'vi'],        // Oudou / Royal Road (C - D - Bm - Em in G)

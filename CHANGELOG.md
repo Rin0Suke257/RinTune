@@ -1,5 +1,9 @@
 # RinTune Changelog
 
+## Unreleased - P2: Micro-rhythm
+- Dotted-8th bounce theo DNA tung genre + ornament 32nd cho lead (grace,
+  run vao downbeat, turn tren not dai), manh theo Variation
+
 ## Unreleased - Be dong (engine + UI + xuat)
 - Sinh theo vai tro (lead/stab/chords/pad/arp/bass/drums/perc), toi da 12 be;
   layout 5 be mac dinh bit-identical; gates/variation/thinning theo vai tro
