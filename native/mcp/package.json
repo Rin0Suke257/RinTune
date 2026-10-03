@@ -1,0 +1,15 @@
+{
+  "name": "rmg-mcp-server",
+  "version": "2.0.0",
+  "description": "RMG MCP Server - sinh nhac LMMS qua AI (dung lai engine cua RMG)",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

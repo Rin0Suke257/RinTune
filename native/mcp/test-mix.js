@@ -1,0 +1,9 @@
+const S = require('D:/RMG/engine/synth.js').RMGSynth;
+const s = new S.SynthEngine();
+console.log('MIX=' + JSON.stringify(s.getTrackMix()));
+s.setTrackPan('arp', 200);
+s.setTrackPan('bass', -150);
+s.setTrackVolume('lead', 0.5);
+console.log('ARP_PAN=' + s.getTrackMix().arp.pan + ' (expect 100)');
+console.log('BASS_PAN=' + s.getTrackMix().bass.pan + ' (expect -100)');
+console.log('LEAD_VOL=' + s.getTrackMix().lead.volume + ' (expect 0.5)');

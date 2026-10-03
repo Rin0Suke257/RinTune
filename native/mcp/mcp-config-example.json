@@ -1,0 +1,9 @@
+{
+  "//": "Mau config gan MCP-RMG vao AI client. Thay <APPDATA> bang duong dan that, VD: C:\\Users\\TenBan\\AppData\\Local\\RMG\\mcp\\MCP-RMG.exe",
+  "mcpServers": {
+    "rmg": {
+      "command": "<APPDATA>\\RMG\\mcp\\MCP-RMG.exe",
+      "args": []
+    }
+  }
+}

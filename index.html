@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RMG - Random Music Generator v2.0 (by Rin0suke257)</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-section">
+        <img src="assets/Icon/SmallLogo.png" alt="RMG Logo" class="app-logo" onerror="this.src='assets/Icon/rmg_icon.png'">
+        <div class="brand-titles">
+          <h1>RMG - RANDOM MUSIC GENERATOR v2.0</h1>
+          <p>Thuật toán sinh âm nhạc thông minh • Không lặp lại • Đúng chuẩn Lý thuyết Âm nhạc</p>
+        </div>
+      </div>
+      <div class="header-status-badges">
+        <div class="status-badge" id="sectionBadge">
+          <span class="status-dot"></span>
+          <span id="badgeSectionText">Toàn Bài</span>
+        </div>
+        <div class="status-badge" id="scaleBadge">
+          <span id="badgeScaleText">Touhou Minor (A)</span>
+        </div>
+        <div class="status-badge" id="bpmBadge">
+          <span id="badgeBpmText">165 BPM</span>
+        </div>
+        <div class="status-badge" id="lmmsStatusBadge" title="Trạng thái LMMS">
+          <span>🎹 LMMS: Ready</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="main-content-grid">
+      <!-- Left Sidebar: Style & Theory Controls -->
+      <aside class="left-controls-sidebar">
+        <!-- Genre Selection Grid -->
+        <div class="glass-panel sidebar-card">
+          <div class="card-title">
+            <span>Phong Cách Âm Nhạc</span>
+            <button id="btnOpenCustomGenre" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Tạo style nhạc riêng">＋ Style riêng</button>
+            <button id="btnExtractStyle" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Trích style từ bài đang mở">🧬 Trích Style</button>
+          </div>
+          <div class="genre-grid" id="genreGrid">
+            <div class="genre-card active" data-genre="fiery_piano">
+              <span class="genre-name">🎹 Fiery Piano</span>
+              <span class="genre-desc">Virtuoso runs, 10th bass</span>
+            </div>
+            <div class="genre-card" data-genre="sasakure_uk">
+              <span class="genre-name">🤖 sasakure.UK</span>
+              <span class="genre-desc">7/8 Math, Chiptune-Fusion</span>
+            </div>
+            <div class="genre-card" data-genre="touhou">
+              <span class="genre-name">🌸 Touhou ZUN</span>
+              <span class="genre-desc">Trumpet lead, piano fast run</span>
+            </div>
+            <div class="genre-card" data-genre="dark_fantasy">
+              <span class="genre-name">🏰 Dark Fantasy</span>
+              <span class="genre-desc">Souls / Gothic RPG, Pipe Organ & Choir</span>
+            </div>
+            <div class="genre-card" data-genre="synthwave">
+              <span class="genre-name">🌆 Synthwave</span>
+              <span class="genre-desc">80s rolling bass, neon pads</span>
+            </div>
+            <div class="genre-card" data-genre="lofi">
+              <span class="genre-name">☕ Lofi Chill</span>
+              <span class="genre-desc">Jazz 7th/9th, laid-back swing</span>
+            </div>
+            <div class="genre-card" data-genre="chiptune">
+              <span class="genre-name">👾 8-Bit Arcade</span>
+              <span class="genre-desc">NES square wave, fast arps</span>
+            </div>
+            <div class="genre-card" data-genre="cyberpunk">
+              <span class="genre-name">⚡ Cyberpunk</span>
+              <span class="genre-desc">Darksynth phrygian bass</span>
+            </div>
+            <div class="genre-card" data-genre="epic">
+              <span class="genre-name">⚔️ Epic Orchestral</span>
+              <span class="genre-desc">Cinematic strings & taiko</span>
+            </div>
+            <div class="genre-card" data-genre="cinematic">
+              <span class="genre-name">🎬 Cinematic Journey</span>
+              <span class="genre-desc">Sử thi chữa lành, outro trầm</span>
+            </div>
+            <div class="genre-card" data-genre="anime">
+              <span class="genre-name">✨ Anime Pop</span>
+              <span class="genre-desc">Oudou Royal Road IV-V-iii-vi</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section & Motif Structure (Phân Đoạn & Cấu Trúc Lặp) -->
+        <div class="glass-panel sidebar-card">
+          <div class="card-title">
+            <span>Phân Đoạn, Cao Trào & Motif</span>
+          </div>
+
+          <!-- Phân Đoạn Sinh Nhạc (SECTION) -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>PHÂN ĐOẠN SINH NHẠC (SECTION)</span>
+            </div>
+            <select id="selectSection">
+              <option value="none" selected>None (Bình thường / Toàn bài 🎵)</option>
+              <option value="intro">Intro (Phần Mở Đầu / Atmosphere Build-up 🌅)</option>
+              <option value="verse">Verse (Thân Bài / Main Theme 🌿)</option>
+              <option value="chorus">Chorus (Điệp Khúc / High-Energy ⚡)</option>
+              <option value="outro">Outro (Phần Kết Thúc / Giảm Dần Final Hit 🌆)</option>
+              <option value="merged">Merged (Bài Hát Ghép Nối Hoàn Chỉnh 🎴)</option>
+            </select>
+          </div>
+
+          <!-- Đường Cong Cao Trào (Climax Curve) -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>ĐƯỜNG CONG CAO TRÀO (CLIMAX & FIRE)</span>
+            </div>
+            <select id="selectClimaxCurve">
+              <option value="none" selected>➖ None (Phẳng / Đồng đều Tự Nhiên)</option>
+              <option value="climax_explosion">🔥 Cao Trào Bùng Nổ (Climax Explosion & Double Octaves)</option>
+              <option value="crescendo">📈 Dồn Dập Tăng Tiến (Epic Crescendo Build-up)</option>
+              <option value="emotional_wave">🌊 Sóng Cảm Xúc (Emotional Waves Verse-Chorus)</option>
+              <option value="full_fire">⚡ Siêu Cháy Liên Tục (Non-Stop 100% Fire Energy)</option>
+            </select>
+          </div>
+
+          <!-- Cấu Trúc Lặp Motif (MELODY) -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>CẤU TRÚC LẶP MOTIF (MELODY)</span>
+            </div>
+            <select id="selectMotifStructure">
+              <option value="none" selected>None (Tự do / Ngẫu nhiên từng bar)</option>
+              <option value="smart_adaptive">⭐ Lặp Tự Động Theo Số Bars (Smart Adaptive Phrase 🧠)</option>
+              <option value="4bars_aabb">Lặp Khúc 4 Bars (A-A'-B-B' 🎼 Cụm 4 Bars Chuẩn)</option>
+              <option value="8bars_abab">Lặp Khúc 8 Bars (A-B-A-B' 🎼 Khúc 8 Bars Dài)</option>
+              <option value="qa_question_answer">A-A' Câu Hỏi & Câu Trả Lời (Question & Answer Form 🗨️)</option>
+              <option value="4bars_abac">Cấu Trúc Bài Hát 4-Bars A-B-A-C (Popular Song Form 🎵)</option>
+              <option value="2bars_abab">Lặp Cụm 2 Bars (A-B-A-B 🔄 Ngắn)</option>
+              <option value="2bars_aaba">Lặp Biến Tấu 2 Bars (A-A'-B-A' 🎵)</option>
+              <option value="1bar_ostinato">Lặp Ostinato 1 Bar (1-Bar Short Loop 🔁)</option>
+            </select>
+          </div>
+
+          <!-- Kiểu Diễn Tấu Nốt (Legato / Staccato) -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>KIỂU DIỄN TẤU NỐT (ARTICULATION)</span>
+            </div>
+            <select id="selectArticulation">
+              <option value="auto" selected>Auto (Tự Động Theo Phong Cách 🎹)</option>
+              <option value="legato">Legato (Ngân Vang Mượt Mà, Nối Dài 🌊)</option>
+              <option value="staccato">Staccato (Nảy Nốt, Ngắn Gọn Giòn Giã ⚡)</option>
+              <option value="touhou_fast">Touhou Speed (Chạy Nốt Chớp Nhoáng 🌸)</option>
+              <option value="balanced">Balanced (Cân Bằng Tiêu Chuẩn)</option>
+            </select>
+          </div>
+
+          <!-- Chế Độ Sinh Bè Riêng Lẻ -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>CHẾ ĐỘ SINH BÈ (TRACK TARGET)</span>
+            </div>
+            <select id="selectTrackTarget">
+              <option value="pure_piano" selected>🎹 Thuần Piano Solo 2 Tay (Pure Concert Grand ⭐)</option>
+              <option value="all">Toàn bộ 5 Bè (Full Multi-Track 🎶)</option>
+              <option value="lead">Chỉ Lead Melody (Giai điệu chính 🎵)</option>
+              <option value="bass">Chỉ Bassline (Bè trầm 🎸)</option>
+              <option value="chords">Chỉ Harmony & Chords (Hợp âm đệm 🎹)</option>
+              <option value="arp">Chỉ Arpeggio (Rải nốt hoa mỹ ✨)</option>
+              <option value="drums">Chỉ Drums & Percussion (Bộ gõ 🥁)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Dựng Bài 1-Click (Arranger) -->
+        <div class="glass-panel sidebar-card">
+          <div class="card-title">
+            <span>🎼 Dựng Bài 1-Click (Arranger)</span>
+          </div>
+          <div class="control-row">
+            <div class="control-label">
+              <span>CẤU TRÚC BÀI (FORM)</span>
+            </div>
+            <select id="selectArrangerForm">
+              <option value="pop_standard" selected>Pop chuẩn (I – V – C – V – C – O)</option>
+              <option value="compact">Gọn (V – C – V – C)</option>
+              <option value="epic_journey">Epic (I – V – C – B – C – O)</option>
+              <option value="concerto">Concerto (Tutti – Solo – Cadenza)</option>
+            </select>
+          </div>
+          <div style="font-size:0.7rem; color:var(--text-muted); margin:2px 0 8px;" id="arrangerInfo"></div>
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.72rem; color:var(--text-muted); cursor:pointer; margin-bottom:8px;">
+            <input type="checkbox" id="checkLoopMode">
+            <span>🔁 Loop liền mạch (game BGM: bỏ hit cuối, bar cuối hạ nhiệt)</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.72rem; color:var(--text-muted); cursor:pointer; margin-bottom:8px;">
+            <input type="checkbox" id="checkFinalHit" checked>
+            <span>🎯 Hit kết bài (tắt = kết tự nhiên)</span>
+          </label>
+          <button id="btnArrange" class="btn-secondary" style="width:100%; padding:8px;">
+            🎼 Dựng Bài Hoàn Chỉnh
+          </button>
+        </div>
+
+        <!-- Musical Parameters -->
+        <div class="glass-panel sidebar-card">
+          <div class="card-title">
+            <span>Thiết Lập Lý Thuyết, Nhịp & Fade</span>
+          </div>
+
+          <!-- Time Signature (Nhịp Điệu) -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>NHỊP ĐIỆU (TIME SIGNATURE)</span>
+              <span class="control-value" id="valTimeSig">4/4</span>
+            </div>
+            <select id="selectTimeSignature">
+              <option value="4/4" selected>4/4 (Nhịp Tiêu Chuẩn 16 Steps / Bar)</option>
+              <option value="7/8">7/8 (Nhịp Lẻ sasakure.UK Math-Rock: 14 Steps / Bar ⚡)</option>
+              <option value="6/8">6/8 (Nhịp Ba Hào Hùng / Epic Waltz: 12 Steps / Bar 🌊)</option>
+              <option value="5/8">5/8 (Nhịp Lẻ Biến Ảo / Odd Meter: 10 Steps / Bar 🌀)</option>
+            </select>
+          </div>
+
+          <!-- Key / Root Note -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>Nốt Chủ (Root Key)</span>
+              <span class="control-value" id="valKey">A</span>
+            </div>
+            <select id="selectKey">
+              <option value="C">C (Đô)</option>
+              <option value="C#">C# / Db</option>
+              <option value="D">D (Rê)</option>
+              <option value="D#">D# / Eb</option>
+              <option value="E">E (Mi)</option>
+              <option value="F">F (Fa)</option>
+              <option value="F#">F# / Gb</option>
+              <option value="G">G (Sol)</option>
+              <option value="G#">G# / Ab</option>
+              <option value="A" selected>A (La)</option>
+              <option value="A#">A# / Bb</option>
+              <option value="B">B (Si)</option>
+            </select>
+          </div>
+
+          <!-- Scale / Mode -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>Thang Âm (Scale / Mode)</span>
+            </div>
+            <select id="selectScale">
+              <option value="touhou_yonanuki" selected>🌸 Touhou Yonanuki Minor (ZUN Signature)</option>
+              <option value="lydian_augmented">🌌 Lydian Augmented (sasakure.UK Sci-Fi)</option>
+              <option value="dorian_b2">🧬 Dorian b2 (Math-Rock Fusion)</option>
+              <option value="melodic_minor">🎷 Melodic Minor (Jazz Fusion)</option>
+              <option value="phrygian_dominant">🏰 Phrygian Dominant (Dark Fantasy / Souls / Castlevania)</option>
+              <option value="gothic_harmonic_minor">🕯️ Gothic Harmonic Minor (Dark Dungeon / Vampire)</option>
+              <option value="byzantine">📜 Byzantine / Double Harmonic (Ancient Tomb)</option>
+              <option value="touhou_insen">🏮 Insen (Japanese Mystical)</option>
+              <option value="hirajoshi">🎋 Hirajoshi (Japanese Folk)</option>
+              <option value="natural_minor">Natural Minor (Aeolian)</option>
+              <option value="harmonic_minor">Harmonic Minor (Gothic Tension)</option>
+              <option value="dorian">Dorian Mode (Synthwave / Funk)</option>
+              <option value="major">Major (Ionian / Anime Pop)</option>
+              <option value="pentatonic_minor">Minor Pentatonic</option>
+              <option value="jazz_neosoul">Neo-Soul / Jazz Color</option>
+              <option value="phrygian">Phrygian Mode (Cyber Dark)</option>
+            </select>
+          </div>
+
+          <!-- BPM: Numeric Input + Slider + Tap -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>Tốc Độ (Tempo / BPM)</span>
+              <span class="control-value" id="valBpm">170 BPM</span>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;">
+              <input type="number" id="inputCustomBpm" min="30" max="350" value="170" style="width:75px; padding:5px 8px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--accent-cyan); font-weight:bold; border-radius:4px; text-align:center;">
+              <input type="range" id="sliderBpm" min="40" max="280" value="170" style="flex:1;">
+              <button id="btnTapTempo" class="btn-preset-bar" style="flex:0 0 45px; padding:5px 0;" title="Bấm nhịp theo bài hát">TAP</button>
+            </div>
+          </div>
+
+          <!-- Length Bars: Custom Number Input + Slider + Presets -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>Độ Dài Tùy Chỉnh (Số Bars)</span>
+              <span class="control-value" id="valBars">8 Bars</span>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input type="number" id="inputCustomBars" min="1" max="256" value="8" style="width:75px; padding:5px 8px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--accent-cyan); font-weight:bold; border-radius:4px; text-align:center;">
+              <input type="range" id="sliderBars" min="1" max="64" value="8" style="flex:1;">
+            </div>
+            <div class="quick-bars-presets" style="display:flex; gap:4px; justify-content:space-between;">
+              <button class="btn-preset-bar" data-bars="4">4</button>
+              <button class="btn-preset-bar" data-bars="8">8</button>
+              <button class="btn-preset-bar" data-bars="12">12</button>
+              <button class="btn-preset-bar active" data-bars="16">16</button>
+              <button class="btn-preset-bar" data-bars="24">24</button>
+              <button class="btn-preset-bar" data-bars="32">32</button>
+              <button class="btn-preset-bar" data-bars="64">64</button>
+            </div>
+          </div>
+
+          <!-- Fade In & Fade Out Sliders -->
+          <div class="control-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+            <div>
+              <div class="control-label">
+                <span>Fade In</span>
+                <span class="control-value" id="valFadeIn">0 Bar</span>
+              </div>
+              <input type="range" id="sliderFadeIn" min="0" max="8" value="0">
+            </div>
+            <div>
+              <div class="control-label">
+                <span>Fade Out</span>
+                <span class="control-value" id="valFadeOut">0 Bar</span>
+              </div>
+              <input type="range" id="sliderFadeOut" min="0" max="8" value="0">
+            </div>
+          </div>
+
+          <!-- Chaos / Mutation Slider -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>Độ Đột Biến (Chaos %)</span>
+              <span class="control-value" id="valChaos">25%</span>
+            </div>
+            <input type="range" id="sliderChaos" min="0" max="100" value="25">
+          </div>
+
+          <!-- Density Slider -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>Mật Độ Nốt (Density %)</span>
+              <span class="control-value" id="valDensity">75%</span>
+            </div>
+            <input type="range" id="sliderDensity" min="20" max="100" value="75">
+          </div>
+
+          <!-- Swing Slider -->
+          <div class="control-row">
+            <div class="control-label">
+              <span>Swing / Shuffle (lơi nhịp)</span>
+              <span class="control-value" id="valSwing">0%</span>
+            </div>
+            <input type="range" id="sliderSwing" min="0" max="60" value="0" title="Trễ offbeat 8th - chỉ ảnh hưởng phát nhạc + xuất MIDI/MMP">
+          </div>
+
+          <!-- Active Progression Display -->
+          <div class="control-row" style="margin-top: 10px;">
+            <div class="control-label">
+              <span>Vòng Hợp Âm Đang Áp Dụng:</span>
+            </div>
+            <div class="progression-display" id="progressionDisplay">
+              <div class="chord-chip active">VI (F)</div>
+              <div class="chord-chip">VII (G)</div>
+              <div class="chord-chip">i (Am)</div>
+              <div class="chord-chip">III (C)</div>
+            </div>
+            <div class="progression-editor" id="progressionEditor" style="display:none; margin-top:8px; padding:8px; background:var(--bg-input); border:1px solid var(--accent-cyan); border-radius:6px;">
+              <div style="font-size:0.72rem; color:var(--accent-cyan); margin-bottom:6px; font-weight:700;" id="progressionEditorTitle">Sửa hợp âm Bar 1</div>
+              <div style="display:flex; gap:6px;">
+                <select id="selectProgChord" style="flex:1;"></select>
+                <button id="btnApplyProgChord" class="btn-secondary" style="padding:4px 10px;">Áp dụng & gieo lại</button>
+                <button id="btnCancelProgChord" class="btn-secondary" style="padding:4px 10px;">Hủy</button>
+              </div>
+              <div style="font-size:0.65rem; color:var(--text-dim); margin-top:4px;">💡 Bấm chip hợp âm phía trên để sửa từng bar. Áp dụng sẽ gieo lại các bè đã chọn ở toolbar vùng, giữ nguyên nốt 🔒.</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center & Right: Piano Roll Viewport + Mixer + History -->
+      <section class="center-viewport">
+        <div class="tab-strip" id="tabStrip" title="Nhiều bài cùng lúc"></div>
+        <!-- Transport & Spectrum Top Bar -->
+        <div class="glass-panel transport-bar">
+          <div class="transport-buttons">
+            <button id="btnPlay" class="btn-primary">
+              <span id="playIcon">▶</span>
+              <span id="playText">PHÁT NHẠC (PLAY)</span>
+            </button>
+            <button id="btnStop" class="btn-icon" title="Dừng và về đầu">⏹</button>
+            <button id="btnRec" class="btn-icon" title="REC: bật để đàn phím ghi nốt vào bè đang soạn (khi đang phát)">●</button>
+            <button id="btnUndo" class="btn-icon" title="Undo (Ctrl+Z)" disabled>↩</button>
+            <button id="btnRedo" class="btn-icon" title="Redo (Ctrl+Y)" disabled>↪</button>
+            <button id="btnAB" class="btn-icon" style="width:auto; padding:0 8px; font-size:0.72rem; font-weight:700;" title="A/B: bấm để ghim bản A, bấm nữa để so với bản đang sửa (double-click để ghim lại)">A/B</button>
+            <button id="btnGenerate" class="btn-secondary" style="border-color: var(--accent-cyan);">
+              <span>🎲 TẠO BÀI MỚI (GENERATE)</span>
+            </button>
+            <button id="btnBlank" class="btn-secondary" title="Bài trống: xóa hết nốt để tự soạn từ đầu (giữ settings)">
+              <span>📄 BÀI TRỐNG</span>
+            </button>
+            <button id="btnTogglePurePiano" class="btn-secondary active" style="border-color: #ffd700; color: #ffd700; background: rgba(255, 215, 0, 0.12);" title="Bật/Tắt chế độ Thuần Piano Solo 2 Tay">
+              <span id="txtPurePiano">🎹 THUẦN PIANO: BẬT</span>
+            </button>
+          </div>
+
+          <!-- Real-time Visualizer -->
+          <div class="visualizer-canvas-container">
+            <canvas id="visualizerCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Interactive Melody Contour Envelope Editor (Tùy Chọn Mở Rộng) -->
+        <div class="glass-panel contour-wrapper" id="contourPanel">
+          <div class="contour-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <label class="switch-toggle" style="position:relative; display:inline-block; width:34px; height:18px;">
+                <input type="checkbox" id="checkEnableContour" style="opacity:0; width:0; height:0;">
+                <span class="slider-round"></span>
+              </label>
+              <span style="font-weight:700; font-size:0.82rem; color:var(--accent-cyan); letter-spacing:0.5px;">
+                🎨 ĐƯỜNG CONG GIAI ĐIỆU (MELODY CONTOUR ENVELOPE)
+              </span>
+              <span class="badge-optional" style="font-size:0.62rem; background:rgba(0,242,254,0.12); color:var(--accent-cyan); padding:2px 6px; border-radius:10px; border:1px solid rgba(0,242,254,0.25);">
+                Tùy Chọn Mở Rộng
+              </span>
+            </div>
+
+            <div class="contour-presets" id="contourPresets" style="display:none; gap:4px; align-items:center;">
+              <button class="btn-contour-pill btn-contour-preset" data-preset="arch" title="Leo núi cao trào">⛰️ Leo Núi</button>
+              <button class="btn-contour-pill btn-contour-preset" data-preset="wave" title="Lượn sóng">🌊 Sóng</button>
+              <button class="btn-contour-pill btn-contour-preset" data-preset="climax" title="Cao trào cuối">⚡ Cao Trào</button>
+              <button class="btn-contour-pill btn-contour-preset" data-preset="qa" title="Hỏi & Đáp">🗨️ Q&A</button>
+              <button class="btn-contour-pill btn-contour-preset" data-preset="flat" title="Đường thẳng ngang">➖ Thẳng</button>
+              <button class="btn-contour-pill" id="btnClearContour" title="Xóa hết các điểm giữa">🗑️ Xóa</button>
+            </div>
+          </div>
+
+          <div class="contour-body" id="contourBody" style="display:none; margin-top:8px;">
+            <div class="contour-canvas-container" id="contourCanvasContainer" style="position:relative; width:100%; height:110px; background:rgba(10,12,20,0.65); border-radius:6px; border:1px solid rgba(0,242,254,0.25); overflow:hidden; cursor:crosshair;">
+              <canvas id="contourCanvas" style="width:100%; height:100%; display:block;"></canvas>
+              <div class="contour-hint" style="position:absolute; bottom:4px; right:8px; font-size:0.65rem; color:var(--text-dim); pointer-events:none; background:rgba(0,0,0,0.5); padding:2px 6px; border-radius:4px;">
+                💡 Click để thêm điểm • Kéo để chỉnh cao độ • Chuột phải để xóa điểm
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Piano Roll Canvas Display -->
+        <div class="glass-panel pianoroll-wrapper">
+          <div class="pianoroll-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding-bottom: 6px;">
+            <div class="studio-track-tabs" id="studioTrackTabs" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 700; margin-right: 2px;">BÈ ĐANG SOẠN:</span>
+              <button class="btn-track-tab active" data-track="lead" style="--track-color:#00f2fe;">🎵 Lead</button>
+              <button class="btn-track-tab" data-track="chords" style="--track-color:#9b51e0;">🎹 Chords</button>
+              <button class="btn-track-tab" data-track="arp" style="--track-color:#4facfe;">✨ Arp</button>
+              <button class="btn-track-tab" data-track="bass" style="--track-color:#f39c12;">🎸 Bass</button>
+              <button class="btn-track-tab" data-track="drums" style="--track-color:#e74c3c;">🥁 Drums</button>
+            </div>
+
+            <div class="studio-tools" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <div style="display:flex; align-items:center; gap:4px;">
+                <span style="font-size:0.72rem; color:var(--text-muted); font-weight:700;">TOOLS:</span>
+                <button class="btn-track-tab tool-tab" data-tool="select" title="Select: kéo khung chọn nhiều nốt">⬚ Select</button>
+                <button class="btn-track-tab tool-tab active" data-tool="draw" title="Draw: thêm/kéo/co giãn nốt">✏️ Draw</button>
+                <button class="btn-track-tab tool-tab" data-tool="knife" title="Knife: bấm vào nốt để cắt đôi">🔪 Knife</button>
+                <button class="btn-track-tab tool-tab" data-tool="erase" title="Erase: bấm để xóa nốt">🧽 Erase</button>
+                <span id="selectionInfo" style="font-size:0.7rem; color:var(--accent-cyan); font-weight:700;"></span>
+              </div>
+              <div style="display:flex; align-items:center; gap:4px;">
+                <span style="font-size:0.72rem; color:var(--text-muted); font-weight:700;">EDIT:</span>
+                <button class="btn-track-tab" id="btnOctDown" title="Dịch quãng xuống 1 (nốt chọn hoặc cả bè)">8va−</button>
+                <button class="btn-track-tab" id="btnOctUp" title="Dịch quãng lên 1 (nốt chọn hoặc cả bè)">8va+</button>
+                <button class="btn-track-tab" id="btnVelDown" title="Giảm velocity 10">Vel−</button>
+                <button class="btn-track-tab" id="btnVelUp" title="Tăng velocity 10">Vel+</button>
+              </div>
+              <label style="display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--text-muted); cursor: pointer;">
+                <input type="checkbox" id="checkGhostNotes" checked>
+                <span>👻 Ghost Notes</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--text-muted); cursor: pointer;" title="Thu phóng piano-roll khi bài dài">
+                <span>🔍 Zoom</span>
+                <select id="selectZoom" style="padding:2px 4px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-main); border-radius:4px; font-size:0.7rem;">
+                  <option value="fit" selected>Vừa khít</option>
+                  <option value="1x">1x</option>
+                  <option value="2x">2x</option>
+                </select>
+              </label>
+              <span class="studio-hint" style="font-size: 0.67rem; color: var(--accent-cyan); background: rgba(0, 242, 254, 0.08); border: 1px solid rgba(0, 242, 254, 0.2); padding: 2px 8px; border-radius: 4px;">
+                💡 Click: Thêm | Kéo thân: Đổi cao độ/phách | Kéo mép: Co giãn | Chuột phải: Xóa
+              </span>
+            </div>
+            <div class="regen-toolbar" id="regenToolbar" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; padding-top: 6px; font-size: 0.72rem; color: var(--text-muted);">
+              <span style="font-weight: 700; color: var(--accent-cyan);">🔁 GIEO LẠI VÙNG:</span>
+              <label style="display:flex; align-items:center; gap:4px;">Bar
+                <input type="number" id="inputRegenFrom" min="1" value="1" style="width:52px; padding:4px 6px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--accent-cyan); font-weight:bold; border-radius:4px; text-align:center;">
+                <span>–</span>
+                <input type="number" id="inputRegenTo" min="1" value="4" style="width:52px; padding:4px 6px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--accent-cyan); font-weight:bold; border-radius:4px; text-align:center;">
+              </label>
+              <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" class="regen-track" value="lead" checked> Lead</label>
+              <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" class="regen-track" value="chords" checked> Chords</label>
+              <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" class="regen-track" value="arp" checked> Arp</label>
+              <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" class="regen-track" value="bass" checked> Bass</label>
+              <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" class="regen-track" value="drums"> Drums</label>
+              <button id="btnRegenRegion" class="btn-secondary" style="padding:4px 12px;">🎲 Gieo lại</button>
+              <button id="btnMotif" class="btn-secondary" style="padding:4px 10px;" title="Lấy nốt lead đã khóa trong 2 bars đầu làm motif, phát triển thành cả bài">🌱 Motif→Bài</button>
+              <button id="btnUnlockAll" class="btn-secondary" style="padding:4px 10px;" title="Mở khóa mọi nốt đã soạn tay">🔓 Mở khóa hết</button>
+            </div>
+            <div style="font-size:0.66rem; color:var(--text-dim); padding:2px 0 4px;">
+              🎹 Đàn phím: <b>Z–M</b> quãng thấp • <b>Q–U</b> quãng cao • <b>←/→</b> đổi quãng • <b>G</b> tạo bài • Bật <b>● REC</b> rồi đàn khi đang phát để ghi nốt
+            </div>
+          </div>
+          <div class="pianoroll-canvas-container" id="canvasContainer">
+            <canvas id="pianoRollCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- 5-Track Mixer Rack -->
+        <div class="glass-panel mixer-rack">
+          <div class="mixer-channel" data-track="lead">
+            <div class="channel-header">
+              <span class="channel-name" style="color:#00f2fe;">🎵 Lead</span>
+              <div class="channel-toggles">
+                <button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>
+                <button class="btn-mini btn-mute" title="Mute">M</button>
+                <button class="btn-mini btn-solo" title="Solo">S</button>
+              </div>
+            </div>
+            <div class="channel-slider">
+              <input type="range" class="vol-slider" min="0" max="1" step="0.01" value="0.85">
+            </div>
+            <div class="channel-pan" title="Pan trái/phải (L/R)">
+              <span style="font-size:0.6rem; color:var(--text-dim);">L</span>
+              <input type="range" class="pan-slider" min="-100" max="100" step="1" value="0">
+              <span style="font-size:0.6rem; color:var(--text-dim);">R</span>
+            </div>
+          </div>
+
+          <div class="mixer-channel" data-track="chords">
+            <div class="channel-header">
+              <span class="channel-name" style="color:#9b51e0;">🎹 Chords</span>
+              <div class="channel-toggles">
+                <button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>
+                <button class="btn-mini btn-mute" title="Mute">M</button>
+                <button class="btn-mini btn-solo" title="Solo">S</button>
+              </div>
+            </div>
+            <div class="channel-slider">
+              <input type="range" class="vol-slider" min="0" max="1" step="0.01" value="0.70">
+            </div>
+            <div class="channel-pan" title="Pan trái/phải (L/R)">
+              <span style="font-size:0.6rem; color:var(--text-dim);">L</span>
+              <input type="range" class="pan-slider" min="-100" max="100" step="1" value="-15">
+              <span style="font-size:0.6rem; color:var(--text-dim);">R</span>
+            </div>
+          </div>
+
+          <div class="mixer-channel" data-track="arp">
+            <div class="channel-header">
+              <span class="channel-name" style="color:#4facfe;">✨ Arp</span>
+              <div class="channel-toggles">
+                <button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>
+                <button class="btn-mini btn-mute" title="Mute">M</button>
+                <button class="btn-mini btn-solo" title="Solo">S</button>
+              </div>
+            </div>
+            <div class="channel-slider">
+              <input type="range" class="vol-slider" min="0" max="1" step="0.01" value="0.75">
+            </div>
+            <div class="channel-pan" title="Pan trái/phải (L/R)">
+              <span style="font-size:0.6rem; color:var(--text-dim);">L</span>
+              <input type="range" class="pan-slider" min="-100" max="100" step="1" value="15">
+              <span style="font-size:0.6rem; color:var(--text-dim);">R</span>
+            </div>
+          </div>
+
+          <div class="mixer-channel" data-track="bass">
+            <div class="channel-header">
+              <span class="channel-name" style="color:#f39c12;">🎸 Bass</span>
+              <div class="channel-toggles">
+                <button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>
+                <button class="btn-mini btn-mute" title="Mute">M</button>
+                <button class="btn-mini btn-solo" title="Solo">S</button>
+              </div>
+            </div>
+            <div class="channel-slider">
+              <input type="range" class="vol-slider" min="0" max="1" step="0.01" value="0.90">
+            </div>
+            <div class="channel-pan" title="Pan trái/phải (L/R)">
+              <span style="font-size:0.6rem; color:var(--text-dim);">L</span>
+              <input type="range" class="pan-slider" min="-100" max="100" step="1" value="0">
+              <span style="font-size:0.6rem; color:var(--text-dim);">R</span>
+            </div>
+          </div>
+
+          <div class="mixer-channel" data-track="drums">
+            <div class="channel-header">
+              <span class="channel-name" style="color:#e74c3c;">🥁 Drums</span>
+              <div class="channel-toggles">
+                <button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>
+                <button class="btn-mini btn-mute" title="Mute">M</button>
+                <button class="btn-mini btn-solo" title="Solo">S</button>
+              </div>
+            </div>
+            <div class="channel-slider">
+              <input type="range" class="vol-slider" min="0" max="1" step="0.01" value="0.95">
+            </div>
+            <div class="channel-pan" title="Pan trái/phải (L/R)">
+              <span style="font-size:0.6rem; color:var(--text-dim);">L</span>
+              <input type="range" class="pan-slider" min="-100" max="100" step="1" value="0">
+              <span style="font-size:0.6rem; color:var(--text-dim);">R</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lịch Sử Gieo Nhạc (Generation History) -->
+        <div class="glass-panel history-panel">
+          <div class="history-header">
+            <div class="history-title">
+              <span>📜 Lịch Sử Gieo Nhạc (Generation History)</span>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <select id="historyFilter" title="Lọc lịch sử" style="padding:3px 6px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-main); border-radius:4px; font-size:0.7rem;">
+                <option value="all">Tất cả</option>
+                <option value="fav">★ Yêu thích</option>
+              </select>
+              <button id="btnBatchMidi" class="btn-secondary" style="padding:3px 10px; font-size:0.7rem;" title="Xuất toàn bộ lịch sử ra MIDI (vào thư mục mặc định)">🎵 Xuất hết MIDI</button>
+              <button id="btnClearHistory" class="btn-clear-history">Xóa Lịch Sử</button>
+            </div>
+          </div>
+          <div class="history-list" id="historyList">
+            <!-- Dynamically populated history items -->
+          </div>
+        </div>
+
+        <!-- File Da Xuat (Export Hub) -->
+        <div class="glass-panel history-panel">
+          <div class="history-header">
+            <div class="history-title">
+              <span>📁 File Đã Xuất</span>
+            </div>
+            <button id="btnRefreshRecent" class="btn-secondary" style="padding:3px 10px; font-size:0.7rem;" title="Tải lại danh sách">↻ Tải lại</button>
+          </div>
+          <div class="history-list" id="recentList">
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Action / Export Hub -->
+    <footer class="action-export-bar">
+      <div style="font-size: 0.76rem; color: var(--text-muted);">
+        <span id="songInfoLabel">RMG v3.5 • Sẵn sàng xuất sang DAW</span>
+        <div style="margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <span>📁 <span id="exportDirLabel">(chọn mỗi lần)</span></span>
+          <button id="btnChangeExportDir" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Chọn thư mục xuất mặc định">Đổi</button>
+          <button id="btnOpenExportDir" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Mở thư mục xuất">Mở thư mục</button>
+        </div>
+      </div>
+      <div class="export-actions">
+        <button id="btnQuickMidi" class="btn-secondary" title="Xuất nhanh MIDI vào thư mục mặc định (không hỏi)">
+          ⚡MIDI
+        </button>
+        <button id="btnQuickMmp" class="btn-secondary" title="Xuất nhanh LMMS vào thư mục mặc định (không hỏi)">
+          ⚡MMP
+        </button>
+        <button id="btnExportWav" class="btn-secondary" title="Render tiếng preview ra file WAV demo">
+          🎧WAV
+        </button>
+        <button id="btnOpenMidi" class="btn-secondary" title="Mở file MIDI (.mid) có sẵn để sửa tiếp trong RMG">
+          📂 Mở MIDI
+        </button>
+        <input type="file" id="fileOpenMidi" accept=".mid,.midi" style="display:none;">
+        <button id="btnCopyClip" class="btn-secondary" title="Sao chép Clip vào Clipboard để dán trực tiếp Ctrl+V trong LMMS">
+          📋 Sao Chép Clip LMMS
+        </button>
+        <button id="btnSaveMidi" class="btn-secondary" title="Xuất file Standard MIDI đa bè tương thích mọi DAW">
+          🎵 Xuất File MIDI (.mid)
+        </button>
+        <button id="btnSaveMmp" class="btn-secondary" title="Lưu toàn bộ dự án định dạng LMMS Project (.mmp)">
+          💾 Lưu File LMMS (.mmp)
+        </button>
+        <button id="btnLaunchLmms" class="btn-secondary btn-lmms" title="Tự động mở LMMS hoặc chèn nhạc ngay vào LMMS đang bật">
+          🚀 Mở Trực Tiếp Vào LMMS
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Custom Genre Modal -->
+  <div class="modal-overlay" id="genreModal" style="display:none;">
+    <div class="modal-box">
+      <h3 style="margin:0 0 10px; color:var(--accent-cyan);">🎨 Style nhạc riêng</h3>
+      <label class="modal-label">Tên style
+        <input id="customName" maxlength="40" placeholder="VD: Vina House">
+      </label>
+      <label class="modal-label">Mô tả ngắn
+        <input id="customDesc" maxlength="80" placeholder="VD: Bass nảy, hook bắt tai">
+      </label>
+      <div class="modal-row">
+        <label class="modal-label">BPM
+          <input id="customBpm" type="number" min="30" max="350" value="128">
+        </label>
+        <label class="modal-label">Key
+          <select id="customKey">
+            <option value="C">C</option><option value="C#">C#</option><option value="D">D</option>
+            <option value="D#">D#</option><option value="E">E</option><option value="F">F</option>
+            <option value="F#">F#</option><option value="G">G</option><option value="G#">G#</option>
+            <option value="A" selected>A</option><option value="A#">A#</option><option value="B">B</option>
+          </select>
+        </label>
+      </div>
+      <div class="modal-row">
+        <label class="modal-label">Scale
+          <select id="customScale"></select>
+        </label>
+        <label class="modal-label">Nhịp
+          <select id="customTs">
+            <option value="4/4" selected>4/4</option>
+            <option value="7/8">7/8</option>
+            <option value="6/8">6/8</option>
+            <option value="5/8">5/8</option>
+          </select>
+        </label>
+      </div>
+      <div class="modal-row">
+        <label class="modal-label">Lead sound
+          <select id="customLead">
+            <option value="square_8bit">Square 8-bit</option>
+            <option value="synth_saw_lead" selected>Saw Lead</option>
+            <option value="zun_trumpet">Trumpet (ZUN)</option>
+            <option value="grand_piano_lead">Grand Piano</option>
+            <option value="pipe_organ_lead">Pipe Organ</option>
+            <option value="chiptune_fm_epiano">FM E-Piano</option>
+            <option value="sparkle_arp">Sparkle Arp</option>
+            <option value="mellow_epiano">Mellow E-Piano</option>
+            <option value="fusion_bright_grand">Bright Grand</option>
+            <option value="distorted_lead">Distorted Lead</option>
+            <option value="orchestral_strings">Strings</option>
+            <option value="anime_bell_lead">Bell Lead</option>
+          </select>
+        </label>
+      </div>
+      <label class="modal-label">Vòng hợp âm (mỗi dòng 1 vòng, ký hiệu cách nhau bởi khoảng trắng)
+        <textarea id="customProg" rows="4">i VI VII i&#10;i VII VI V</textarea>
+      </label>
+      <div class="modal-actions">
+        <button id="btnSaveCustomGenre" class="btn-secondary">💾 Lưu style</button>
+        <button id="btnCancelCustomGenre" class="btn-secondary">Hủy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Scripts -->
+  <script src="engine/theory.js"></script>
+  <script src="engine/generator.js"></script>
+  <script src="engine/synth.js"></script>
+  <script src="engine/exporter.js"></script>
+  <script src="engine/midi.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

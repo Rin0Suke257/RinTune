@@ -1,0 +1,11 @@
+const G = require('D:/RMG/engine/generator.js').RMGGenerator;
+const T = require('D:/RMG/engine/theory.js').RMGTheory;
+const E = require('D:/RMG/engine/exporter.js').RMGExporter;
+console.log('HAS_CINEMATIC=' + !!T.GENRES['cinematic']);
+const g = new G.MusicGenerator({ genre: 'cinematic', key: 'D', scale: 'natural_minor', bpm: 100, lengthBars: 8, seed: 9 });
+const s = g.generate();
+console.log('NOTES=' + s.metadata.noteCount + ' PROG=' + s.progression.slice(0, 4).map(c => c.symbol + c.rootName).join(' '));
+console.log('BASS_BAR0=' + s.tracks.bass.notes.filter(n => n.step < 16).map(n => n.step + ':' + n.midi).join(' '));
+console.log('ARP_BAR0=' + s.tracks.arp.notes.filter(n => n.step < 16).map(n => n.step + ':' + n.midi).join(' '));
+const mmp = E.Exporter.generateLmmsProject(s);
+console.log('MMP_OK=' + mmp.includes('<lmms-project'));

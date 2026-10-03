@@ -1,0 +1,18 @@
+# Build outputs
+native/out/
+native/obj/
+native/packages/webview2.zip
+native/packages/inno-setup.exe
+# Node
+native/mcp/node_modules/
+native/mcp/dist/
+native/mcp/test-out/
+# Debug / screenshots
+native/dbg-*
+native/shot*.png
+native/*.log
+*.log
+# OS / editor
+Thumbs.db
+Desktop.ini
+.vs/
