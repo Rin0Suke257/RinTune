@@ -1,5 +1,14 @@
 # RMG Changelog
 
+## v2.1.0 - Sound that + Projects
+- Project files `.rmg` (Save/Save-nhanh/Ctrl+S/Open, luu ca settings)
+- Export SoundFont GeneralUser GS (~30MB, tai 1 lan): `.mmp` dung Sf2 player
+  (piano/strings/brass/drums that) thay tripleosc
+- So Seed (luu/nap/xoa seed co ten), seed chia se deterministic
+- Version 2.1.0 + nut kiem tra cap nhat (can GitHub repo de co kenh that)
+- Version 2.1.0 + nut kiem tra cap nhat (can GitHub repo)
+- Version 2.1.0 + nut kiem tra cap nhat (can GitHub repo)
+
 ## v2.0.0 (chua phat hanh) - Native + Studio
 - App C++ Win32 + WebView2 thay Electron (`RMG.exe` ~600KB)
 - Setup Inno per-user + component MCP (`MCP-RMG.exe`)

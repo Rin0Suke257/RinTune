@@ -1,7 +1,7 @@
 ; RMG - Inno Setup script (per-user, khong can quyen admin)
 ; Build: ISCC.exe RMG.iss  ->  out\Setup_RMG_2.0.0.exe
 
-#define AppVersion "2.0.0"
+#define AppVersion "2.1.0"
 
 [Setup]
 AppId={{8C1B4E2A-7F6C-4D8A-9E21-5C7A0B3D9F43}

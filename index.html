@@ -644,6 +644,21 @@
           <div class="history-list" id="recentList">
           </div>
         </div>
+
+        <!-- So Seed (chia se) -->
+        <div class="glass-panel history-panel">
+          <div class="history-header">
+            <div class="history-title">
+              <span>🌱 Sổ Seed</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; padding:0 12px 6px;">
+            <input id="seedName" maxlength="50" placeholder="Tên seed (VD: Boss hay nhất)..." style="flex:1; padding:4px 8px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-main); border-radius:4px; font-size:0.72rem;">
+            <button id="btnSaveSeed" class="btn-secondary" style="padding:3px 10px; font-size:0.7rem;" title="Lưu seed bài hiện tại">Lưu seed</button>
+          </div>
+          <div class="history-list" id="seedList">
+          </div>
+        </div>
       </section>
     </main>
 
@@ -655,6 +670,13 @@
           <span>📁 <span id="exportDirLabel">(chọn mỗi lần)</span></span>
           <button id="btnChangeExportDir" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Chọn thư mục xuất mặc định">Đổi</button>
           <button id="btnOpenExportDir" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Mở thư mục xuất">Mở thư mục</button>
+        </div>
+        <div style="margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer;" title="Xuất MMP dùng SoundFont tiếng thật (tải 1 lần ~30MB)">
+            <input type="checkbox" id="checkUseSf2">
+            <span>🎻 Tiếng thật (SF2)</span>
+          </label>
+          <span id="sfStatus" style="color:var(--text-dim);">(chưa có)</span>
         </div>
         <div style="margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
           <span>🌱 Seed:</span>
@@ -682,7 +704,13 @@
         <button id="btnOpenMidi" class="btn-secondary" title="Mở file MIDI (.mid) có sẵn để sửa tiếp trong RMG">
           📂 Mở MIDI
         </button>
-        <input type="file" id="fileOpenMidi" accept=".mid,.midi" style="display:none;">
+        <button id="btnSaveProject" class="btn-secondary" title="Lưu project (.rmg: nhạc + settings)">
+          💾 Project
+        </button>
+        <button id="btnOpenProject" class="btn-secondary" title="Mở project (.rmg)">
+          📂 Project
+        </button>
+        <input type="file" id="fileOpenMidi" accept=".mid,.midi,.rmg" style="display:none;">
         <button id="btnCopyClip" class="btn-secondary" title="Sao chép Clip vào Clipboard để dán trực tiếp Ctrl+V trong LMMS">
           📋 Sao Chép Clip LMMS
         </button>
@@ -777,6 +805,8 @@
         <b>Mẹo:</b> melody giữ lại bằng cách khóa nốt (kéo/thêm là tự khóa). Muốn take mới 1 bè: bấm 🎲 trên mixer. Style riêng: ＋Style riêng hoặc 🧬 Trích Style từ bài ưng ý.
       </div>
       <div class="modal-actions">
+        <span id="appVersionLabel" style="font-size:0.72rem; color:var(--text-dim); margin-right:auto;">v2.1.0</span>
+        <button id="btnCheckUpdate" class="btn-secondary">↻ Kiểm tra cập nhật</button>
         <button id="btnCloseHelp" class="btn-secondary">Đóng</button>
       </div>
     </div>

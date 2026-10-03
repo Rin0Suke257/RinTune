@@ -368,11 +368,17 @@ static json HandleSaveFile(const json& payload) {
   };
   std::string ln = lower(defaultName);
   bool isMidi = (type == "midi") || (ln.size() > 4 && ln.compare(ln.size() - 4, 4, ".mid") == 0);
+  bool isRmg = (type == "rmg") || (ln.size() > 4 && ln.compare(ln.size() - 4, 4, ".rmg") == 0);
+  bool isWav = (type == "wav") || (ln.size() > 4 && ln.compare(ln.size() - 4, 4, ".wav") == 0);
 
   const wchar_t* filter = isMidi
     ? L"MIDI Files (*.mid)\0*.mid\0All Files (*.*)\0*.*\0"
-    : L"LMMS Project Files (*.mmp)\0*.mmp\0All Files (*.*)\0*.*\0";
-  const wchar_t* defExt = isMidi ? L"mid" : L"mmp";
+    : (isRmg
+      ? L"RMG Project Files (*.rmg)\0*.rmg\0All Files (*.*)\0*.*\0"
+      : (isWav
+        ? L"WAV Audio (*.wav)\0*.wav\0All Files (*.*)\0*.*\0"
+        : L"LMMS Project Files (*.mmp)\0*.mmp\0All Files (*.*)\0*.*\0"));
+  const wchar_t* defExt = isMidi ? L"mid" : (isRmg ? L"rmg" : (isWav ? L"wav" : L"mmp"));
 
   std::wstring wName = Utf8ToWide(defaultName);
   std::vector<wchar_t> fileBuf(32768, 0);
@@ -525,6 +531,12 @@ static std::wstring GetAutosaveDirW() {
 static bool ResolveDirectFolder(const std::string& folder, std::wstring& outDir) {
   if (folder == "autosave") { outDir = GetAutosaveDirW(); return true; }
   if (folder == "export") { outDir = GetExportDirW(); return true; }
+  if (folder == "soundfonts") {
+    std::wstring base = GetLocalAppDataW();
+    outDir = base.empty() ? (GetExeDirW() + L"\\soundfonts") : (base + L"\\RMG\\soundfonts");
+    SHCreateDirectoryExW(nullptr, outDir.c_str(), nullptr);
+    return true;
+  }
   return false;
 }
 
@@ -727,7 +739,7 @@ static json HandleOpenFile(const json& payload) {
   OPENFILENAMEW ofn{};
   ofn.lStructSize = sizeof(ofn);
   ofn.hwndOwner = g_hwnd;
-  ofn.lpstrFilter = L"Standard MIDI Files (*.mid;*.midi)\0*.mid;*.midi\0All Files (*.*)\0*.*\0";
+  ofn.lpstrFilter = L"RMG Project (*.rmg)\0*.rmg\0Standard MIDI Files (*.mid;*.midi)\0*.mid;*.midi\0All Files (*.*)\0*.*\0";
   ofn.nFilterIndex = 1;
   ofn.lpstrFile = fileBuf.data();
   ofn.nMaxFile = (DWORD)fileBuf.size();

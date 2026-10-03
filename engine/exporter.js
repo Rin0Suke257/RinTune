@@ -76,6 +76,35 @@
     }
   };
 
+  // RMG instrument -> GM program (cho Sf2 player): [bank, patch]
+  const GM_PROGRAMS = {
+    grand_piano_lead: [0, 0], mellow_epiano: [0, 4], fusion_bright_grand: [0, 1],
+    chiptune_fm_epiano: [0, 5], sparkle_arp: [0, 46], anime_bell_lead: [0, 9],
+    pipe_organ_lead: [0, 19], orchestral_strings: [0, 48], zun_trumpet: [0, 56],
+    synth_saw_lead: [0, 81], square_8bit: [0, 80], distorted_lead: [0, 29],
+    sub_saw_bass: [0, 38], analog_pad: [0, 89], standard_kit: [128, 0]
+  };
+
+  function gmFor(instrument, isDrums) {
+    if (isDrums) return { bank: 128, patch: 0 };
+    const p = GM_PROGRAMS[instrument];
+    if (p) return { bank: p[0], patch: p[1] };
+    return { bank: 0, patch: 81 }; // saw lead fallback
+  }
+
+  function xmlEscape(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function sf2InstrumentXml(src, bank, patch, isDrums, indent) {
+    const pad = indent || '          ';
+    // reverb nhe cho nhac cu (khong cho drums) de bot choi
+    const verb = isDrums ? ' reverbOn="0"' : ' reverbOn="1"';
+    return `${pad}<instrument name="sf2player">\n` +
+      `${pad}  <sf2player src="${xmlEscape(src)}" bank="${bank}" patch="${patch}" gain="1"${verb}/>\n` +
+      `${pad}</instrument>\n`;
+  }
+
   function recipeFor(genreId, role) {
     const g = GENRE_INSTRUMENTS[genreId] || {};
     const base = ROLE_DEFAULTS[role] || ROLE_DEFAULTS.lead;
@@ -97,8 +126,7 @@
     return xml;
   }
 
-  function mixSoloSet(mix) {
-    if (!mix) return null;
+  function mixSoloSet(mix) {    if (!mix) return null;
     const soloed = Object.keys(mix).filter(k => mix[k] && mix[k].solo);
     return soloed.length ? soloed : null;
   }
@@ -113,9 +141,9 @@
     /**
      * Generate complete LMMS Project (.mmp) XML String
      * mix (optional): { trackKey: { volume 0..1, muted, solo, pan -100..100 } }
-     * lay tu Synth.getTrackMix() de export dung nhu dang nghe.
+     * swing: % tre offbeat. soundfont: duong dan .sf2 hoac null (tripleosc).
      */
-    static generateLmmsProject(songData, mix = null, swing = 0) {
+    static generateLmmsProject(songData, mix = null, swing = 0, soundfont = null) {
       const { metadata, tracks } = songData;
       const bpm = metadata.bpm || 140;
       const lengthBars = metadata.lengthBars || 16;
@@ -154,7 +182,12 @@
 
         xml += `      <track name="${def.name}" type="0" muted="0" solo="0">\n`;
         xml += `        <instrumenttrack pan="${outPan}" vol="${outVol}" pitch="0" basenote="57" fxch="0">\n`;
-        xml += triOscXml(recipe, '          ');
+        if (soundfont) {
+          const gp = gmFor(track.instrument, def.key === 'drums');
+          xml += sf2InstrumentXml(soundfont, gp.bank, gp.patch, def.key === 'drums', '          ');
+        } else {
+          xml += triOscXml(recipe, '          ');
+        }
         xml += `        </instrumenttrack>\n`;
 
         // Pattern

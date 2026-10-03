@@ -197,6 +197,9 @@
   const btnRefreshRecent = document.getElementById('btnRefreshRecent');
   const historyFilter = document.getElementById('historyFilter');
   const btnBatchMidi = document.getElementById('btnBatchMidi');
+  const btnSaveProject = document.getElementById('btnSaveProject');
+  const btnQuickSaveProject = document.getElementById('btnQuickSaveProject');
+  const btnOpenProject = document.getElementById('btnOpenProject');
   const btnFinish = document.getElementById('btnFinish');
   const btnTransferStyle = document.getElementById('btnTransferStyle');
   const btnCopySeed = document.getElementById('btnCopySeed');
@@ -802,13 +805,22 @@
     }
   }
 
+  function openAnyFile(name, bytes) {
+    if (/\.rmg$/i.test(name || '')) openProjectFile(name, bytes);
+    else handleOpenMidiFile(name, bytes);
+  }
+
+  function requestOpenProject() {
+    requestOpenMidi(); // cung dialog (loc gom .rmg + .mid), phan loai theo duoi file
+  }
+
   function requestOpenMidi() {
     if (window.rmgAPI && window.rmgAPI.openFile) {
       window.rmgAPI.openFile({ type: 'midi' }).then(res => {
         if (!res) return;
         if (res.success) {
           const base = String(res.filePath || 'song.mid').split(/[\\/]/).pop();
-          handleOpenMidiFile(base, Uint8Array.from(res.data || []));
+          openAnyFile(base, Uint8Array.from(res.data || []));
         } else if (!res.cancelled) {
           showToast('⚠️ ' + (res.error || 'Không mở được file'));
         }
@@ -1348,11 +1360,12 @@
     }
     const isMidi = kind === 'midi';
     const fileName = sanitizeFileName(state.currentSong.metadata.title) + (isMidi ? '.mid' : '.mmp');
+    const sf2 = isMidi ? null : await resolveSf2();
     try {
       if (window.rmgAPI && window.rmgAPI.saveFileDirect) {
         const data = isMidi
           ? Array.from(Exporter.generateMidiFile(state.currentSong, getMix(), state.swing))
-          : Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing);
+          : Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2);
         const r = await window.rmgAPI.saveFileDirect({ folder: 'export', fileName, data });
         if (r && r.success) {
           showToast(`⚡ Đã xuất nhanh: ${r.filePath}`, 4000);
@@ -1374,6 +1387,11 @@
   async function saveLargeArray(folder, fileName, u8) {
     const CHUNK = 512 * 1024;
     const total = Math.max(1, Math.ceil(u8.length / CHUNK));
+    if (total === 1) {
+      const r = await window.rmgAPI.saveFileDirect({ folder, fileName, data: Array.from(u8) });
+      if (!r || !r.success) throw new Error((r && r.error) || 'save failed');
+      return r;
+    }
     let last = null;
     for (let i = 0; i < total; i++) {
       const part = u8.subarray(i * CHUNK, Math.min(u8.length, (i + 1) * CHUNK));
@@ -1449,6 +1467,7 @@
     renderPianoRoll(Synth.currentStep || 0);
     renderHistory();
     const base = sanitizeFileName(song.metadata.title);
+    const sf2 = await resolveSf2();
     try {
       if (window.rmgAPI && window.rmgAPI.saveFileDirect) {
         const done = [];
@@ -1459,11 +1478,11 @@
         if (mid && mid.success) done.push(mid.filePath);
         const mmp = await window.rmgAPI.saveFileDirect({
           folder: 'export', fileName: base + '.mmp',
-          data: Exporter.generateLmmsProject(song, getMix(), state.swing)
+          data: Exporter.generateLmmsProject(song, getMix(), state.swing, sf2)
         });
         if (mmp && mmp.success) done.push(mmp.filePath);
         if (done.length) {
-          showToast(`⚡ Finish xong (${done.length} file): ${done.join(' • ')}`, 6000);
+          showToast(`⚡ Finish xong (${done.length} file)${sf2 ? ' [SoundFont 🎻]' : ''}: ${done.join(' • ')}`, 6000);
           refreshRecent();
           return;
         }
@@ -1600,6 +1619,295 @@
       trackTarget: state.trackTarget, seed
     });
     showToast(`📅 Seed hôm nay: ${seed} — ai nhập seed này cũng ra cùng bài!`, 5000);
+  }
+
+  const APP_VERSION = '2.1.0';
+  const UPDATE_CHECK_URL = ''; // VD: 'https://api.github.com/OWNER/RMG/releases/latest' (tao repo roi dien vao)
+  const SF2_URL = 'https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/main/GeneralUser-GS.sf2';
+  const SF2_NAME = 'GeneralUser-GS.sf2';
+
+  let lastProjectName = null;
+
+  function projectPayload() {
+    if (!state.currentSong) return null;
+    return {
+      app: 'RMG', v: 1, savedAt: Date.now(),
+      ui: {
+        genre: state.genre, key: state.key, scale: state.scale, bpm: state.bpm,
+        timeSignature: state.timeSignature, lengthBars: state.lengthBars,
+        section: state.section, motifStructure: state.motifStructure,
+        articulation: state.articulation, climaxCurve: state.climaxCurve,
+        trackTarget: state.trackTarget, chaosLevel: state.chaosLevel,
+        density: state.density, fadeInBars: state.fadeInBars, fadeOutBars: state.fadeOutBars
+      },
+      song: state.currentSong
+    };
+  }
+
+  async function saveProject(quick) {
+    if (!state.currentSong) {
+      showToast('⚠️ Chưa có bài nhạc!');
+      return;
+    }
+    const data = JSON.stringify(projectPayload());
+    const fileName = sanitizeFileName(state.currentSong.metadata.title) + '.rmg';
+    try {
+      if (quick && window.rmgAPI && window.rmgAPI.saveFileDirect) {
+        const r = await window.rmgAPI.saveFileDirect({ folder: 'export', fileName, data });
+        if (r && r.success) {
+          lastProjectName = fileName;
+          showToast(`💾 Project xong: ${r.filePath}`, 4000);
+          refreshRecent();
+          return;
+        }
+      }
+    } catch (e) {}
+    // Save As dialog
+    try {
+      if (window.rmgAPI && window.rmgAPI.saveFile) {
+        const r = await window.rmgAPI.saveFile({ data, defaultName: fileName, type: 'rmg' });
+        if (r && r.success) {
+          lastProjectName = String(r.filePath || '').split(/[\\/]/).pop();
+          showToast(`💾 Project xong: ${r.filePath}`, 4000);
+          refreshRecent();
+        }
+        return;
+      }
+    } catch (e) {}
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`💾 Project xong: ${fileName}`);
+  }
+
+  async function openProjectFile(name, bytes) {
+    try {
+      const obj = JSON.parse(new TextDecoder().decode(bytes));
+      if (!obj || obj.app !== 'RMG' || !obj.song || !obj.song.metadata || !obj.song.tracks) {
+        throw new Error('File .rmg không hợp lệ');
+      }
+      const song = obj.song;
+      const ui = obj.ui || {};
+      pushUndo('mở project');
+      if (ui.genre && Theory.GENRES[ui.genre]) state.genre = ui.genre;
+      if (ui.key) state.key = ui.key;
+      if (ui.scale && Theory.SCALES[ui.scale]) state.scale = ui.scale;
+      if (ui.bpm) state.bpm = ui.bpm;
+      if (ui.timeSignature) state.timeSignature = ui.timeSignature;
+      if (ui.lengthBars) state.lengthBars = ui.lengthBars;
+      if (ui.section) state.section = ui.section;
+      if (ui.motifStructure) state.motifStructure = ui.motifStructure;
+      if (ui.articulation) state.articulation = ui.articulation;
+      if (ui.climaxCurve) state.climaxCurve = ui.climaxCurve;
+      if (ui.trackTarget) state.trackTarget = ui.trackTarget;
+      if (ui.chaosLevel != null) state.chaosLevel = ui.chaosLevel;
+      if (ui.density != null) state.density = ui.density;
+      state.fadeInBars = ui.fadeInBars || 0;
+      state.fadeOutBars = ui.fadeOutBars || 0;
+      state.currentSong = song;
+      stampBaseVel(song);
+      closeProgEditor();
+      syncControlsFromState();
+      Synth.loadSong(song);
+      updateHeaderBadges();
+      updateProgressionUI(song.progression);
+      renderPianoRoll(0);
+      renderHistory();
+      lastProjectName = String(name || '').split(/[\\/]/).pop() || null;
+      showToast(`📂 Đã mở project: ${lastProjectName || name}`, 4000);
+    } catch (err) {
+      showToast('⚠️ Không mở được project: ' + (err.message || err), 5000);
+    }
+  }
+
+  function requestOpenProject() {
+    if (window.rmgAPI && window.rmgAPI.openFile) {
+      window.rmgAPI.openFile({ type: 'any' }).then(res => {
+        if (!res) return;
+        if (res.success) {
+          const base = String(res.filePath || 'song.rmg').split(/[\\/]/).pop();
+          openProjectFile(base, Uint8Array.from(res.data || []));
+        } else if (!res.cancelled) {
+          showToast('⚠️ ' + (res.error || 'Không mở được file'));
+        }
+      }).catch(err => showToast('⚠️ Lỗi mở file: ' + err.message));
+    } else if (fileOpenMidi) {
+      fileOpenMidi.click();
+    }
+  }
+
+  /**
+   * So seed: luu/nap seed co ten (localStorage)
+   */
+  const SEED_GALLERY_KEY = 'rmg_seed_gallery_v1';
+
+  function getSeedGallery() {
+    try {
+      const arr = JSON.parse(localStorage.getItem(SEED_GALLERY_KEY) || '[]');
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveSeedGallery(arr) {
+    try {
+      localStorage.setItem(SEED_GALLERY_KEY, JSON.stringify(arr.slice(0, 50)));
+    } catch (e) {}
+  }
+
+  function renderSeedGallery() {
+    const list = document.getElementById('seedList');
+    if (!list) return;
+    list.innerHTML = '';
+    const arr = getSeedGallery();
+    if (!arr.length) {
+      list.innerHTML = '<div style="font-size:0.72rem; color:var(--text-dim); text-align:center; padding:8px;">Chưa có seed nào. Gieo bài ưng rồi bấm Lưu.</div>';
+      return;
+    }
+    for (const item of arr) {
+      const el = document.createElement('div');
+      el.className = 'recent-item';
+      el.innerHTML = `<span style="cursor:pointer;" title="Bấm để gieo từ seed này">🌱 ${escapeHtml(item.name)}</span><span class="seed-del" style="cursor:pointer;" title="Xóa">🗑️</span>`;
+      el.querySelector('span').addEventListener('click', () => {
+        try {
+          applySeedOptions(JSON.parse(item.seed));
+        } catch (e) {
+          showToast('⚠️ Seed hỏng');
+        }
+      });
+      el.querySelector('.seed-del').addEventListener('click', (e) => {
+        e.stopPropagation();
+        saveSeedGallery(getSeedGallery().filter(x => x.id !== item.id));
+        renderSeedGallery();
+      });
+      list.appendChild(el);
+    }
+  }
+
+  function saveSeedToGallery() {
+    if (!state.currentSong) {
+      showToast('⚠️ Chưa có bài nhạc!');
+      return;
+    }
+    const md = state.currentSong.metadata;
+    const nameInput = document.getElementById('seedName');
+    const name = ((nameInput && nameInput.value) || md.title || 'Seed').trim().slice(0, 50) || 'Seed';
+    const data = {
+      v: 1, genre: md.genre, key: md.key, scale: md.scale, bpm: md.bpm,
+      timeSignature: md.timeSignature, lengthBars: md.lengthBars, section: md.section,
+      motifStructure: md.motifStructure, articulation: md.articulation,
+      climaxCurve: md.climaxCurve, chaosLevel: md.chaosLevel, density: md.density,
+      fadeInBars: md.fadeInBars, fadeOutBars: md.fadeOutBars,
+      trackTarget: md.trackTarget, seed: md.seed
+    };
+    const arr = getSeedGallery();
+    arr.unshift({ id: 'seed_' + Date.now(), name, seed: JSON.stringify(data), createdAt: Date.now() });
+    saveSeedGallery(arr);
+    renderSeedGallery();
+    if (nameInput) nameInput.value = '';
+    showToast(`🌱 Đã lưu seed: ${name}`);
+  }
+
+  async function checkUpdate() {
+    const verEl = document.getElementById('appVersionLabel');
+    try {
+      if (!UPDATE_CHECK_URL) {
+        showToast('Chưa cấu hình kênh cập nhật (cần GitHub repo). Bản hiện tại: v' + APP_VERSION, 5000);
+        return;
+      }
+      showToast('Đang kiểm tra cập nhật...');
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 15000);
+      const res = await fetch(UPDATE_CHECK_URL, { signal: ctrl.signal });
+      clearTimeout(t);
+      const info = await res.json();
+      const tag = String(info.tag_name || info.version || '').replace(/^v/, '');
+      if (tag && tag !== APP_VERSION) {
+        showToast(`🎉 Có bản mới v${tag}! (đang dùng v${APP_VERSION})`, 6000);
+      } else {
+        showToast(`✓ Đang dùng bản mới nhất (v${APP_VERSION})`);
+      }
+      if (verEl) verEl.textContent = 'v' + APP_VERSION;
+    } catch (e) {
+      showToast('⚠️ Không kiểm tra được (mất mạng?): bản hiện tại v' + APP_VERSION);
+    }
+  }
+
+  /**
+   * SoundFont tieng that (GeneralUser GS): tai 1 lan, export MMP dung Sf2 player
+   */
+  let sf2LocalPath = null;
+
+  async function ensureSoundFont() {
+    if (sf2LocalPath) return sf2LocalPath;
+    try {
+      if (!(window.rmgAPI && window.rmgAPI.saveFileDirect && window.rmgAPI.listFiles)) {
+        showToast('Tải SoundFont cần chạy trong app RMG');
+        return null;
+      }
+      const l = await window.rmgAPI.listFiles({ folder: 'soundfonts' });
+      const hit = ((l && l.files) || []).find(f => f.name === SF2_NAME);
+      if (hit) {
+        sf2LocalPath = l.dir + '\\' + SF2_NAME;
+        updateSfStatus();
+        return sf2LocalPath;
+      }
+    } catch (e) {}
+    // Tai ve (~30MB, 1 lan duy nhat)
+    try {
+      showToast('⬇️ Đang tải SoundFont tiếng thật (~30MB, 1 lần duy nhất)...', 6000);
+      const res = await fetch(SF2_URL);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const buf = new Uint8Array(await res.arrayBuffer());
+      if (buf.length < 1000000 || buf[0] !== 0x52 || buf[1] !== 0x49) {
+        throw new Error('File tải về không phải SoundFont');
+      }
+      await saveLargeArray('soundfonts', SF2_NAME, buf);
+      showToast('🎻 Tải SoundFont xong! Export từ giờ dùng tiếng thật.', 5000);
+      sf2LocalPath = null; // doc lai duong dan chuan
+      try {
+        const l2 = await window.rmgAPI.listFiles({ folder: 'soundfonts' });
+        const hit2 = ((l2 && l2.files) || []).find(f => f.name === SF2_NAME);
+        if (hit2) sf2LocalPath = l2.dir + '\\' + SF2_NAME;
+      } catch (e) {}
+      updateSfStatus();
+      return sf2LocalPath;
+    } catch (e) {
+      showToast('⚠️ Không tải được SoundFont (mất mạng?): dùng tiếng synth', 5000);
+      return null;
+    }
+  }
+
+  function updateSfStatus() {
+    const el = document.getElementById('sfStatus');
+    if (!el) return;
+    el.textContent = sf2LocalPath ? 'có sẵn ✓' : 'chưa có';
+  }
+
+  async function resolveSf2() {
+    try {
+      const cb = document.getElementById('checkUseSf2');
+      if (!cb || !cb.checked) return null;
+      return await ensureSoundFont();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function initSoundFontStatus() {
+    try {
+      if (window.rmgAPI && window.rmgAPI.listFiles) {
+        const l = await window.rmgAPI.listFiles({ folder: 'soundfonts' });
+        const hit = ((l && l.files) || []).find(f => f.name === SF2_NAME);
+        if (hit) sf2LocalPath = l.dir + '\\' + SF2_NAME;
+      }
+    } catch (e) {}
+    updateSfStatus();
   }
 
   async function batchExportMidi() {    if (!songHistory.length) {
@@ -2786,13 +3094,28 @@
         if (!f) return;
         const reader = new FileReader();
         reader.onload = () => {
-          handleOpenMidiFile(f.name, new Uint8Array(reader.result));
+          openAnyFile(f.name, new Uint8Array(reader.result));
           fileOpenMidi.value = '';
         };
         reader.onerror = () => showToast('⚠️ Không đọc được file MIDI');
         reader.readAsArrayBuffer(f);
       });
     }
+
+    // Project save/open
+    if (btnSaveProject) btnSaveProject.addEventListener('click', () => saveProject(false));
+    if (btnQuickSaveProject) btnQuickSaveProject.addEventListener('click', () => saveProject(true));
+    if (btnOpenProject) btnOpenProject.addEventListener('click', requestOpenProject);
+
+    // Seed gallery
+    const btnSaveSeed = document.getElementById('btnSaveSeed');
+    if (btnSaveSeed) btnSaveSeed.addEventListener('click', saveSeedToGallery);
+
+    // Update check
+    const btnCheckUpdate = document.getElementById('btnCheckUpdate');
+    if (btnCheckUpdate) btnCheckUpdate.addEventListener('click', checkUpdate);
+    const appVersionLabel = document.getElementById('appVersionLabel');
+    if (appVersionLabel) appVersionLabel.textContent = 'v' + APP_VERSION;
 
     // REC dan phim + motif
     if (btnRec) btnRec.addEventListener('click', toggleRec);
@@ -2886,6 +3209,9 @@
       } else if ((e.ctrlKey || e.metaKey) && e.code === 'KeyD') {
         e.preventDefault();
         duplicateSelection();
+      } else if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') {
+        e.preventDefault();
+        saveProject(true);
       } else if ((e.ctrlKey || e.metaKey) && e.code === 'KeyC' && selectedNotes.size > 0) {
         e.preventDefault();
         copySelection();
@@ -3753,7 +4079,8 @@
 
   async function handleSaveMmp() {
     if (!state.currentSong) return;
-    const mmpXml = Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing);
+    const sf2 = await resolveSf2();
+    const mmpXml = Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2);
     const defaultName = `${state.currentSong.metadata.title}.mmp`;
 
     if (window.rmgAPI && window.rmgAPI.saveFile) {
@@ -3763,7 +4090,7 @@
         type: 'mmp'
       });
       if (res && res.success) {
-        showToast(`💾 Đã lưu dự án LMMS thành công: "${res.filePath}"`);
+        showToast(`💾 Đã lưu dự án LMMS thành công: "${res.filePath}"${sf2 ? ' [SoundFont 🎻]' : ''}`);
         refreshRecent();
       }
     } else {
@@ -3780,7 +4107,8 @@
 
   async function handleLaunchLmms() {
     if (!state.currentSong) return;
-    const mmpXml = Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing);
+    const sf2 = await resolveSf2();
+    const mmpXml = Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2);
     const trackClipXml = Exporter.generateLmmsClipboardClip(state.currentSong, getMix());
 
     showToast('🚀 Đang chuẩn bị kết nối LMMS...');
@@ -4207,8 +4535,10 @@
 
     restoreStartup().then(() => {
       renderHistory();
+      renderSeedGallery();
       refreshRecent();
       refreshExportDirLabel();
+      initSoundFontStatus();
       // Tab dau tien tu bai hien tai
       tabSeq = 1;
       songTabs = [{ id: 'tab1', label: '', snap: snapshotState() }];
