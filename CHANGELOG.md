@@ -1,5 +1,9 @@
 # RinTune Changelog
 
+## Unreleased - Q2: Hoa am co chuc nang
+- Cadence V–I / V–VI (deceptive) o bien doan, at thuong VII→v (modal
+  mixture), lead ve leading-tone truoc doan moi
+
 ## Unreleased - Q1: Motif-first
 - Motif chat (buoc nho + 1 leap + ket on dinh + khoang tho), B derive tu A,
   bien tau sequence/inversion/fragment theo slot, mutation khoa theo vi tri

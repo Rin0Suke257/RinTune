@@ -371,7 +371,10 @@
       const activeTimeSig = timeSignature || genreDef.defaultTimeSignature || '4/4';
       const stepsPerBar = this._getStepsPerBar(activeTimeSig);
 
-      const progression = this._generateChordProgression(genreDef, key, scaleKey, lengthBars, section);
+      const isPurePiano = (trackTarget === 'pure_piano');
+      const VV = this._resolveVariation(this.options.variation);
+      const zoneMap = this._resolveZoneGates(this._zoneMapFor(lengthBars, section, this.options.seed), this.options.seed);
+      const progression = this._generateChordProgression(genreDef, key, scaleKey, lengthBars, section, zoneMap, this.options.seed);
 
       const leadScaleNotes = Theory.getScaleNotes(key, scaleKey, 4, 6);
       const bassScaleNotes = Theory.getScaleNotes(key, scaleKey, 2, 3);
@@ -390,9 +393,6 @@
         densityMod = Math.max(30, density - 25);
       }
 
-      const isPurePiano = (trackTarget === 'pure_piano');
-      const VV = this._resolveVariation(this.options.variation);
-      const zoneMap = this._resolveZoneGates(this._zoneMapFor(lengthBars, section, this.options.seed), this.options.seed);
       const prof = genreDef.trackProfile || {};
       const profW = k => {
         if (isPurePiano) return 1;
@@ -854,7 +854,7 @@
       return song;
     }
 
-    _generateChordProgression(genreDef, key, scaleKey, totalBars, section) {
+    _generateChordProgression(genreDef, key, scaleKey, totalBars, section, zoneMap, seed) {
       let template = this.rng.choice(genreDef.progressions) || ['i', 'VI', 'VII', 'i'];
 
       if (section === 'intro') {
@@ -867,7 +867,10 @@
       let templateIndex = 0;
 
       for (let bar = 0; bar < totalBars; bar++) {
-        const symbol = template[templateIndex % template.length];
+        let symbol = template[templateIndex % template.length];
+        if (bar > 0 && bar < totalBars - 1 && symbol === 'VII' && this._hash01(seed + '|mix' + bar) < 0.12) {
+          symbol = 'v';
+        }
         const chord = Theory.resolveChord(symbol, key, scaleKey, 3);
         resolvedList.push({
           bar,
@@ -879,6 +882,36 @@
           quality: chord.quality
         });
         templateIndex++;
+      }
+
+      if (zoneMap && zoneMap.length > 1) {
+        for (const z of zoneMap) {
+          const X = z.from + z.bars;
+          if (X <= 1 || X >= totalBars - 1) continue;
+          const h = this._hash01(seed + '|cad' + X);
+          if (h >= 0.7) continue;
+          const dom = Theory.resolveChord('V', key, scaleKey, 3);
+          resolvedList[X - 1] = {
+            bar: X - 1,
+            symbol: 'V',
+            rootName: dom.rootName,
+            rootMidi: dom.rootMidi,
+            chordType: dom.chordType,
+            notes: dom.notes,
+            quality: dom.quality
+          };
+          const arrSym = (this._hash01(seed + '|dec' + X) < 0.3) ? 'VI' : 'i';
+          const arr = Theory.resolveChord(arrSym, key, scaleKey, 3);
+          resolvedList[X] = {
+            bar: X,
+            symbol: arrSym,
+            rootName: arr.rootName,
+            rootMidi: arr.rootMidi,
+            chordType: arr.chordType,
+            notes: arr.notes,
+            quality: arr.quality
+          };
+        }
       }
 
       if (totalBars >= 2) {
@@ -1198,6 +1231,15 @@
 
           if (forceCadenceResolve && !isLastNoteInPhrase && i === activeBlueprint.length - 2 && !useContour) {
             targetMidi = rootMidi + 11;
+          }
+          if (!forceCadenceResolve && isLastNoteInPhrase && !useContour && currentNoteBar < lengthBars - 1) {
+            const zb2 = this._zoneAt(currentNoteBar, ctx.zoneMap);
+            if (zb2 && currentNoteBar === zb2.from + zb2.bars - 1) {
+              const nc = progression[currentNoteBar + 1];
+              if (nc && /^(i|VI)$/.test(nc.symbol || '') && nc.rootMidi != null) {
+                targetMidi = nc.rootMidi - 1;
+              }
+            }
           }
 
           let finalDuration = noteDef.durationSteps;
