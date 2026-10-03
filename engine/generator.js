@@ -2134,10 +2134,26 @@
           }
 
           if (isFillBar) {
-            const fillHits = [stepsPerBar - 4, stepsPerBar - 3, stepsPerBar - 2, stepsPerBar - 1];
-            for (let fi = 0; fi < fillHits.length; fi++) {
-              const f = fillHits[fi];
-              notes.push({ step: barStartStep + f, duration: 1, midi: SNARE, velocity: Math.min(127, 100 + fi * 8 + velocityBoost), pan: 0 });
+            // Fill 3 bien the moi take: snare chay / tom xuong / kick+snare doi dap
+            const fillPat = this._variant(3, Vd);
+            if (fillPat === 1) {
+              const toms = [TOM_HI, TOM_MID, TOM_LOW, TOM_LOW];
+              for (let fi = 0; fi < 4; fi++) {
+                const f = stepsPerBar - 4 + fi;
+                notes.push({ step: barStartStep + f, duration: 1, midi: toms[fi % toms.length], velocity: Math.min(127, 100 + fi * 8 + velocityBoost), pan: 0 });
+              }
+            } else if (fillPat === 2) {
+              const seq = [SNARE, KICK, SNARE, SNARE];
+              for (let fi = 0; fi < 4; fi++) {
+                const f = stepsPerBar - 4 + fi;
+                notes.push({ step: barStartStep + f, duration: 1, midi: seq[fi % seq.length], velocity: Math.min(127, 100 + fi * 8 + velocityBoost), pan: 0 });
+              }
+            } else {
+              const fillHits = [stepsPerBar - 4, stepsPerBar - 3, stepsPerBar - 2, stepsPerBar - 1];
+              for (let fi = 0; fi < fillHits.length; fi++) {
+                const f = fillHits[fi];
+                notes.push({ step: barStartStep + f, duration: 1, midi: SNARE, velocity: Math.min(127, 100 + fi * 8 + velocityBoost), pan: 0 });
+              }
             }
           }
         } else if (genreDef.id === 'synthwave') {
@@ -2182,11 +2198,19 @@
           notes.push({ step: barStartStep, duration: 8, midi: CRASH, velocity: Math.min(127, Math.round(105 * climaxFactor) + velocityBoost), pan: 15 });
         }
         if (((bar + 1) % 8 === 0) && !hasOwnFill && stepsPerBar >= 8) {
+          // Fill tom 2 bien the: xuoi / nguoc + doi dap snare
+          const tomPat = this._variant(2, Vd);
           const toms = [TOM_HI, TOM_MID, TOM_LOW, SNARE];
           for (let f = 0; f < 4; f++) {
             const fs = stepsPerBar - 4 + f;
-            notes.push({ step: barStartStep + fs, duration: 1, midi: toms[f % toms.length], velocity: Math.min(127, 95 + f * 8 + velocityBoost), pan: 0 });
+            const drum = tomPat === 1 ? toms[3 - (f % toms.length)] : toms[f % toms.length];
+            notes.push({ step: barStartStep + fs, duration: 1, midi: drum, velocity: Math.min(127, 95 + f * 8 + velocityBoost), pan: 0 });
           }
+        }
+        // Crash doi khi tre 1 step (pickup crash, tru bar dau tien)
+        if (bar % 8 === 0 && bar !== startBar && this._vChance(0.3, Vd)) {
+          const ci = notes.findIndex(n => n.midi === CRASH && n.step === barStartStep);
+          if (ci >= 0) notes[ci].step += 1;
         }
       }
 

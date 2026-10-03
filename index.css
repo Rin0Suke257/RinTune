@@ -593,6 +593,16 @@ input[type="range"]::-webkit-slider-thumb:hover {
   cursor: crosshair;
 }
 
+/* Timeline Clips Lane */
+.clip-ruler, .clip-row { display: flex; align-items: stretch; gap: 4px; margin-bottom: 3px; }
+.clip-row-label { flex: none; width: 52px; font-size: 0.65rem; color: var(--text-dim); font-weight: 700; display: flex; align-items: center; }
+.clip-row-body { flex: 1; display: flex; gap: 3px; min-width: 0; }
+.clip-tick { font-size: 0.6rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; border-left: 1px solid var(--border-color); padding-left: 2px; }
+.clip-block { border: 1px solid; border-radius: 5px; background: var(--bg-input); font-size: 0.62rem; color: var(--text-main); padding: 3px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; user-select: none; -webkit-user-select: none; min-width: 0; touch-action: pan-y; }
+.clip-block:hover { filter: brightness(1.25); }
+.clip-selected { outline: 2px solid var(--accent-gold); }
+.clip-muted { opacity: 0.35; }
+
 /* Mixer Rack */
 .mixer-rack {
   padding: 8px 12px;

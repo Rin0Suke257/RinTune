@@ -439,6 +439,11 @@
               <span class="control-value" id="valVariation">70%</span>
             </div>
             <input type="range" id="sliderVariation" min="0" max="100" value="70" title="0% = gieo lại gần như giữ nguyên khung, 100% = đảo mạnh mỗi take">
+            <div style="display:flex; gap:6px; margin-top:4px;">
+              <button class="btn-secondary" data-varpreset="20" style="flex:1; padding:3px 0; font-size:0.68rem;" title="Giữ khung, chỉ đổi chi tiết nhỏ">An toàn 20</button>
+              <button class="btn-secondary" data-varpreset="70" style="flex:1; padding:3px 0; font-size:0.68rem;" title="Mặc định">Cân bằng 70</button>
+              <button class="btn-secondary" data-varpreset="100" style="flex:1; padding:3px 0; font-size:0.68rem;" title="Đảo mạnh mỗi take">Điên 100</button>
+            </div>
             <details style="margin-top:4px; font-size:0.7rem; color:var(--text-muted);">
               <summary style="cursor:pointer;">Tỉ lệ từng bè (× với slider tổng)</summary>
               <div style="display:grid; grid-template-columns:1fr auto; gap:2px 8px; align-items:center; margin-top:4px;">
@@ -606,8 +611,35 @@
               <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" class="regen-track" value="bass" checked> Bass</label>
               <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" class="regen-track" value="drums"> Drums</label>
               <button id="btnRegenRegion" class="btn-secondary" style="padding:4px 12px;">🎲 Gieo lại</button>
+              <button id="btnNewTake" class="btn-secondary" style="padding:4px 10px;" title="Gieo take mới vào khay thử, nghe từng take rồi giữ bản ưng nhất">🎬 Take mới</button>
               <button id="btnMotif" class="btn-secondary" style="padding:4px 10px;" title="Lấy nốt lead đã khóa trong 2 bars đầu làm motif, phát triển thành cả bài">🌱 Motif→Bài</button>
               <button id="btnUnlockAll" class="btn-secondary" style="padding:4px 10px;" title="Mở khóa mọi nốt đã soạn tay">🔓 Mở khóa hết</button>
+            </div>
+            <div class="regen-toolbar" id="takeStrip" style="display:none; align-items:center; gap:6px; flex-wrap:wrap; width:100%; padding-top:6px; font-size:0.72rem; color:var(--text-muted);">
+              <span style="font-weight:700; color:var(--accent-gold);">🎬 KHAY TAKE:</span>
+              <span id="takeButtons" style="display:flex; gap:6px; flex-wrap:wrap;"></span>
+              <button id="btnKeepTake" class="btn-secondary" style="padding:4px 10px;" title="Giữ take đang nghe, đóng khay">📌 Giữ bản này</button>
+              <button id="btnRevertTake" class="btn-secondary" style="padding:4px 10px;" title="Trả về bản trước khi thử take">↩ Bản gốc</button>
+            </div>
+            <div id="timelinePanel" style="width:100%; padding-top:6px; font-size:0.72rem; color:var(--text-muted);">
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <button id="btnTimelineToggle" class="btn-secondary" style="padding:2px 8px;" title="Thu/mở lane clips">▼</button>
+                <span style="font-weight:700; color:var(--accent-cyan);">🎬 TIMELINE CLIPS</span>
+                <span id="clipInfo"></span>
+                <span style="flex:1;"></span>
+                <label style="display:flex; align-items:center; gap:4px;">Tách tại bar
+                  <input type="number" id="inputClipSplit" min="1" value="5" style="width:52px; padding:4px 6px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--accent-cyan); font-weight:bold; border-radius:4px; text-align:center;">
+                </label>
+                <button id="btnClipSplit" class="btn-secondary" style="padding:4px 10px;" title="Tách clip đang chứa bar này thành 2 (cắt cứng)">✂ Tách</button>
+                <button id="btnClipDup" class="btn-secondary" style="padding:4px 10px;" title="Nhân đôi clip đang chọn ngay sau nó">⧉ Nhân đôi</button>
+                <button id="btnClipDel" class="btn-secondary" style="padding:4px 10px;" title="Xóa clip đang chọn, các clip sau dồn lên">🗑 Xóa</button>
+                <button id="btnClipLeft" class="btn-secondary" style="padding:4px 8px;" title="Dời clip lên trước">◀</button>
+                <button id="btnClipRight" class="btn-secondary" style="padding:4px 8px;" title="Dời clip xuống sau">▶</button>
+                <button id="btnClipMute" class="btn-secondary" style="padding:4px 10px;" title="Tắt/mở tiếng clip (nốt giữ lại)">🔇 Mute</button>
+                <button id="btnClipRename" class="btn-secondary" style="padding:4px 10px;" title="Đổi tên clip">✏ Tên</button>
+              </div>
+              <div id="clipLanes" style="margin-top:4px;"></div>
+              <div style="font-size:0.65rem; color:var(--text-dim); margin-top:2px;">💡 Bấm chọn clip • kéo ngang để dời • đúp để đặt vùng gieo lại = clip đó • soạn nốt vẫn làm ở piano roll bên dưới</div>
             </div>
           </div>
           <div class="pianoroll-canvas-container" id="canvasContainer">

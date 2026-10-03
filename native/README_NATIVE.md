@@ -52,6 +52,13 @@ Copy ca thu muc `out\RMG` la chay duoc (portable, khong can cai dat).
   tram, epic quarter pulse, cyberpunk chromatic, anime 8th nay + fill; bass tuong ung
   (rolling/pedal/chay 8th/doom-pop...).
 - Arranger 1-click (Pop/Gon/Epic) sinh tung doan roi noi thanh bai 40/32/36 bars.
+- **Timeline clips**: bai la chuoi clips noi tiep (Intro/Verse/Chorus...), lane 5 be
+  keo-tha doi vi tri, tach/nhan doi/xoa/mute/doi ten, dup clip = dat vung gieo lai;
+  tracks phang flatten tu clips (phat/xuat khong doi), tuong thich bai cu.
+- **Khay take (audition)**: gieo toi 4 takes, nghe tung take, giu ban ung hoac
+  tra ve ban goc (1 undo cho ca phien).
+- **Variation**: slider tong 0-100% + ti le tung be + preset An toan 20/Can bang 70/
+  Dien 100; chords/arp/bass/drums gieo lai khac that (fill trong 3 bien the).
 - Mo file MIDI (.mid) sua tiep: parser rieng (tempo/timeSig/kenh nhac cu),
   key/scale theo thiet lap, tu dung vong hop am tu bass.
 - Dan bang phim may tinh (Z-M/Q-U, <-/-> doi quang) + nut REC ghi not khi phat.

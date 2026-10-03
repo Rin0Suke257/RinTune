@@ -1,5 +1,16 @@
 # RMG Changelog
 
+## Unreleased - Timeline Clips + Takes + Fill
+- Timeline clips: bài là chuỗi clips nối tiếp (Intro/Verse/Chorus...),
+  lane 5 bè kéo-thả dời clip, tách/nhân đôi/xóa/mute/đổi tên, đúp clip =
+  đặt vùng gieo lại; soạn nốt vẫn ở piano roll (tracks phẳng flatten từ
+  clips, phát nhạc/xuất không đổi)
+- Arranger 1-click và ghép lịch sử xuất ra clips giữ cấu trúc đoạn
+- Khay take (audition): gieo tới 4 takes, nghe từng take, giữ bản ưng
+  hoặc trả về bản gốc (1 undo duy nhất cho cả phiên)
+- Fill trống 3 biến thể (snare/tom/kick+snare) + crash đôi khi trễ 1 step
+- Preset variation 1 chạm: An toàn 20 / Cân bằng 70 / Điên 100
+
 ## Unreleased - Variation (Biến tấu)
 - Gieo lại vùng/take dice giờ khác nhau thật: chords (đảo inversion +
   rhythm + tension 9th + chiều strum), arp (dịch octave giữ pitch-class +

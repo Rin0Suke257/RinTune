@@ -565,6 +565,7 @@
       showToast('⚠️ Chưa có bài nhạc nào để gieo lại! Hãy bấm Generate trước.');
       return;
     }
+    endTakeSession(true); // gieo tay ngoai khay -> dong khay take cu
     if (push) pushUndo('gieo vùng');
     if (!trackKeys || trackKeys.length === 0) {
       showToast('⚠️ Hãy chọn ít nhất 1 bè để gieo lại!');
@@ -586,6 +587,498 @@
     renderHistory();
     scheduleAutosave();
     showToast(`🎲 Đã gieo lại bars ${result.fromBar + 1}–${result.toBar + 1} (${trackKeys.join(', ').toUpperCase()}): +${added} nốt mới, thay ${removed} nốt cũ, nốt 🔒 giữ nguyên`);
+  }
+
+  // Khay take (audition): gieo nhieu take, nghe tung take, giu ban ung
+  let takeSession = null; // {from,to,tracks,takes:[{id,label,notes}],appliedId,preSong}
+  let takeCounter = 0;
+
+  function sameScope(a, b) {
+    return a && b && a.from === b.from && a.to === b.to &&
+      (a.tracks || []).join(',') === (b.tracks || []).join(',');
+  }
+
+  function renderTakeStrip() {
+    const strip = document.getElementById('takeStrip');
+    const box = document.getElementById('takeButtons');
+    if (!strip || !box) return;
+    if (!takeSession || !takeSession.takes.length) {
+      strip.style.display = 'none';
+      box.innerHTML = '';
+      return;
+    }
+    strip.style.display = 'flex';
+    box.innerHTML = '';
+    for (const t of takeSession.takes) {
+      const b = document.createElement('button');
+      b.className = 'btn-secondary';
+      b.style.padding = '4px 10px';
+      b.style.borderColor = (t.id === takeSession.appliedId) ? 'var(--accent-gold)' : '';
+      b.style.color = (t.id === takeSession.appliedId) ? 'var(--accent-gold)' : '';
+      b.textContent = (t.id === takeSession.appliedId ? '▶ ' : '') + t.label;
+      b.title = 'Nghe take này';
+      b.addEventListener('click', () => applyTake(t.id));
+      box.appendChild(b);
+    }
+  }
+
+  function refreshSongUI() {
+    Synth.loadSong(state.currentSong);
+    updateHeaderBadges();
+    renderPianoRoll(Synth.currentStep || 0);
+    renderTimelineLane();
+    renderHistory();
+    scheduleAutosave();
+  }
+
+  function newTake() {
+    if (!state.currentSong) {
+      showToast('⚠️ Chưa có bài nhạc nào! Hãy bấm Generate trước.');
+      return;
+    }
+    const totalBars = state.currentSong.metadata.lengthBars;
+    const from = Math.max(0, Math.min(totalBars - 1, (parseInt(inputRegenFrom.value, 10) || 1) - 1));
+    const to = Math.max(from, Math.min(totalBars - 1, (parseInt(inputRegenTo.value, 10) || 1) - 1));
+    const tracks = getCheckedRegenTracks();
+    if (!tracks.length) {
+      showToast('⚠️ Hãy chọn ít nhất 1 bè để gieo take!');
+      return;
+    }
+    const scope = { from, to, tracks };
+    if (!takeSession || !sameScope(takeSession, scope)) {
+      // Doi vung/be -> mo phien moi (giu undo 1 lan duy nhat)
+      takeSession = { from, to, tracks, takes: [], appliedId: null, preSong: cloneSong(state.currentSong) };
+      pushUndo('thử take');
+      takeCounter = 0;
+    }
+    const gen = generatorFromSong(state.currentSong);
+    const result = gen.regenerateRegion(state.currentSong, { fromBar: from, toBar: to, tracks });
+    takeCounter++;
+    const take = {
+      id: 'take_' + Date.now() + '_' + takeCounter,
+      label: `Take ${takeCounter} • ${state.variation}%`,
+      result: { fromBar: result.fromBar, toBar: result.toBar, notes: result.notes }
+    };
+    takeSession.takes.push(take);
+    if (takeSession.takes.length > 4) takeSession.takes.shift(); // giu toi da 4 take
+    applyTake(take.id, true);
+    showToast(`🎬 Đã gieo ${take.label} (bars ${from + 1}–${to + 1}): bấm tên take để nghe lại, 📌 để giữ`);
+  }
+
+  function applyTake(id, silent) {
+    if (!takeSession) return;
+    const take = takeSession.takes.find(t => t.id === id);
+    if (!take) return;
+    takeSession.appliedId = id;
+    spliceRegenResult(state.currentSong, take.result);
+    refreshSongUI();
+    renderTakeStrip();
+    if (!silent) showToast(`▶ Đang nghe ${take.label}`);
+  }
+
+  function endTakeSession(silent) {
+    if (!takeSession) return;
+    takeSession = null;
+    renderTakeStrip();
+    if (!silent) showToast('📌 Đã giữ take đang nghe — khay take đã đóng');
+  }
+
+  function revertTakeSession() {
+    if (!takeSession) return;
+    state.currentSong = cloneSong(takeSession.preSong);
+    takeSession = null;
+    renderTakeStrip();
+    refreshSongUI();
+    showToast('↩ Đã trả về bản gốc trước khi thử take');
+  }
+
+  // TIMELINE CLIPS: bai = chuoi clips noi tiep (ten + do dai + not cuc bo).
+  // tracks phẳng la cache flatten tu clips (phat nhac/xuat dung ban phang).
+  const TRACK_KEYS = ['lead', 'chords', 'arp', 'bass', 'drums'];
+  const TRACK_COLORS = { lead: '#00f2fe', chords: '#9b51e0', arp: '#4facfe', bass: '#f39c12', drums: '#e74c3c' };
+  const SECTION_VN = { intro: 'Intro', verse: 'Verse', chorus: 'Chorus', bridge: 'Bridge', outro: 'Outro', merged: 'Đoạn', none: 'Đoạn' };
+  let selectedClipId = null;
+
+  function clipId() {
+    return 'clip_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 10000);
+  }
+
+  function blankClipNotes() {
+    return { lead: [], chords: [], arp: [], bass: [], drums: [] };
+  }
+
+  function clipNoteCount(c) {
+    return TRACK_KEYS.reduce((a, k) => a + ((c.notes && c.notes[k]) ? c.notes[k].length : 0), 0);
+  }
+
+  function layoutClips(song) {
+    let bar = 0;
+    for (const c of song.clips) {
+      c.startBar = bar;
+      bar += c.lengthBars;
+    }
+    if (song.metadata) song.metadata.lengthBars = bar;
+    return bar;
+  }
+
+  // Bai cu / bai ngoai (flat) -> 1 clip duy nhat, giu nguyen not
+  function ensureClips(song, fallbackName) {
+    if (!song) return song;
+    if (!Array.isArray(song.clips) || !song.clips.length) {
+      const notes = blankClipNotes();
+      for (const k of TRACK_KEYS) {
+        const t = song.tracks && song.tracks[k];
+        notes[k] = (t && t.notes ? t.notes.map(n => Object.assign({}, n)) : []);
+      }
+      song.clips = [{
+        id: clipId(), name: fallbackName || 'Bài',
+        lengthBars: (song.metadata && song.metadata.lengthBars) || 8,
+        muted: false, notes
+      }];
+    } else {
+      for (const c of song.clips) {
+        if (!c.id) c.id = clipId();
+        if (!c.name) c.name = 'Đoạn';
+        c.lengthBars = Math.max(1, c.lengthBars | 0 || 1);
+        c.muted = !!c.muted;
+        if (!c.notes) c.notes = blankClipNotes();
+        for (const k of TRACK_KEYS) if (!Array.isArray(c.notes[k])) c.notes[k] = [];
+      }
+    }
+    layoutClips(song);
+    return song;
+  }
+
+  // Don clips -> tracks phang (bo qua clip muted). Phat nhac + xuat dung ban nay.
+  function flattenTimeline(song) {
+    ensureClips(song);
+    layoutClips(song);
+    const spb = (song.metadata && song.metadata.stepsPerBar) || 16;
+    for (const k of TRACK_KEYS) {
+      if (song.tracks[k]) song.tracks[k].notes = [];
+    }
+    let stepBase = 0;
+    for (const c of song.clips) {
+      if (!c.muted) {
+        for (const k of TRACK_KEYS) {
+          const t = song.tracks[k];
+          if (!t) continue;
+          for (const n of (c.notes[k] || [])) {
+            t.notes.push(Object.assign({}, n, { step: n.step + stepBase }));
+          }
+        }
+      }
+      stepBase += c.lengthBars * spb;
+    }
+    for (const k of TRACK_KEYS) {
+      const t = song.tracks[k];
+      if (t && t.notes) t.notes.sort((a, b) => a.step - b.step);
+    }
+    if (song.metadata) {
+      song.metadata.noteCount = TRACK_KEYS.reduce((a, k) => a + ((song.tracks[k] && song.tracks[k].notes) ? song.tracks[k].notes.length : 0), 0);
+    }
+    return song;
+  }
+
+  // Day not phang ve clips (sau khi soan not / gieo vung / undo). Clip muted giu nguyen.
+  // Not roi ra ngoai -> noi clip cuoi dai ra (khong mat not).
+  function syncClipsFromFlat(song) {
+    ensureClips(song);
+    layoutClips(song);
+    const spb = (song.metadata && song.metadata.stepsPerBar) || 16;
+    for (const c of song.clips) {
+      if (c.muted) continue;
+      const s0 = c.startBar * spb;
+      const s1 = s0 + c.lengthBars * spb;
+      for (const k of TRACK_KEYS) {
+        const t = song.tracks[k];
+        const arr = [];
+        if (t && t.notes) {
+          for (const n of t.notes) {
+            if (n.step >= s0 && n.step < s1) arr.push(Object.assign({}, n, { step: n.step - s0 }));
+          }
+        }
+        arr.sort((a, b) => a.step - b.step);
+        c.notes[k] = arr;
+      }
+    }
+    let maxStep = -1;
+    for (const k of TRACK_KEYS) {
+      const t = song.tracks[k];
+      if (t && t.notes) for (const n of t.notes) if (n.step > maxStep) maxStep = n.step;
+    }
+    const total = song.clips.reduce((a, c) => a + c.lengthBars, 0) * spb;
+    if (maxStep >= total) {
+      const last = [...song.clips].reverse().find(c => !c.muted);
+      if (last) {
+        last.lengthBars += Math.ceil((maxStep + 1 - total) / spb);
+        layoutClips(song);
+        return syncClipsFromFlat(song);
+      }
+    }
+    return song;
+  }
+
+  // Cat bai phang thanh clips theo tung doan (arranger / ghep lich su)
+  function sliceFlatToClips(song, sections) {    const spb = (song.metadata && song.metadata.stepsPerBar) || 16;
+    song.clips = [];
+    let s0 = 0;
+    for (const s of sections) {
+      const bars = Math.max(1, s.bars | 0 || 1);
+      const c = { id: clipId(), name: s.name || 'Đoạn', lengthBars: bars, muted: false, notes: blankClipNotes() };
+      const s1 = s0 + bars * spb;
+      for (const k of TRACK_KEYS) {
+        const t = song.tracks[k];
+        const arr = [];
+        if (t && t.notes) {
+          for (const n of t.notes) {
+            if (n.step >= s0 && n.step < s1) arr.push(Object.assign({}, n, { step: n.step - s0 }));
+          }
+        }
+        c.notes[k] = arr;
+      }
+      song.clips.push(c);
+      s0 = s1;
+    }
+    layoutClips(song);
+    return syncClipsFromFlat(song); // gom not le (final hit...) vao clip cuoi
+  }
+
+  function selectedClip() {
+    const song = state.currentSong;
+    if (!song || !song.clips) return null;
+    return song.clips.find(c => c.id === selectedClipId) || null;
+  }
+
+  // Moi thao tac clips: dong bo not phang ve -> sua clips -> don phang lai
+  function timelineOp(label, fn) {
+    const song = state.currentSong;
+    if (!song) {
+      showToast('⚠️ Chưa có bài nhạc nào! Hãy bấm Generate trước.');
+      return;
+    }
+    endTakeSession(true);
+    pushUndo(label);
+    syncClipsFromFlat(song);
+    const msg = fn(song);
+    flattenTimeline(song);
+    state.lengthBars = song.metadata.lengthBars;
+    refreshSongUI();
+    renderTimelineLane();
+    if (msg) showToast(msg, 4000);
+  }
+
+  function splitSelectedClip() {
+    const input = document.getElementById('inputClipSplit');
+    const bar1 = Math.max(1, parseInt((input && input.value) || '1', 10) || 1);
+    timelineOp('tách clip', (song) => {
+      const spb = song.metadata.stepsPerBar || 16;
+      const b = bar1 - 1;
+      const idx = song.clips.findIndex(c => b >= c.startBar && b < c.startBar + c.lengthBars);
+      if (idx < 0) return `⚠️ Bar ${bar1} nằm ngoài bài (${song.metadata.lengthBars} bars)`;
+      const c = song.clips[idx];
+      if (b === c.startBar) return `⚠️ Bar ${bar1} đã là biên clip "${c.name}" rồi`;
+      const cutLocal = (b - c.startBar) * spb;
+      const left = { id: clipId(), name: c.name, lengthBars: b - c.startBar, muted: c.muted, notes: blankClipNotes() };
+      const right = { id: clipId(), name: c.name + ' (2)', lengthBars: c.startBar + c.lengthBars - b, muted: c.muted, notes: blankClipNotes() };
+      for (const k of TRACK_KEYS) {
+        for (const n of (c.notes[k] || [])) {
+          if (n.step < cutLocal) {
+            // Not lan qua bien -> cat cung duration (khong legato qua bien)
+            const cp = Object.assign({}, n);
+            if (cp.step + (cp.duration || 1) > cutLocal) cp.duration = Math.max(1, cutLocal - cp.step);
+            left.notes[k].push(cp);
+          } else {
+            right.notes[k].push(Object.assign({}, n, { step: n.step - cutLocal }));
+          }
+        }
+      }
+      song.clips.splice(idx, 1, left, right);
+      selectedClipId = right.id;
+      return `✂ Đã tách "${c.name}" tại bar ${bar1} → "${left.name}" + "${right.name}"`;
+    });
+  }
+
+  function duplicateSelectedClip() {
+    timelineOp('nhân đôi clip', (song) => {
+      const c = selectedClip();
+      if (!c) return '⚠️ Hãy bấm chọn 1 clip trên lane trước';
+      const idx = song.clips.indexOf(c);
+      const copy = {
+        id: clipId(), name: c.name + ' (copy)', lengthBars: c.lengthBars,
+        muted: false, notes: blankClipNotes()
+      };
+      for (const k of TRACK_KEYS) copy.notes[k] = (c.notes[k] || []).map(n => Object.assign({}, n));
+      song.clips.splice(idx + 1, 0, copy);
+      selectedClipId = copy.id;
+      return `⧉ Đã nhân đôi "${c.name}" (${copy.lengthBars} bars) ngay sau nó`;
+    });
+  }
+
+  function deleteSelectedClip() {
+    timelineOp('xóa clip', (song) => {
+      if (song.clips.length <= 1) return '⚠️ Bài chỉ còn 1 clip — không xóa được (hãy gieo bài mới)';
+      const c = selectedClip();
+      if (!c) return '⚠️ Hãy bấm chọn 1 clip trên lane trước';
+      const idx = song.clips.indexOf(c);
+      song.clips.splice(idx, 1);
+      const next = song.clips[Math.min(idx, song.clips.length - 1)];
+      selectedClipId = next ? next.id : null;
+      return `🗑 Đã xóa "${c.name}" — các clip sau dồn lên`;
+    });
+  }
+
+  function moveSelectedClip(dir) {
+    timelineOp('dời clip', (song) => {
+      const c = selectedClip();
+      if (!c) return '⚠️ Hãy bấm chọn 1 clip trên lane trước';
+      const idx = song.clips.indexOf(c);
+      const j = idx + dir;
+      if (j < 0 || j >= song.clips.length) return '⚠️ Clip đã ở đầu/cuối rồi';
+      song.clips.splice(idx, 1);
+      song.clips.splice(j, 0, c);
+      return `↔ Đã dời "${c.name}" ${dir < 0 ? 'lên trước' : 'xuống sau'}`;
+    });
+  }
+
+  function toggleMuteSelectedClip() {
+    timelineOp('mute clip', (song) => {
+      const c = selectedClip();
+      if (!c) return '⚠️ Hãy bấm chọn 1 clip trên lane trước';
+      c.muted = !c.muted;
+      return c.muted ? `🔇 Đã mute "${c.name}" (nốt giữ lại, không phát)` : `🔊 Đã mở tiếng "${c.name}"`;
+    });
+  }
+
+  function renameSelectedClip() {    const c = selectedClip();
+    if (!c) {
+      showToast('⚠️ Hãy bấm chọn 1 clip trên lane trước');
+      return;
+    }
+    const name = prompt('Tên clip:', c.name);
+    if (name == null) return;
+    const clean = String(name).trim().slice(0, 40) || c.name;
+    pushUndo('đổi tên clip');
+    syncClipsFromFlat(state.currentSong);
+    c.name = clean;
+    renderTimelineLane();
+    scheduleAutosave();
+    showToast(`✏ Clip giờ tên "${clean}"`);
+  }
+
+  // Ve lane clips (DOM): 5 hang be x truc bars. Keo ngang = doi vi tri clip.
+  function renderTimelineLane() {
+    const lanes = document.getElementById('clipLanes');
+    const info = document.getElementById('clipInfo');
+    if (!lanes) return;
+    const song = state.currentSong;
+    if (!song) {
+      lanes.innerHTML = '';
+      if (info) info.textContent = '';
+      return;
+    }
+    syncClipsFromFlat(song);
+    if (!selectedClipId || !song.clips.some(c => c.id === selectedClipId)) {
+      selectedClipId = song.clips.length ? song.clips[0].id : null;
+    }
+    const total = song.clips.reduce((a, c) => a + c.lengthBars, 0) || 1;
+    if (info) {
+      const sel = selectedClip();
+      info.textContent = `${song.clips.length} clips • ${total} bars` +
+        (sel ? ` • chọn: "${sel.name}" (${sel.lengthBars} bars, ${clipNoteCount(sel)} nốt${sel.muted ? ', muted' : ''})` : '');
+    }
+    lanes.innerHTML = '';
+    const ruler = document.createElement('div');
+    ruler.className = 'clip-ruler';
+    const spacer = document.createElement('div');
+    spacer.className = 'clip-row-label';
+    ruler.appendChild(spacer);
+    const ticks = document.createElement('div');
+    ticks.className = 'clip-row-body';
+    for (let b = 0; b < total; b++) {
+      const t = document.createElement('div');
+      t.className = 'clip-tick';
+      t.style.width = (100 / total) + '%';
+      if (b % 4 === 0) t.textContent = 'B' + (b + 1);
+      ticks.appendChild(t);
+    }
+    ruler.appendChild(ticks);
+    lanes.appendChild(ruler);
+    const names = { lead: 'Lead', chords: 'Chords', arp: 'Arp', bass: 'Bass', drums: 'Drums' };
+    for (const k of TRACK_KEYS) {
+      const row = document.createElement('div');
+      row.className = 'clip-row';
+      const lab = document.createElement('div');
+      lab.className = 'clip-row-label';
+      lab.textContent = names[k];
+      row.appendChild(lab);
+      const body = document.createElement('div');
+      body.className = 'clip-row-body';
+      for (const c of song.clips) {
+        const n = (c.notes[k] || []).length;
+        const d = document.createElement('div');
+        d.className = 'clip-block' + (c.id === selectedClipId ? ' clip-selected' : '') + (c.muted ? ' clip-muted' : '');
+        d.style.width = (c.lengthBars / total * 100) + '%';
+        d.style.borderColor = TRACK_COLORS[k];
+        d.textContent = c.name + (n ? ` (${n})` : '');
+        d.title = `"${c.name}" • bars ${c.startBar + 1}–${c.startBar + c.lengthBars} • ${clipNoteCount(c)} nốt • đúp: đặt vùng gieo lại`;
+        d.addEventListener('click', () => {
+          selectedClipId = c.id;
+          renderTimelineLane();
+        });
+        d.addEventListener('dblclick', () => {
+          selectedClipId = c.id;
+          if (inputRegenFrom) inputRegenFrom.value = c.startBar + 1;
+          if (inputRegenTo) inputRegenTo.value = c.startBar + c.lengthBars;
+          renderTimelineLane();
+          showToast(`🎯 Vùng gieo lại = clip "${c.name}" (bars ${c.startBar + 1}–${c.startBar + c.lengthBars})`);
+        });
+        enableClipDrag(d, c, body);
+        body.appendChild(d);
+      }
+      row.appendChild(body);
+      lanes.appendChild(row);
+    }
+  }
+
+  function enableClipDrag(el, clip, rowBody) {
+    let sx = 0, dragging = false;
+    el.addEventListener('pointerdown', (e) => {
+      sx = e.clientX;
+      dragging = false;
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (sx && Math.abs(e.clientX - sx) > 8) dragging = true;
+    });
+    el.addEventListener('pointerup', (e) => {
+      const moved = dragging;
+      sx = 0;
+      dragging = false;
+      if (!moved) return;
+      const song = state.currentSong;
+      if (!song || !song.clips) return;
+      const rect = rowBody.getBoundingClientRect();
+      const total = song.clips.reduce((a, c) => a + c.lengthBars, 0) || 1;
+      const targetBar = Math.max(0, Math.min(total - 1, Math.floor((e.clientX - rect.left) / Math.max(1, rect.width) * total)));
+      const fromIdx = song.clips.findIndex(c => c.id === clip.id);
+      selectedClipId = clip.id;
+      timelineOp('dời clip', (sg) => {
+        const cur = sg.clips.findIndex(c => c.id === clip.id);
+        if (cur < 0) return null;
+        const [mv] = sg.clips.splice(cur, 1);
+        let ti = sg.clips.findIndex(c => targetBar >= c.startBar && targetBar < c.startBar + c.lengthBars);
+        if (ti < 0) sg.clips.push(mv);
+        else {
+          // Tha vao nua sau clip dich -> chen sau no
+          const cc = sg.clips[ti];
+          if (targetBar >= cc.startBar + Math.ceil(cc.lengthBars / 2)) ti++;
+          sg.clips.splice(ti, 0, mv);
+        }
+        if (fromIdx === sg.clips.indexOf(mv)) return null;
+        return `↔ Đã dời "${clip.name}" tới quanh bar ${targetBar + 1}`;
+      });
+    });
   }
 
   /**
@@ -625,6 +1118,7 @@
     Synth.loadSong(song);
     updateHeaderBadges();
     renderPianoRoll(Synth.currentStep || 0);
+    renderTimelineLane();
     renderHistory();
     scheduleAutosave();
     showToast(`🌱 Đã phát triển motif (${motif.length} nốt gốc) thành lead ${totalBars} bars: +${added} nốt mới`, 4500);
@@ -815,12 +1309,15 @@
       state.section = 'none';
       state.currentSong = song;
       stampBaseVel(song);
+      ensureClips(song, 'MIDI nhập');
+      selectedClipId = null;
       closeProgEditor();
       syncControlsFromState();
       Synth.loadSong(song);
       updateHeaderBadges();
       updateProgressionUI(song.progression);
       renderPianoRoll(0);
+      renderTimelineLane();
       pushToHistory(song);
       showToast(`📂 Đã mở ${name}: ${song.metadata.lengthBars} bars, ${song.metadata.bpm} BPM [${song.metadata.timeSignature}], ${song.metadata.noteCount} nốt (key/scale theo thiết lập: ${song.metadata.key}/${song.metadata.scale})`, 5000);
     } catch (err) {
@@ -1003,6 +1500,7 @@
   }
 
   function snapshotState() {
+    if (state.currentSong) syncClipsFromFlat(state.currentSong);
     return {
       song: state.currentSong ? cloneSong(state.currentSong) : null,
       ui: {
@@ -1053,6 +1551,7 @@
     updateHeaderBadges();
     updateProgressionUI(state.currentSong.progression);
     renderPianoRoll(0);
+    renderTimelineLane();
     renderHistory();
     updateUndoButtons();
     if (wasPlaying) {
@@ -2058,10 +2557,13 @@
     });
     state.currentSong = gen.generate();
     stampBaseVel(state.currentSong);
+    ensureClips(state.currentSong, 'Bài');
+    selectedClipId = null;
     Synth.loadSong(state.currentSong);
     updateHeaderBadges();
     updateProgressionUI(state.currentSong.progression);
     renderPianoRoll(0);
+    renderTimelineLane();
     renderHistory();
     pushToHistory(state.currentSong);
     if (wasPlaying) {
@@ -2106,6 +2608,7 @@
 
   function projectPayload() {
     if (!state.currentSong) return null;
+    syncClipsFromFlat(state.currentSong); // luu clips dong bo voi not phang
     return {
       app: 'RMG', v: 1, savedAt: Date.now(),
       ui: {
@@ -2189,12 +2692,15 @@
       state.fadeOutBars = ui.fadeOutBars || 0;
       state.currentSong = song;
       stampBaseVel(song);
+      ensureClips(song);
+      selectedClipId = null;
       closeProgEditor();
       syncControlsFromState();
       Synth.loadSong(song);
       updateHeaderBadges();
       updateProgressionUI(song.progression);
       renderPianoRoll(0);
+      renderTimelineLane();
       renderHistory();
       lastProjectName = String(name || '').split(/[\\/]/).pop() || null;
       showToast(`📂 Đã mở project: ${lastProjectName || name}`, 4000);
@@ -2451,6 +2957,7 @@
   function generateNewSong(addToHistory = true) {
     const wasPlaying = Synth.isPlaying;
     if (wasPlaying) Synth.stop();
+    endTakeSession(true); // bai moi -> bo khay take cu
     pushUndo('tạo bài');
 
     const safeBars = Math.max(1, Math.min(256, parseInt(state.lengthBars, 10) || 8));
@@ -2484,11 +2991,14 @@
 
     state.currentSong = gen.generate();
     stampBaseVel(state.currentSong);
+    ensureClips(state.currentSong, 'Bài');
+    selectedClipId = null;
     Synth.loadSong(state.currentSong);
 
     updateHeaderBadges();
     updateProgressionUI(state.currentSong.progression);
     renderPianoRoll();
+    renderTimelineLane();
 
     if (addToHistory) {
       pushToHistory(state.currentSong);
@@ -2721,10 +3231,13 @@
 
   function loadHistoryItem(item, quiet = false) {
     if (!quiet) pushUndo('tải lại');
+    endTakeSession(true); // doi bai -> bo khay take cu
     // Genre custom co the da bi xoa -> fallback
     if (!Theory.GENRES[item.genre]) item.genre = 'touhou';
     state.currentSong = item.songData;
     stampBaseVel(state.currentSong);
+    ensureClips(state.currentSong);
+    selectedClipId = null;
     state.genre = item.genre;
     state.key = item.key;
     state.scale = item.scale;
@@ -2786,6 +3299,7 @@
     updateHeaderBadges();
     updateProgressionUI(state.currentSong.progression);
     renderPianoRoll();
+    renderTimelineLane();
     if (quiet) return;
     Synth.play();
     updatePlayButtonUI(true);
@@ -2934,9 +3448,14 @@
     };
 
     Generator.MusicGenerator.prototype.arrangeFinal(mergedSong, { finalHit: state.finalHit });
+    // Moi phan doan lich su thanh 1 clip tren timeline
+    sliceFlatToClips(mergedSong, itemsToMerge.map(it => ({
+      name: String((it.customTitle || it.title || it.section || 'Đoạn')).replace(/^RMG_/, '').slice(0, 24),
+      bars: (it.songData.metadata && it.songData.metadata.lengthBars) || 8
+    })));
+    selectedClipId = null;
 
-    state.currentSong = mergedSong;
-    state.lengthBars = totalBars;
+    state.currentSong = mergedSong;    state.lengthBars = totalBars;
     state.section = 'merged';
     selectSection.value = 'merged';
     if (inputCustomBars) inputCustomBars.value = totalBars;
@@ -2947,6 +3466,7 @@
     updateHeaderBadges();
     updateProgressionUI(st.progression);
     renderPianoRoll();
+    renderTimelineLane();
     pushToHistory(mergedSong);
     Synth.play();
     updatePlayButtonUI(true);
@@ -3114,10 +3634,13 @@
     closeProgEditor();
     selectedNotes.clear();
     stampBaseVel(song);
+    ensureClips(song, 'Bài trống');
+    selectedClipId = null;
     Synth.loadSong(song);
     updateHeaderBadges();
     updateProgressionUI(progression);
     renderPianoRoll(0);
+    renderTimelineLane();
     pushToHistory(song);
     showToast(`📄 Bài trống ${bars} bars — soạn tay/đàn phím/REC, rồi Trích Style khi ưng!`, 4500);
   }
@@ -3244,6 +3767,12 @@
     Generator.MusicGenerator.prototype.arrangeFinal(song, { finalHit: state.finalHit });
     applyPartTextures(song, parts);
     stampBaseVel(song);
+    // Giu cau truc doan duoi dang clips tren timeline
+    sliceFlatToClips(song, parts.map(p => ({
+      name: (SECTION_VN[p.section] || p.section || 'Đoạn') + (p.texture && p.texture !== 'tutti' ? ` [${p.texture}]` : ''),
+      bars: p.bars
+    })));
+    selectedClipId = null;
 
     state.currentSong = song;
     state.lengthBars = totalBars;
@@ -3258,6 +3787,7 @@
     updateHeaderBadges();
     updateProgressionUI(st.progression);
     renderPianoRoll();
+    renderTimelineLane();
     pushToHistory(song);
     if (wasPlaying) {
       Synth.play();
@@ -3535,6 +4065,15 @@
       });
       s.addEventListener('change', () => generateNewSong());
     }
+    // Preset variation 1 cham
+    document.querySelectorAll('[data-varpreset]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.variation = parseInt(btn.dataset.varpreset, 10);
+        syncVariationControls();
+        generateNewSong();
+        showToast(`🎲 Variation ${state.variation}% — bài mới đã gieo theo độ biến tấu này`);
+      });
+    });
 
     // Swing Slider (khong gieo lai - chi groove phat + xuat)
     if (sliderSwing) {
@@ -3583,6 +4122,38 @@
       inputRegenTo.value = to;
       applyRegenToSong(from - 1, to - 1, getCheckedRegenTracks());
     });
+
+    // Khay take (audition)
+    const btnNewTake = document.getElementById('btnNewTake');
+    const btnKeepTake = document.getElementById('btnKeepTake');
+    const btnRevertTake = document.getElementById('btnRevertTake');
+    if (btnNewTake) btnNewTake.addEventListener('click', newTake);
+    if (btnKeepTake) btnKeepTake.addEventListener('click', () => endTakeSession(false));
+    if (btnRevertTake) btnRevertTake.addEventListener('click', revertTakeSession);
+
+    // Timeline clips
+    const btnTimelineToggle = document.getElementById('btnTimelineToggle');
+    if (btnTimelineToggle) btnTimelineToggle.addEventListener('click', () => {
+      const lanes = document.getElementById('clipLanes');
+      if (!lanes) return;
+      const hidden = lanes.style.display === 'none';
+      lanes.style.display = hidden ? '' : 'none';
+      btnTimelineToggle.textContent = hidden ? '▼' : '▲';
+    });
+    const btnClipSplit = document.getElementById('btnClipSplit');
+    const btnClipDup = document.getElementById('btnClipDup');
+    const btnClipDel = document.getElementById('btnClipDel');
+    const btnClipLeft = document.getElementById('btnClipLeft');
+    const btnClipRight = document.getElementById('btnClipRight');
+    const btnClipMute = document.getElementById('btnClipMute');
+    const btnClipRename = document.getElementById('btnClipRename');
+    if (btnClipSplit) btnClipSplit.addEventListener('click', splitSelectedClip);
+    if (btnClipDup) btnClipDup.addEventListener('click', duplicateSelectedClip);
+    if (btnClipDel) btnClipDel.addEventListener('click', deleteSelectedClip);
+    if (btnClipLeft) btnClipLeft.addEventListener('click', () => moveSelectedClip(-1));
+    if (btnClipRight) btnClipRight.addEventListener('click', () => moveSelectedClip(1));
+    if (btnClipMute) btnClipMute.addEventListener('click', toggleMuteSelectedClip);
+    if (btnClipRename) btnClipRename.addEventListener('click', renameSelectedClip);
 
     // Arranger 1-click
     if (selectArrangerForm) {
@@ -5152,12 +5723,26 @@
     requestAnimationFrame(draw);
   }
 
+  // Hook kiem thu headless (app local, khong anh huong nguoi dung)
+  window.RMGTest = {
+    state,
+    effectiveVariation, generateNewSong, arrangeSong,
+    newTake, applyTake, endTakeSession, revertTakeSession,
+    getTakeSession: () => takeSession,
+    ensureClips, flattenTimeline, syncClipsFromFlat, sliceFlatToClips,
+    splitSelectedClip, duplicateSelectedClip, deleteSelectedClip,
+    moveSelectedClip, toggleMuteSelectedClip, timelineOp,
+    renderTimelineLane,
+    getClips: () => (state.currentSong && state.currentSong.clips) || null,
+    selectClip: (id) => { selectedClipId = id; },
+    flatCount: () => Object.values(state.currentSong.tracks).reduce((a, t) => a + (t.notes ? t.notes.length : 0), 0)
+  };
+
   window.addEventListener('DOMContentLoaded', () => {
     loadHistoryStorage();
     loadCustomGenres();
     loadTheme();
-    setupEventListeners();
-    window.addEventListener('resize', handleResize);
+    setupEventListeners();    window.addEventListener('resize', handleResize);
     handleResize();
     renderCustomGenreCards();
 
