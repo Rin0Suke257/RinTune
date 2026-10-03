@@ -640,6 +640,7 @@
                 <button id="btnClipMute" class="btn-secondary" style="padding:4px 10px;" title="Tắt/mở tiếng đoạn (nốt giữ lại)">🔇 Mute</button>
                 <button id="btnClipRename" class="btn-secondary" style="padding:4px 10px;" title="Đổi tên đoạn">✏ Tên</button>
               </div>
+              <div id="timelineBody">
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:4px;">
                 <span style="color:var(--text-dim);">Bè trong đoạn đang chọn:</span>
                 <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="clipTrack_lead" checked> Lead</label>
@@ -650,6 +651,7 @@
               </div>
               <div id="clipLanes" style="margin-top:4px;"></div>
               <div style="font-size:0.65rem; color:var(--text-dim); margin-top:2px;">💡 Bấm chọn đoạn • kéo ngang để dời • đúp để đặt vùng gieo lại = đoạn đó • tắt bè để tạo build/drop • soạn nốt ở piano roll bên dưới</div>
+              </div>
             </div>
           </div>
           <div class="pianoroll-canvas-container" id="canvasContainer">
@@ -952,7 +954,7 @@
         <b>5. Xuất:</b> ⚡Finish làm 1 lèo (MIDI+MMP vào thư mục xuất). Mở trực tiếp vào LMMS đang chạy để phối tiếp.<br>
         <b>6. Chia sẻ:</b> Copy seed gửi bạn — nhập seed ra đúng bài đó. Seed ngày hôm nay giống nhau mọi máy.<br>
         <b>Mẹo:</b> melody giữ lại bằng cách khóa nốt (kéo/thêm là tự khóa). Muốn take mới 1 bè: bấm 🎲 trên mixer. Style riêng: ＋Style riêng hoặc 🧬 Trích Style từ bài ưng ý.<br>
-        <b>Phím tắt:</b> Space phát/dừng • G gieo bài • Ctrl+N/O/E/B/L/T tab mới • Ctrl+Tab chuyển tab • Ctrl+1..5 chọn bè • Ctrl+D/C/V nhân bản/copy/paste • Del xóa chọn • Shift+↑/↓ dịch cao độ • Ctrl+S lưu project • Home về đầu • Esc đóng menu.
+        <b>Phím tắt:</b> Space phát/dừng • G gieo bài • Alt+T ẩn/hiện timeline • Ctrl+N/O/E/B/L/T tab mới • Ctrl+Tab chuyển tab • Ctrl+1..5 chọn bè • Ctrl+D/C/V nhân bản/copy/paste • Del xóa chọn • Shift+↑/↓ dịch cao độ • Ctrl+S lưu project • Home về đầu • Esc đóng menu.
       </div>
       <div class="modal-actions">
         <span id="appVersionLabel" style="font-size:0.72rem; color:var(--text-dim); margin-right:auto;">v2.1.0</span>

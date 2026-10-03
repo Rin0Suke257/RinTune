@@ -1101,7 +1101,21 @@
     showToast(`✏ Clip giờ tên "${clean}"`);
   }
 
-  // Ve lane clips (DOM): 1 hang doan (sections) x truc bars. Keo ngang = doi vi tri.
+  // An/hien lane timeline (mac dinh an, nho lua chon)
+  const TL_COLLAPSE_KEY = 'rmg_timeline_collapsed_v1';
+  function setTimelineCollapsed(collapsed, save) {
+    const body = document.getElementById('timelineBody');
+    const btn = document.getElementById('btnTimelineToggle');
+    if (body) body.style.display = collapsed ? 'none' : '';
+    if (btn) btn.textContent = collapsed ? '▲' : '▼';
+    if (save !== false) {
+      try { localStorage.setItem(TL_COLLAPSE_KEY, collapsed ? '1' : '0'); } catch (e) {}
+    }
+  }
+  function toggleTimeline() {
+    const body = document.getElementById('timelineBody');
+    setTimelineCollapsed(!(body && body.style.display === 'none'));
+  }
   function renderTimelineLane() {
     const lanes = document.getElementById('clipLanes');
     const info = document.getElementById('clipInfo');
@@ -4276,13 +4290,12 @@
 
     // Timeline clips
     const btnTimelineToggle = document.getElementById('btnTimelineToggle');
-    if (btnTimelineToggle) btnTimelineToggle.addEventListener('click', () => {
-      const lanes = document.getElementById('clipLanes');
-      if (!lanes) return;
-      const hidden = lanes.style.display === 'none';
-      lanes.style.display = hidden ? '' : 'none';
-      btnTimelineToggle.textContent = hidden ? '▼' : '▲';
-    });
+    if (btnTimelineToggle) btnTimelineToggle.addEventListener('click', toggleTimeline);
+    try {
+      setTimelineCollapsed(localStorage.getItem(TL_COLLAPSE_KEY) !== '0', false);
+    } catch (e) {
+      setTimelineCollapsed(true, false);
+    }
     const btnClipSplit = document.getElementById('btnClipSplit');
     const btnClipDup = document.getElementById('btnClipDup');
     const btnClipMerge = document.getElementById('btnClipMerge');
@@ -4492,6 +4505,9 @@
       } else if ((e.ctrlKey || e.metaKey) && e.code === 'KeyT') {
         e.preventDefault();
         newTab();
+      } else if (e.altKey && e.code === 'KeyT') {
+        e.preventDefault();
+        toggleTimeline();
       } else if ((e.ctrlKey || e.metaKey) && e.code === 'Tab') {
         e.preventDefault();
         cycleTab(e.shiftKey ? -1 : 1);
@@ -4514,7 +4530,7 @@
         e.preventDefault();
         state.pianoOctave = Math.max(1, Math.min(7, state.pianoOctave + (e.code === 'ArrowRight' ? 1 : -1)));
         showToast(`🎹 Quãng đàn: C${state.pianoOctave} (hàng trên C${state.pianoOctave + 1})`);
-      } else if (!e.repeat && !e.ctrlKey && !e.metaKey && (e.code in PIANO_LOWER || e.code in PIANO_UPPER)) {
+      } else if (!e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey && (e.code in PIANO_LOWER || e.code in PIANO_UPPER)) {
         playPianoKey(e.code);
       }
     });
