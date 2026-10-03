@@ -1265,6 +1265,297 @@
   }
 
   /**
+   * Menu bar (File/Edit/View/Tools/Help) + theme + dock + collapsible
+   */
+  function closeAllMenus() {
+    document.querySelectorAll('.menu-top.open').forEach(m => m.classList.remove('open'));
+  }
+
+  function setZoomMenu(v) {
+    state.zoom = v;
+    if (selectZoom) selectZoom.value = v;
+    handleResize();
+    renderPianoRoll(Synth.currentStep || 0);
+  }
+
+  function togglePanel(sel) {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    el.style.display = (el.style.display === 'none') ? '' : 'none';
+    handleResize();
+  }
+
+  let dockHidden = false;
+
+  function toggleDockAll() {
+    const ids = ['dockTabs', 'historyPanel', 'recentPanel', 'seedPanel'];
+    dockHidden = !dockHidden;
+    const activeBtn = document.querySelector('.dock-tab.active');
+    const activeId = activeBtn ? activeBtn.dataset.dock : 'historyPanel';
+    for (const id of ids) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      if (dockHidden) el.style.display = 'none';
+      else el.style.display = (id === 'dockTabs' || id === activeId) ? '' : 'none';
+    }
+    handleResize();
+    showToast(dockHidden ? '📜 Đã ẩn panel dưới' : '📜 Đã hiện panel dưới');
+  }
+
+  function switchDock(id) {
+    document.querySelectorAll('.dock-tab').forEach(b => b.classList.toggle('active', b.dataset.dock === id));
+    for (const pid of ['historyPanel', 'recentPanel', 'seedPanel']) {
+      const el = document.getElementById(pid);
+      if (el) el.style.display = (pid === id) ? '' : 'none';
+    }
+  }
+
+  function scrollToArranger() {
+    if (selectArrangerForm) {
+      selectArrangerForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      showToast('🎼 Arranger ở sidebar trái — chọn form rồi Dựng Bài');
+    }
+  }
+
+  async function quitApp() {
+    try {
+      if (window.rmgAPI && window.rmgAPI.quitApp) {
+        await window.rmgAPI.quitApp();
+        return;
+      }
+    } catch (e) {}
+    window.close();
+  }
+
+  // ---- Themes (built-in + custom accent + custom background) ----
+  const THEME_KEY = 'rmg_theme_v1';
+
+  function getThemeStore() {
+    try {
+      return JSON.parse(localStorage.getItem(THEME_KEY) || '{}') || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function hexToRgba(hex, a) {
+    try {
+      const h = String(hex).replace('#', '');
+      const v = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+      const n = parseInt(v, 16);
+      return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+    } catch (e) {
+      return `rgba(0,242,254,${a})`;
+    }
+  }
+
+  function applyThemeStore(t) {
+    const root = document.documentElement;
+    root.removeAttribute('data-theme');
+    root.style.removeProperty('--accent-cyan');
+    root.style.removeProperty('--border-glow');
+    if (t && (t.name === 'midnight' || t.name === 'sakura')) {
+      root.setAttribute('data-theme', t.name);
+    } else if (t && t.name === 'custom' && t.accent) {
+      root.style.setProperty('--accent-cyan', t.accent);
+      root.style.setProperty('--border-glow', hexToRgba(t.accent, 0.25));
+    }
+    document.body.classList.toggle('has-bg', !!(t && t.bg));
+    const bg = document.getElementById('bgLayer');
+    if (bg) bg.style.backgroundImage = (t && t.bg) ? `url(${t.bg})` : 'none';
+  }
+
+  function saveTheme(t) {
+    try {
+      localStorage.setItem(THEME_KEY, JSON.stringify(t));
+    } catch (e) {
+      showToast('⚠️ Không lưu được theme (ảnh nền quá lớn?)');
+      return;
+    }
+    applyThemeStore(t);
+  }
+
+  function loadTheme() {
+    applyThemeStore(getThemeStore());
+  }
+
+  function setTheme(name) {
+    const cur = getThemeStore();
+    if (name === 'custom') {
+      saveTheme({ name: 'custom', accent: cur.accent || '#00f2fe', bg: cur.bg || null });
+    } else {
+      saveTheme({ name });
+    }
+    showToast(`🎨 Theme: ${name}`);
+  }
+
+  function openThemeCustom() {
+    const inp = document.createElement('input');
+    inp.type = 'color';
+    inp.value = (getThemeStore().accent) || '#00f2fe';
+    inp.onchange = () => {
+      const cur = getThemeStore();
+      saveTheme({ name: 'custom', accent: inp.value, bg: cur.bg || null });
+      showToast(`🎨 Accent: ${inp.value}`);
+    };
+    inp.click();
+  }
+
+  function downscaleImage(dataUrl) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const maxW = 1280;
+          const sc = Math.min(1, maxW / (img.width || maxW));
+          const c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(img.width * sc));
+          c.height = Math.max(1, Math.round(img.height * sc));
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          resolve(c.toDataURL('image/jpeg', 0.72));
+        } catch (e) {
+          reject(e);
+        }
+      };
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+  }
+
+  function uploadBackground() {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/*';
+    inp.onchange = () => {
+      const f = inp.files && inp.files[0];
+      if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        downscaleImage(String(rd.result)).then(dataUrl => {
+          const cur = getThemeStore();
+          saveTheme({ name: 'custom', accent: cur.accent || null, bg: dataUrl });
+          showToast('🖼️ Đã đặt ảnh nền (tự mờ + tối để dễ nhìn)');
+        }).catch(() => showToast('⚠️ Không đọc được ảnh'));
+      };
+      rd.onerror = () => showToast('⚠️ Không đọc được file ảnh');
+      rd.readAsDataURL(f);
+    };
+    inp.click();
+  }
+
+  function clearBackground() {
+    const cur = getThemeStore();
+    saveTheme({ name: (cur.name === 'midnight' || cur.name === 'sakura') ? cur.name : 'custom', accent: cur.accent || null, bg: null });
+    showToast('🧹 Đã xóa ảnh nền');
+  }
+
+  function runMenuAction(act) {
+    switch (act) {
+      case 'new-blank': newBlankSong(); break;
+      case 'open-midi': requestOpenMidi(); break;
+      case 'save-project': saveProject(false); break;
+      case 'quicksave-project': saveProject(true); break;
+      case 'exp-midi': handleSaveMidi(); break;
+      case 'exp-mmp': handleSaveMmp(); break;
+      case 'exp-wav': exportWav(false); break;
+      case 'exp-clip': handleCopyClip(); break;
+      case 'exp-quick-midi': quickExport('midi'); break;
+      case 'exp-quick-mmp': quickExport('mmp'); break;
+      case 'finish': finishSong(); break;
+      case 'launch-lmms': handleLaunchLmms(); break;
+      case 'quit': quitApp(); break;
+      case 'undo': doUndo(); break;
+      case 'redo': doRedo(); break;
+      case 'tool-select': setTool('select'); break;
+      case 'tool-draw': setTool('draw'); break;
+      case 'tool-knife': setTool('knife'); break;
+      case 'tool-erase': setTool('erase'); break;
+      case 'sel-delete': deleteSelection(); break;
+      case 'sel-dup': duplicateSelection(); break;
+      case 'sel-copy': copySelection(); break;
+      case 'sel-paste': pasteSelection(); break;
+      case 'oct-down': shiftOctave(-1); break;
+      case 'oct-up': shiftOctave(1); break;
+      case 'vel-down': shiftVelocity(-10); break;
+      case 'vel-up': shiftVelocity(10); break;
+      case 'zoom-fit': setZoomMenu('fit'); break;
+      case 'zoom-1x': setZoomMenu('1x'); break;
+      case 'zoom-2x': setZoomMenu('2x'); break;
+      case 'theme-neon': setTheme('neon'); break;
+      case 'theme-midnight': setTheme('midnight'); break;
+      case 'theme-sakura': setTheme('sakura'); break;
+      case 'theme-custom': openThemeCustom(); break;
+      case 'bg-upload': uploadBackground(); break;
+      case 'bg-clear': clearBackground(); break;
+      case 'view-sidebar': togglePanel('.left-controls-sidebar'); break;
+      case 'view-mixer': togglePanel('.mixer-rack'); break;
+      case 'view-dock': toggleDockAll(); break;
+      case 'arrange': scrollToArranger(); break;
+      case 'motif': developMotif(); break;
+      case 'transfer': transferStyle(); break;
+      case 'progedit-hint': showToast('🎹 Bấm vào từng chip hợp âm ở panel Vòng Hợp Âm (sidebar) để sửa', 4500); break;
+      case 'seed-copy': copySeed(); break;
+      case 'seed-paste': pasteSeed(); break;
+      case 'seed-daily': dailySeed(); break;
+      case 'seed-save': saveSeedToGallery(); break;
+      case 'genre-custom': openCustomGenreModal(); break;
+      case 'genre-extract': extractStyleFromSong(); break;
+      case 'help-open': if (helpModal) helpModal.style.display = 'flex'; break;
+      case 'check-update': checkUpdate(); break;
+      case 'about': showToast(`RMG v${APP_VERSION} by Rin0suke257 — Random Music Generator cho LMMS`, 5000); break;
+      default: break;
+    }
+  }
+
+  function wireMenus() {
+    document.querySelectorAll('.menu-top > span').forEach(label => {
+      label.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const top = label.parentElement;
+        const was = top.classList.contains('open');
+        closeAllMenus();
+        if (!was) top.classList.add('open');
+      });
+      label.addEventListener('mouseenter', () => {
+        if (document.querySelector('.menu-top.open') && !label.parentElement.classList.contains('open')) {
+          closeAllMenus();
+          label.parentElement.classList.add('open');
+        }
+      });
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest || !e.target.closest('.menubar')) closeAllMenus();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAllMenus();
+    });
+    document.querySelectorAll('.menu-drop button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        closeAllMenus();
+        runMenuAction(btn.dataset.act);
+      });
+    });
+  }
+
+  function wireDockTabs() {
+    document.querySelectorAll('.dock-tab').forEach(btn => {
+      btn.addEventListener('click', () => switchDock(btn.dataset.dock));
+    });
+  }
+
+  function wireCollapsibleCards() {
+    document.querySelectorAll('.left-controls-sidebar .sidebar-card').forEach(card => {
+      const title = card.querySelector('.card-title');
+      if (!title) return;
+      card.classList.add('collapsible');
+      title.addEventListener('click', (e) => {
+        if (e.target.closest('button, select, input')) return;
+        card.classList.toggle('collapsed');
+      });
+    });
+  }
+
+  /**
    * Mixer hien tai de export dung nhu dang nghe (vol/mute/solo/pan)
    */
   function getMix() {
@@ -3409,6 +3700,11 @@
       tab.addEventListener('click', () => setTool(tab.dataset.tool));
     });
 
+    // Menu bar + dock tabs + collapsible sidebar
+    wireMenus();
+    wireDockTabs();
+    wireCollapsibleCards();
+
     // Studio Track Tabs Selection
     if (studioTrackTabs) {
       studioTrackTabs.querySelectorAll('.btn-track-tab').forEach(tab => {
@@ -4528,6 +4824,7 @@
   window.addEventListener('DOMContentLoaded', () => {
     loadHistoryStorage();
     loadCustomGenres();
+    loadTheme();
     setupEventListeners();
     window.addEventListener('resize', handleResize);
     handleResize();

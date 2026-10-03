@@ -317,7 +317,8 @@ static const wchar_t* kBridgeShim = LR"SHIM(
     deleteFile: function (o) { return call('deleteFile', o || {}); },
     getExportDir: function () { return call('getExportDir', {}); },
     setExportDir: function () { return call('setExportDir', {}); },
-    openFolder: function (o) { return call('openFolder', o || {}); }
+    openFolder: function (o) { return call('openFolder', o || {}); },
+    quitApp: function () { return call('quitApp', {}); }
   };
   window.__rmgResolve = function (id, result) {
     var r = pending[id];
@@ -724,8 +725,13 @@ static json HandleSetExportDir(const json& payload) {
   return json{{"success", true}, {"dir", WideToUtf8(sel)}};
 }
 
-static json HandleOpenFolder(const json& payload) {
-  std::string folder = payload.value("folder", std::string("export"));
+static json HandleQuitApp(const json& payload) {
+  (void)payload;
+  PostQuitMessage(0);
+  return json{{"success", true}};
+}
+
+static json HandleOpenFolder(const json& payload) {  std::string folder = payload.value("folder", std::string("export"));
   std::wstring dir;
   if (!ResolveDirectFolder(folder, dir)) return json{{"success", false}, {"error", "Unknown folder"}};
   HINSTANCE r = ShellExecuteW(g_hwnd, L"open", dir.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
@@ -820,6 +826,7 @@ static void OnWebMessage(const std::wstring& msgJsonW) {
     else if (method == "getExportDir") res = HandleGetExportDir(payload);
     else if (method == "setExportDir") res = HandleSetExportDir(payload);
     else if (method == "openFolder") res = HandleOpenFolder(payload);
+    else if (method == "quitApp") res = HandleQuitApp(payload);
       else res = json{{"success", false}, {"error", "Unknown method: " + method}};
     } catch (const std::exception& e) {
       res = json{{"success", false}, {"error", e.what()}};

@@ -427,6 +427,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   flex-direction: column;
   gap: 10px;
   min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 4px;
 }
 
 /* Visualizer & Transport Top Bar */
@@ -508,10 +511,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 /* Piano Roll Container */
 .pianoroll-wrapper {
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  min-height: 0;
   padding: 10px;
   position: relative;
   overflow: hidden;
@@ -572,7 +574,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .pianoroll-canvas-container {
-  flex: 1;
+  flex: none;
+  height: 340px;
   position: relative;
   background: #0b0c14;
   border: 1px solid var(--border-color);
@@ -909,6 +912,41 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .btn-icon.rec-armed { background: rgba(231, 76, 60, 0.25); border-color: #e74c3c; color: #e74c3c; }
 .btn-mini.btn-dice { width: auto; padding: 0 3px; }
 .tool-tab.active { border-color: var(--accent-cyan); color: var(--accent-cyan); background: rgba(0, 242, 254, 0.12); }
+
+/* ===== Menu Bar (File/Edit/View/Tools/Help) ===== */
+.menubar { display: flex; align-items: stretch; gap: 2px; padding: 0 10px; height: 32px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: 8px; flex: 0 0 auto; }
+.menu-top { position: relative; display: flex; align-items: center; }
+.menu-top > span { font-size: 0.76rem; font-weight: 600; color: var(--text-muted); padding: 4px 12px; border-radius: 5px; cursor: pointer; user-select: none; }
+.menu-top:hover > span, .menu-top.open > span { color: var(--accent-cyan); background: rgba(0, 242, 254, 0.08); }
+.menu-drop { display: none; position: absolute; top: 100%; left: 0; min-width: 250px; background: var(--bg-secondary); border: 1px solid var(--accent-cyan); border-radius: 8px; padding: 5px; z-index: 9000; box-shadow: 0 12px 32px rgba(0,0,0,0.6); }
+.menu-top.open .menu-drop { display: block; }
+.menu-drop button { display: block; width: 100%; text-align: left; background: transparent; border: none; color: var(--text-main); font-size: 0.76rem; padding: 6px 10px; border-radius: 5px; cursor: pointer; }
+.menu-drop button:hover { background: rgba(0, 242, 254, 0.12); color: var(--accent-cyan); }
+.menu-sep { height: 1px; background: var(--border-color); margin: 4px 6px; }
+.menubar-title { margin-left: auto; align-self: center; font-size: 0.68rem; color: var(--text-dim); letter-spacing: 1px; }
+
+/* ===== Themes ===== */
+[data-theme="midnight"] { --bg-primary: #040814; --bg-secondary: #0a1230; --bg-card: rgba(16, 28, 64, 0.8); --bg-card-hover: rgba(24, 40, 88, 0.92); --bg-input: #0d1530; --accent-cyan: #4facfe; --border-glow: rgba(79, 172, 254, 0.3); }
+[data-theme="sakura"] { --bg-primary: #f6f1f7; --bg-secondary: #ffffff; --bg-card: rgba(255, 255, 255, 0.92); --bg-card-hover: rgba(255, 240, 246, 0.98); --bg-input: #f3ecf5; --border-color: rgba(120, 40, 90, 0.16); --border-glow: rgba(255, 42, 109, 0.25); --accent-cyan: #c2145b; --accent-blue: #7b5cff; --accent-purple: #9b51e0; --text-main: #33222e; --text-muted: #7a5f74; --text-dim: #a98fa2; }
+#bgLayer { position: fixed; inset: 0; z-index: 0; background-size: cover; background-position: center; filter: blur(14px) brightness(0.42); transform: scale(1.06); pointer-events: none; display: none; }
+body.has-bg #bgLayer { display: block; }
+body.has-bg .app-container { background: transparent; }
+body.has-bg { background-color: #05060a; }
+
+/* ===== Dock tabs (Lich su / File / Seed) ===== */
+.dock-tabs { display: flex; gap: 6px; padding: 8px 4px 0; }
+.dock-tab { background: var(--bg-input); border: 1px solid var(--border-color); border-bottom: none; color: var(--text-muted); font-size: 0.72rem; font-weight: 700; padding: 5px 14px; border-radius: 8px 8px 0 0; cursor: pointer; }
+.dock-tab.active { color: var(--accent-cyan); border-color: var(--accent-cyan); background: rgba(0, 242, 254, 0.07); }
+
+/* ===== Collapsible sidebar cards ===== */
+.sidebar-card.collapsible > .card-title { cursor: pointer; user-select: none; }
+.sidebar-card.collapsible > .card-title::after { content: '▾'; margin-left: auto; color: var(--text-dim); font-size: 0.7rem; }
+.sidebar-card.collapsible.collapsed > .card-title::after { content: '▸'; }
+.sidebar-card.collapsible.collapsed > *:not(.card-title) { display: none; }
+
+/* ===== Footer declutter: chi giu Finish + Mo LMMS ===== */
+#btnCopyClip, #btnSaveMidi, #btnSaveMmp, #btnOpenMidi, #btnSaveProject, #btnOpenProject,
+#btnQuickMidi, #btnQuickMmp, #btnExportWav, #btnTransferStyle { display: none; }
 .tab-strip { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 6px 4px 0; }
 .tab-item { display: flex; align-items: center; gap: 6px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.72rem; font-weight: 600; padding: 4px 8px 4px 10px; border-radius: 8px 8px 0 0; cursor: pointer; max-width: 200px; }
 .tab-item.active { color: var(--accent-cyan); border-color: var(--accent-cyan); background: rgba(0, 242, 254, 0.08); }

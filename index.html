@@ -7,7 +7,94 @@
   <link rel="stylesheet" href="index.css">
 </head>
 <body>
+  <div id="bgLayer"></div>
   <div class="app-container">
+    <!-- Menu Bar (File/Edit/View/Tools/Help) -->
+    <nav class="menubar" id="menubar">
+      <div class="menu-top" data-menu="file"><span>File</span>
+        <div class="menu-drop">
+          <button data-act="new-blank">📄 Bài trống</button>
+          <button data-act="open-midi">📂 Mở MIDI / Project…</button>
+          <button data-act="save-project">💾 Lưu Project…</button>
+          <button data-act="quicksave-project">💾 Lưu nhanh (Ctrl+S)</button>
+          <div class="menu-sep"></div>
+          <button data-act="exp-midi">🎵 Xuất MIDI…</button>
+          <button data-act="exp-mmp">💾 Xuất LMMS…</button>
+          <button data-act="exp-wav">🎧 Xuất WAV…</button>
+          <button data-act="exp-clip">📋 Sao chép Clip LMMS</button>
+          <button data-act="exp-quick-midi">⚡ Xuất nhanh MIDI</button>
+          <button data-act="exp-quick-mmp">⚡ Xuất nhanh MMP</button>
+          <button data-act="finish">⚡ Finish 1-click</button>
+          <div class="menu-sep"></div>
+          <button data-act="launch-lmms">🚀 Mở vào LMMS</button>
+          <div class="menu-sep"></div>
+          <button data-act="quit">✕ Thoát</button>
+        </div>
+      </div>
+      <div class="menu-top" data-menu="edit"><span>Sửa</span>
+        <div class="menu-drop">
+          <button data-act="undo">↩ Undo (Ctrl+Z)</button>
+          <button data-act="redo">↪ Redo (Ctrl+Y)</button>
+          <div class="menu-sep"></div>
+          <button data-act="tool-select">⬚ Công cụ Select</button>
+          <button data-act="tool-draw">✏️ Công cụ Draw</button>
+          <button data-act="tool-knife">🔪 Công cụ Knife</button>
+          <button data-act="tool-erase">🧽 Công cụ Erase</button>
+          <div class="menu-sep"></div>
+          <button data-act="sel-delete">🗑️ Xóa đã chọn (Del)</button>
+          <button data-act="sel-dup">📄 Nhân bản (Ctrl+D)</button>
+          <button data-act="sel-copy">📋 Copy (Ctrl+C)</button>
+          <button data-act="sel-paste">📌 Paste (Ctrl+V)</button>
+          <div class="menu-sep"></div>
+          <button data-act="oct-down">🎹 Quãng −1</button>
+          <button data-act="oct-up">🎹 Quãng +1</button>
+          <button data-act="vel-down">🔉 Velocity −10</button>
+          <button data-act="vel-up">🔊 Velocity +10</button>
+        </div>
+      </div>
+      <div class="menu-top" data-menu="view"><span>Xem</span>
+        <div class="menu-drop">
+          <button data-act="zoom-fit">🔍 Zoom vừa khít</button>
+          <button data-act="zoom-1x">🔍 Zoom 1x</button>
+          <button data-act="zoom-2x">🔍 Zoom 2x</button>
+          <div class="menu-sep"></div>
+          <button data-act="theme-neon">🌃 Theme: Neon Dark</button>
+          <button data-act="theme-midnight">🌌 Theme: Midnight</button>
+          <button data-act="theme-sakura">🌸 Theme: Sakura (sáng)</button>
+          <button data-act="theme-custom">🎨 Theme: Tùy chỉnh…</button>
+          <button data-act="bg-upload">🖼️ Ảnh nền riêng…</button>
+          <button data-act="bg-clear">🧹 Xóa ảnh nền</button>
+          <div class="menu-sep"></div>
+          <button data-act="view-sidebar">📐 Thanh bên trái</button>
+          <button data-act="view-mixer">🎚️ Mixer</button>
+          <button data-act="view-dock">📜 Panel dưới (sử/file/seed)</button>
+        </div>
+      </div>
+      <div class="menu-top" data-menu="tools"><span>Công cụ</span>
+        <div class="menu-drop">
+          <button data-act="arrange">🎼 Dựng bài (Arranger)</button>
+          <button data-act="motif">🌱 Motif → Bài</button>
+          <button data-act="transfer">🎭 Ép style hiện tại</button>
+          <button data-act="progedit-hint">🎹 Sửa hợp âm (bấm chip)</button>
+          <div class="menu-sep"></div>
+          <button data-act="seed-copy">🔗 Copy seed</button>
+          <button data-act="seed-paste">📥 Nhập seed…</button>
+          <button data-act="seed-daily">📅 Seed hôm nay</button>
+          <button data-act="seed-save">🌱 Lưu seed vào sổ</button>
+          <div class="menu-sep"></div>
+          <button data-act="genre-custom">🎨 Style riêng…</button>
+          <button data-act="genre-extract">🧬 Trích style từ bài</button>
+        </div>
+      </div>
+      <div class="menu-top" data-menu="help"><span>Giúp đỡ</span>
+        <div class="menu-drop">
+          <button data-act="help-open">📖 Hướng dẫn</button>
+          <button data-act="check-update">↻ Kiểm tra cập nhật</button>
+          <button data-act="about">ℹ️ Giới thiệu</button>
+        </div>
+      </div>
+      <div class="menubar-title">RMG Studio</div>
+    </nav>
     <!-- Header -->
     <header class="app-header">
       <div class="brand-section">
@@ -465,14 +552,11 @@
                 <button class="btn-track-tab tool-tab active" data-tool="draw" title="Draw: thêm/kéo/co giãn nốt">✏️ Draw</button>
                 <button class="btn-track-tab tool-tab" data-tool="knife" title="Knife: bấm vào nốt để cắt đôi">🔪 Knife</button>
                 <button class="btn-track-tab tool-tab" data-tool="erase" title="Erase: bấm để xóa nốt">🧽 Erase</button>
-                <span id="selectionInfo" style="font-size:0.7rem; color:var(--accent-cyan); font-weight:700;"></span>
-              </div>
-              <div style="display:flex; align-items:center; gap:4px;">
-                <span style="font-size:0.72rem; color:var(--text-muted); font-weight:700;">EDIT:</span>
                 <button class="btn-track-tab" id="btnOctDown" title="Dịch quãng xuống 1 (nốt chọn hoặc cả bè)">8va−</button>
                 <button class="btn-track-tab" id="btnOctUp" title="Dịch quãng lên 1 (nốt chọn hoặc cả bè)">8va+</button>
                 <button class="btn-track-tab" id="btnVelDown" title="Giảm velocity 10">Vel−</button>
                 <button class="btn-track-tab" id="btnVelUp" title="Tăng velocity 10">Vel+</button>
+                <span id="selectionInfo" style="font-size:0.7rem; color:var(--accent-cyan); font-weight:700;"></span>
               </div>
               <label style="display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--text-muted); cursor: pointer;">
                 <input type="checkbox" id="checkGhostNotes" checked>
@@ -486,8 +570,8 @@
                   <option value="2x">2x</option>
                 </select>
               </label>
-              <span class="studio-hint" style="font-size: 0.67rem; color: var(--accent-cyan); background: rgba(0, 242, 254, 0.08); border: 1px solid rgba(0, 242, 254, 0.2); padding: 2px 8px; border-radius: 4px;">
-                💡 Click: Thêm | Kéo thân: Đổi cao độ/phách | Kéo mép: Co giãn | Chuột phải: Xóa
+              <span class="studio-hint" style="font-size: 0.67rem; color: var(--accent-cyan); background: rgba(0, 242, 254, 0.08); border: 1px solid rgba(0, 242, 254, 0.2); padding: 2px 8px; border-radius: 4px;" title="Đàn phím: Z–M quãng thấp • Q–U quãng cao • ←/→ đổi quãng • G tạo bài • Bật ● REC rồi đàn khi đang phát để ghi nốt">
+                💡 Click: Thêm | Kéo thân: Đổi cao độ/phách | Kéo mép: Co giãn | Chuột phải: Xóa | 🎹 Z–M/Q–U đàn phím
               </span>
             </div>
             <div class="regen-toolbar" id="regenToolbar" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; padding-top: 6px; font-size: 0.72rem; color: var(--text-muted);">
@@ -505,9 +589,6 @@
               <button id="btnRegenRegion" class="btn-secondary" style="padding:4px 12px;">🎲 Gieo lại</button>
               <button id="btnMotif" class="btn-secondary" style="padding:4px 10px;" title="Lấy nốt lead đã khóa trong 2 bars đầu làm motif, phát triển thành cả bài">🌱 Motif→Bài</button>
               <button id="btnUnlockAll" class="btn-secondary" style="padding:4px 10px;" title="Mở khóa mọi nốt đã soạn tay">🔓 Mở khóa hết</button>
-            </div>
-            <div style="font-size:0.66rem; color:var(--text-dim); padding:2px 0 4px;">
-              🎹 Đàn phím: <b>Z–M</b> quãng thấp • <b>Q–U</b> quãng cao • <b>←/→</b> đổi quãng • <b>G</b> tạo bài • Bật <b>● REC</b> rồi đàn khi đang phát để ghi nốt
             </div>
           </div>
           <div class="pianoroll-canvas-container" id="canvasContainer">
@@ -613,8 +694,15 @@
           </div>
         </div>
 
+        <!-- Lich Su / File / Seed (dock tabs) -->
+        <div class="dock-tabs" id="dockTabs">
+          <button class="dock-tab active" data-dock="historyPanel">📜 Lịch sử</button>
+          <button class="dock-tab" data-dock="recentPanel">📁 File xuất</button>
+          <button class="dock-tab" data-dock="seedPanel">🌱 Sổ Seed</button>
+        </div>
+
         <!-- Lịch Sử Gieo Nhạc (Generation History) -->
-        <div class="glass-panel history-panel">
+        <div class="glass-panel history-panel" id="historyPanel">
           <div class="history-header">
             <div class="history-title">
               <span>📜 Lịch Sử Gieo Nhạc (Generation History)</span>
@@ -634,7 +722,7 @@
         </div>
 
         <!-- File Da Xuat (Export Hub) -->
-        <div class="glass-panel history-panel">
+        <div class="glass-panel history-panel" id="recentPanel" style="display:none;">
           <div class="history-header">
             <div class="history-title">
               <span>📁 File Đã Xuất</span>
@@ -646,7 +734,7 @@
         </div>
 
         <!-- So Seed (chia se) -->
-        <div class="glass-panel history-panel">
+        <div class="glass-panel history-panel" id="seedPanel" style="display:none;">
           <div class="history-header">
             <div class="history-title">
               <span>🌱 Sổ Seed</span>
