@@ -992,8 +992,28 @@
     });
   }
 
-  function deleteSelectedClip() {
-    timelineOp('xóa clip', (song) => {
+  // Gop doan dang chon voi doan ke tiep (nguoc cua Tach)
+  function mergeWithNextClip() {
+    timelineOp('gộp đoạn', (song) => {
+      const c = selectedClip();
+      if (!c) return '⚠️ Hãy bấm chọn 1 đoạn trên lane trước';
+      const idx = song.clips.indexOf(c);
+      if (idx < 0 || idx >= song.clips.length - 1) return '⚠️ Đoạn này đã cuối cùng — không còn đoạn sau để gộp';
+      const nx = song.clips[idx + 1];
+      const spb = song.metadata.stepsPerBar || 16;
+      const off = c.lengthBars * spb;
+      for (const k of TRACK_KEYS) {
+        const moved = (nx.notes[k] || []).map(n => Object.assign({}, n, { step: n.step + off }));
+        c.notes[k] = (c.notes[k] || []).concat(moved);
+      }
+      c.lengthBars += nx.lengthBars;
+      song.clips.splice(idx + 1, 1);
+      selectedClipId = c.id;
+      return `⛓ Đã gộp "${c.name}" + "${nx.name}" thành "${c.name}" (${c.lengthBars} bars, giữ cờ đoạn đầu)`;
+    });
+  }
+
+  function deleteSelectedClip() {    timelineOp('xóa clip', (song) => {
       if (song.clips.length <= 1) return '⚠️ Bài chỉ còn 1 clip — không xóa được (hãy gieo bài mới)';
       const c = selectedClip();
       if (!c) return '⚠️ Hãy bấm chọn 1 clip trên lane trước';
@@ -4265,6 +4285,7 @@
     });
     const btnClipSplit = document.getElementById('btnClipSplit');
     const btnClipDup = document.getElementById('btnClipDup');
+    const btnClipMerge = document.getElementById('btnClipMerge');
     const btnClipRest = document.getElementById('btnClipRest');
     const btnClipDel = document.getElementById('btnClipDel');
     const btnClipLeft = document.getElementById('btnClipLeft');
@@ -4273,6 +4294,7 @@
     const btnClipRename = document.getElementById('btnClipRename');
     if (btnClipSplit) btnClipSplit.addEventListener('click', splitSelectedClip);
     if (btnClipDup) btnClipDup.addEventListener('click', duplicateSelectedClip);
+    if (btnClipMerge) btnClipMerge.addEventListener('click', mergeWithNextClip);
     if (btnClipRest) btnClipRest.addEventListener('click', insertRestClip);
     if (btnClipDel) btnClipDel.addEventListener('click', deleteSelectedClip);
     if (btnClipLeft) btnClipLeft.addEventListener('click', () => moveSelectedClip(-1));
@@ -5860,6 +5882,7 @@
     getTakeSession: () => takeSession,
     ensureClips, flattenTimeline, syncClipsFromFlat, sliceFlatToClips,
     splitSelectedClip, duplicateSelectedClip, deleteSelectedClip,
+    mergeWithNextClip,
     moveSelectedClip, toggleMuteSelectedClip, insertRestClip, setClipTrack, timelineOp,
     renderTimelineLane,
     getClips: () => (state.currentSong && state.currentSong.clips) || null,

@@ -2,8 +2,7 @@
 
 ## Unreleased - Timeline Clips + Takes + Fill
 - Timeline 1 hàng đoạn (Intro/Verse/Chorus...): bấm chọn, kéo dời, tách/
-  nhân đôi/xóa/mute/đổi tên, đúp = đặt vùng gieo lại; soạn nốt ở piano roll
-  (tracks phẳng flatten từ clips, phát nhạc/xuất không đổi)
+  gộp/nhân đôi/xóa/mute/đổi tên, đúp = đặt vùng gieo lại; soạn nốt ở piano roll  (tracks phẳng flatten từ clips, phát nhạc/xuất không đổi)
 - Khoảng lặng ☕: chèn đoạn trống N bars (breakdown/breath); gieo/soạn nốt
   vào đó tự thành đoạn thường
 - Bè trong đoạn: toggle Lead/Chords/Arp/Bass/Drums từng đoạn để build/drop
