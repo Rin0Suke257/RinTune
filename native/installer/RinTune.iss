@@ -18,6 +18,8 @@ UninstallDisplayIcon={app}\RinTune.exe
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+WizardImageFile=..\res\wizard\side.bmp
+WizardSmallImageFile=..\res\wizard\small.bmp
 CloseApplications=yes
 RestartApplications=no
 VersionInfoVersion={#AppVersion}
@@ -43,6 +45,12 @@ Source: "..\mcp\mcp-config-example.json"; DestDir: "{app}\mcp"; Components: mcp
 [Icons]
 Name: "{autoprograms}\RinTune Studio"; Filename: "{app}\RinTune.exe"
 Name: "{autodesktop}\RinTune Studio"; Filename: "{app}\RinTune.exe"; Tasks: desktopicon
+
+[InstallDelete]
+Type: files; Name: "{autodesktop}\RMG - Random Music Generator.lnk"
+Type: files; Name: "{autoprograms}\RMG - Random Music Generator.lnk"
+Type: files; Name: "{autodesktop}\RMG - Random Music Generator*.lnk"
+Type: files; Name: "{autoprograms}\RMG - Random Music Generator*.lnk"
 
 [Tasks]
 Name: "desktopicon"; Description: "Tao shortcut ngoai Desktop"; GroupDescription: "Tuy chon:"

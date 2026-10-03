@@ -34,6 +34,7 @@
     density: 75,
     variation: 70, // Bien tau tong 0..100 (0 = giu khung, 100 = dao manh)
     variationTracks: { lead: 100, chords: 100, arp: 100, bass: 100, drums: 100 },
+    lang: 'vi',
     currentSong: null,
     isPlaying: false,
     editingTrack: 'lead',
@@ -243,17 +244,17 @@
     if (valTimeSig) valTimeSig.textContent = timeSigStr;
 
     const sectionLabels = {
-      'none': 'Toàn Bài',
-      'intro': 'Intro (Mở đầu)',
-      'verse': 'Verse (Thân bài)',
-      'chorus': 'Chorus (Điệp khúc)',
-      'outro': 'Outro (Kết thúc)',
-      'merged': 'Merged (Ghép nối)'
+      'none': t('Toàn Bài'),
+      'intro': t('Intro (Mở đầu)'),
+      'verse': t('Verse (Thân bài)'),
+      'chorus': t('Chorus (Điệp khúc)'),
+      'outro': t('Outro (Kết thúc)'),
+      'merged': t('Merged (Ghép nối)')
     };
-    badgeSectionText.textContent = sectionLabels[state.section] || 'Toàn Bài';
+    badgeSectionText.textContent = sectionLabels[state.section] || t('Toàn Bài');
 
     if (state.currentSong) {
-      songInfoLabel.textContent = `Tác phẩm: ${state.currentSong.metadata.title} (${state.lengthBars} Bars, ${state.bpm} BPM [${timeSigStr}] • ${state.currentSong.metadata.noteCount || 0} Nốt)`;
+      songInfoLabel.textContent = t('Tác phẩm: {0} ({1} Bars, {2} BPM [{3}] • {4} Nốt)', state.currentSong.metadata.title, state.lengthBars, state.bpm, timeSigStr, state.currentSong.metadata.noteCount || 0);
     }
   }
 
@@ -334,7 +335,7 @@
     delete Theory.GENRES[id];
     renderCustomGenreCards();
     if (state.genre === id) selectGenre('fiery_piano');
-    else showToast('🗑️ Đã xóa style riêng');
+    else showToast(t('🗑️ Đã xóa style riêng'));
   }
 
   function openCustomGenreModal() {
@@ -365,11 +366,11 @@
     const lead = customLead.value;
     const templates = (customProg.value || '').split('\n').map(l => l.split(/[\s,;|]+/).filter(Boolean).slice(0, 8)).filter(t => t.length >= 2).slice(0, 8);
     if (!name) {
-      showToast('⚠️ Hãy đặt tên cho style');
+      showToast(t('⚠️ Hãy đặt tên cho style'));
       return;
     }
     if (!templates.length) {
-      showToast('⚠️ Cần ít nhất 1 vòng hợp âm (VD: i VI VII i)');
+      showToast(t('⚠️ Cần ít nhất 1 vòng hợp âm (VD: i VI VII i)'));
       return;
     }
     const id = 'custom_' + Date.now();
@@ -388,7 +389,7 @@
     renderCustomGenreCards();
     closeCustomGenreModal();
     selectGenre(id);
-    showToast(`🎨 Đã lưu style riêng: ${name}`);
+    showToast(t(`🎨 Đã lưu style riêng: {0}`, name));
   }
 
 
@@ -426,7 +427,7 @@
   function shiftOctave(d) {
     const list = editTargetNotes();
     if (!list.length) {
-      showToast('⚠️ Không có nốt nào (bôi đen nốt hoặc chọn bè)');
+      showToast(t('⚠️ Không có nốt nào (bôi đen nốt hoặc chọn bè)'));
       return;
     }
     pushUndo('dịch quãng');
@@ -439,13 +440,13 @@
       n++;
     }
     refreshAfterEdit();
-    showToast(`🎹 Dịch quãng ${d > 0 ? '+1' : '−1'}: ${n} nốt`);
+    showToast(t(`🎹 Dịch quãng {0}: {1} nốt`, d > 0 ? '+1' : '−1', n));
   }
 
   function shiftVelocity(d) {
     const list = editTargetNotes();
     if (!list.length) {
-      showToast('⚠️ Không có nốt nào (bôi đen nốt hoặc chọn bè)');
+      showToast(t('⚠️ Không có nốt nào (bôi đen nốt hoặc chọn bè)'));
       return;
     }
     pushUndo('đổi velocity');
@@ -455,7 +456,7 @@
       note.locked = true;
     }
     refreshAfterEdit();
-    showToast(`🔊 Velocity ${d > 0 ? '+' : ''}${d}: ${list.length} nốt`);
+    showToast(t(`🔊 Velocity {0}{1}: {2} nốt`, d > 0 ? '+' : '', d, list.length));
   }
 
 
@@ -524,13 +525,13 @@
 
   function applyRegenToSong(fromBar0, toBar0, trackKeys, push = true) {
     if (!state.currentSong) {
-      showToast('⚠️ Chưa có bài nhạc nào để gieo lại! Hãy bấm Generate trước.');
+      showToast(t('⚠️ Chưa có bài nhạc nào để gieo lại! Hãy bấm Generate trước.'));
       return;
     }
     endTakeSession(true); // gieo tay ngoai khay -> dong khay take cu
     if (push) pushUndo('gieo vùng');
     if (!trackKeys || trackKeys.length === 0) {
-      showToast('⚠️ Hãy chọn ít nhất 1 bè để gieo lại!');
+      showToast(t('⚠️ Hãy chọn ít nhất 1 bè để gieo lại!'));
       return;
     }
     const song = state.currentSong;
@@ -548,7 +549,7 @@
     renderPianoRoll(Synth.currentStep || 0);
     renderHistory();
     scheduleAutosave();
-    showToast(`🎲 Đã gieo lại bars ${result.fromBar + 1}–${result.toBar + 1} (${trackKeys.join(', ').toUpperCase()}): +${added} nốt mới, thay ${removed} nốt cũ, nốt 🔒 giữ nguyên`);
+    showToast(t(`🎲 Đã gieo lại bars {0}–{1} ({2}): +{3} nốt mới, thay {4} nốt cũ, nốt 🔒 giữ nguyên`, result.fromBar + 1, result.toBar + 1, trackKeys.join(', ').toUpperCase(), added, removed));
   }
 
   let takeSession = null; // {from,to,tracks,takes:[{id,label,notes}],appliedId,preSong}
@@ -594,7 +595,7 @@
 
   function newTake() {
     if (!state.currentSong) {
-      showToast('⚠️ Chưa có bài nhạc nào! Hãy bấm Generate trước.');
+      showToast(t('⚠️ Chưa có bài nhạc nào! Hãy bấm Generate trước.'));
       return;
     }
     const totalBars = state.currentSong.metadata.lengthBars;
@@ -602,7 +603,7 @@
     const to = Math.max(from, Math.min(totalBars - 1, (parseInt(inputRegenTo.value, 10) || 1) - 1));
     const tracks = getCheckedRegenTracks();
     if (!tracks.length) {
-      showToast('⚠️ Hãy chọn ít nhất 1 bè để gieo take!');
+      showToast(t('⚠️ Hãy chọn ít nhất 1 bè để gieo take!'));
       return;
     }
     const scope = { from, to, tracks };
@@ -622,7 +623,7 @@
     takeSession.takes.push(take);
     if (takeSession.takes.length > 4) takeSession.takes.shift(); // giu toi da 4 take
     applyTake(take.id, true);
-    showToast(`🎬 Đã gieo ${take.label} (bars ${from + 1}–${to + 1}): bấm tên take để nghe lại, 📌 để giữ`);
+    showToast(t(`🎬 Đã gieo {0} (bars {1}–{2}): bấm tên take để nghe lại, 📌 để giữ`, take.label, from + 1, to + 1));
   }
 
   function applyTake(id, silent) {
@@ -633,14 +634,14 @@
     spliceRegenResult(state.currentSong, take.result);
     refreshSongUI();
     renderTakeStrip();
-    if (!silent) showToast(`▶ Đang nghe ${take.label}`);
+    if (!silent) showToast(t(`▶ Đang nghe {0}`, take.label));
   }
 
   function endTakeSession(silent) {
     if (!takeSession) return;
     takeSession = null;
     renderTakeStrip();
-    if (!silent) showToast('📌 Đã giữ take đang nghe — khay take đã đóng');
+    if (!silent) showToast(t('📌 Đã giữ take đang nghe — khay take đã đóng'));
   }
 
   function revertTakeSession() {
@@ -649,7 +650,7 @@
     takeSession = null;
     renderTakeStrip();
     refreshSongUI();
-    showToast('↩ Đã trả về bản gốc trước khi thử take');
+    showToast(t('↩ Đã trả về bản gốc trước khi thử take'));
   }
 
   const TRACK_KEYS = ['lead', 'chords', 'arp', 'bass', 'drums'];
@@ -870,7 +871,7 @@
   function timelineOp(label, fn) {
     const song = state.currentSong;
     if (!song) {
-      showToast('⚠️ Chưa có bài nhạc nào! Hãy bấm Generate trước.');
+      showToast(t('⚠️ Chưa có bài nhạc nào! Hãy bấm Generate trước.'));
       return;
     }
     endTakeSession(true);
@@ -990,7 +991,7 @@
   }
 
   function insertRestClip() {
-    const v = prompt('Khoảng lặng mấy bars?', '2');
+    const v = prompt(t('Khoảng lặng mấy bars?'), '2');
     if (v == null) return;
     const bars = Math.max(1, Math.min(32, parseInt(v, 10) || 2));
     timelineOp('khoảng lặng', (song) => {
@@ -1011,7 +1012,7 @@
   function setClipTrack(trackKey, on) {
     const c = selectedClip();
     if (!c) {
-      showToast('⚠️ Hãy bấm chọn 1 clip trên lane trước');
+      showToast(t('⚠️ Hãy bấm chọn 1 clip trên lane trước'));
       renderTimelineLane();
       return;
     }
@@ -1027,10 +1028,10 @@
 
   function renameSelectedClip() {    const c = selectedClip();
     if (!c) {
-      showToast('⚠️ Hãy bấm chọn 1 clip trên lane trước');
+      showToast(t('⚠️ Hãy bấm chọn 1 clip trên lane trước'));
       return;
     }
-    const name = prompt('Tên clip:', c.name);
+    const name = prompt(t('Tên clip:'), c.name);
     if (name == null) return;
     const clean = String(name).trim().slice(0, 40) || c.name;
     pushUndo('đổi tên clip');
@@ -1038,7 +1039,7 @@
     c.name = clean;
     renderTimelineLane();
     scheduleAutosave();
-    showToast(`✏ Clip giờ tên "${clean}"`);
+    showToast(t(`✏ Clip giờ tên "{0}"`, clean));
   }
 
   const TL_COLLAPSE_KEY = 'rmg_timeline_collapsed_v1';
@@ -1073,8 +1074,8 @@
     const total = song.clips.reduce((a, c) => a + c.lengthBars, 0) || 1;
     const sel = selectedClip();
     if (info) {
-      info.textContent = `${song.clips.length} đoạn • ${total} bars` +
-        (sel ? ` • chọn: "${sel.name}" (${sel.lengthBars} bars, ${clipNoteCount(sel)} nốt${sel.rest ? ', lặng' : ''}${sel.muted ? ', muted' : ''})` : '');
+      info.textContent = t('{0} đoạn • {1} bars', song.clips.length, total) +
+        (sel ? t(' • chọn: "{0}" ({1} bars, {2} nốt{3}{4})', sel.name, sel.lengthBars, clipNoteCount(sel), sel.rest ? t(', lặng') : '', sel.muted ? ', muted' : '') : '');
     }
     syncClipTrackToggles(sel);
     lanes.innerHTML = '';
@@ -1116,7 +1117,7 @@
         if (inputRegenFrom) inputRegenFrom.value = c.startBar + 1;
         if (inputRegenTo) inputRegenTo.value = c.startBar + c.lengthBars;
         renderTimelineLane();
-        showToast(`🎯 Vùng gieo lại = đoạn "${c.name}" (bars ${c.startBar + 1}–${c.startBar + c.lengthBars})`);
+        showToast(t(`🎯 Vùng gieo lại = đoạn "{0}" (bars {1}–{2})`, c.name, c.startBar + 1, c.startBar + c.lengthBars));
       });
       enableClipDrag(d, c, body);
       body.appendChild(d);
@@ -1176,7 +1177,7 @@
 
   function developMotif() {    const song = state.currentSong;
     if (!song) {
-      showToast('⚠️ Chưa có bài nhạc nào! Hãy bấm Generate trước.');
+      showToast(t('⚠️ Chưa có bài nhạc nào! Hãy bấm Generate trước.'));
       return;
     }
     const spb = song.metadata.stepsPerBar || 16;
@@ -1185,7 +1186,7 @@
       .filter(n => n.locked && n.step < motifSteps)
       .sort((a, b) => a.step - b.step);
     if (!motif.length) {
-      showToast('🌱 Hãy soạn/kéo vài nốt lead (viền vàng 🔒) trong 2 bars đầu rồi bấm lại', 4500);
+      showToast(t('🌱 Hãy soạn/kéo vài nốt lead (viền vàng 🔒) trong 2 bars đầu rồi bấm lại'), 4500);
       return;
     }
     const scaleNotes = Theory.getScaleNotes(song.metadata.key, song.metadata.scale, 4, 6);
@@ -1210,7 +1211,7 @@
     renderTimelineLane();
     renderHistory();
     scheduleAutosave();
-    showToast(`🌱 Đã phát triển motif (${motif.length} nốt gốc) thành lead ${totalBars} bars: +${added} nốt mới`, 4500);
+    showToast(t(`🌱 Đã phát triển motif ({0} nốt gốc) thành lead {1} bars: +{2} nốt mới`, motif.length, totalBars, added), 4500);
   }
 
   const MidiParser = window.RMGMidi;
@@ -1402,9 +1403,9 @@
       renderPianoRoll(0);
       renderTimelineLane();
       pushToHistory(song);
-      showToast(`📂 Đã mở ${name}: ${song.metadata.lengthBars} bars, ${song.metadata.bpm} BPM [${song.metadata.timeSignature}], ${song.metadata.noteCount} nốt (key/scale theo thiết lập: ${song.metadata.key}/${song.metadata.scale})`, 5000);
+      showToast(t(`📂 Đã mở {0}: {1} bars, {2} BPM [{3}], {4} nốt (key/scale theo thiết lập: {5}/{6})`, name, song.metadata.lengthBars, song.metadata.bpm, song.metadata.timeSignature, song.metadata.noteCount, song.metadata.key, song.metadata.scale), 5000);
     } catch (err) {
-      showToast('⚠️ Không mở được MIDI: ' + (err.message || err), 5000);
+      showToast(t('⚠️ Không mở được MIDI: {0}', err.message || err), 5000);
     }
   }
 
@@ -1425,13 +1426,13 @@
           const base = String(res.filePath || 'song.mid').split(/[\\/]/).pop();
           openAnyFile(base, Uint8Array.from(res.data || []));
         } else if (!res.cancelled) {
-          showToast('⚠️ ' + (res.error || 'Không mở được file'));
+          showToast(t('⚠️ {0}', res.error || t('Không mở được file')));
         }
-      }).catch(err => showToast('⚠️ Lỗi mở file: ' + err.message));
+      }).catch(err => showToast(t('⚠️ Lỗi mở file: {0}', err.message)));
     } else if (fileOpenMidi) {
       fileOpenMidi.click();
     } else {
-      showToast('Trình duyệt không hỗ trợ mở file.');
+      showToast(t('Trình duyệt không hỗ trợ mở file.'));
     }
   }
 
@@ -1463,7 +1464,7 @@
   function toggleRec() {
     state.recArmed = !state.recArmed;
     if (btnRec) btnRec.classList.toggle('rec-armed', state.recArmed);
-    showToast(state.recArmed ? '🔴 REC bật: đàn phím khi phát nhạc để ghi nốt vào bè đang soạn' : '⚪ REC tắt');
+    showToast(state.recArmed ? t('🔴 REC bật: đàn phím khi phát nhạc để ghi nốt vào bè đang soạn') : t('⚪ REC tắt'));
   }
 
   function openProgEditor(bar) {
@@ -1471,7 +1472,7 @@
     const song = state.currentSong;
     if (!song.progression || !song.progression[bar]) return;
     editingProgBar = bar;
-    progressionEditorTitle.textContent = `Sửa hợp âm Bar ${bar + 1} (hiện tại: ${song.progression[bar].symbol})`;
+    progressionEditorTitle.textContent = t('Sửa hợp âm Bar {0} (hiện tại: {1})', bar + 1, song.progression[bar].symbol);
     selectProgChord.innerHTML = '';
     const key = song.metadata.key, scale = song.metadata.scale;
     for (const sym of Theory.listChordSymbols()) {
@@ -1525,7 +1526,7 @@
     }
     renderPianoRoll(Synth.currentStep || 0);
     renderHistory();
-    showToast(n > 0 ? `🔓 Đã mở khóa ${n} nốt soạn tay` : 'Không có nốt nào đang bị khóa');
+    showToast(n > 0 ? t('🔓 Đã mở khóa {0} nốt soạn tay', n) : t('Không có nốt nào đang bị khóa'));
   }
 
 
@@ -1638,19 +1639,19 @@
 
   function doUndo() {
     if (undoStack.length === 0) {
-      showToast('↩️ Không còn bước nào để Undo');
+      showToast(t('↩️ Không còn bước nào để Undo'));
       return;
     }
     redoStack.push(snapshotState());
     const snap = undoStack.pop();
     restoreSnapshot(snap);
     updateUndoButtons();
-    showToast(`↩️ Undo: ${snap.label || 'thao tác'}`);
+    showToast(t(`↩️ Undo: {0}`, snap.label || 'thao tác'));
   }
 
   function doRedo() {
     if (redoStack.length === 0) {
-      showToast('↪️ Không còn bước nào để Redo');
+      showToast(t('↪️ Không còn bước nào để Redo'));
       return;
     }
     const cur = snapshotState();
@@ -1661,7 +1662,7 @@
     const snap = redoStack.pop();
     restoreSnapshot(snap);
     updateUndoButtons();
-    showToast('↪️ Redo');
+    showToast(t('↪️ Redo'));
   }
 
   function updateUndoButtons() {
@@ -1726,13 +1727,13 @@
     activeTabId = id;
     restoreSnapshot(target.snap);
     renderTabs();
-    showToast(`📑 Tab: ${tabLabelFor(target)}`);
+    showToast(t(`📑 Tab: {0}`, tabLabelFor(target)));
   }
 
   function newTab() {
     if (!state.currentSong) return;
     if (songTabs.length >= 6) {
-      showToast('⚠️ Tối đa 6 tabs');
+      showToast(t('⚠️ Tối đa 6 tabs'));
       return;
     }
     const cur = currentTab();
@@ -1754,7 +1755,7 @@
 
   function closeTab(id) {
     if (songTabs.length <= 1) {
-      showToast('⚠️ Giữ lại ít nhất 1 tab');
+      showToast(t('⚠️ Giữ lại ít nhất 1 tab'));
       return;
     }
     const ix = songTabs.findIndex(t => t.id === id);
@@ -1777,14 +1778,14 @@
 
   function toggleAB() {
     if (!state.currentSong) {
-      showToast('⚠️ Chưa có bài nhạc!');
+      showToast(t('⚠️ Chưa có bài nhạc!'));
       return;
     }
     if (!abSlotA) {
       abSlotA = snapshotState();
       abHearing = 'A';
       updateABButton();
-      showToast('📌 Đã ghim bản A — chỉnh sửa rồi bấm A/B để so với bản hiện tại');
+      showToast(t('📌 Đã ghim bản A — chỉnh sửa rồi bấm A/B để so với bản hiện tại'));
       return;
     }
     if (abHearing === 'A') {
@@ -1792,16 +1793,16 @@
       restoreSnapshot(abSlotA);
       abHearing = 'B';
       updateABButton();
-      showToast('🔊 Nghe bản A (đã ghim)');
+      showToast(t('🔊 Nghe bản A (đã ghim)'));
     } else {
       if (!abSlotB) {
-        showToast('⚠️ Chưa có bản B để so');
+        showToast(t('⚠️ Chưa có bản B để so'));
         return;
       }
       restoreSnapshot(abSlotB);
       abHearing = 'A';
       updateABButton();
-      showToast('🔊 Nghe bản hiện tại (B)');
+      showToast(t('🔊 Nghe bản hiện tại (B)'));
     }
   }
 
@@ -1819,12 +1820,12 @@
       btnTogglePurePiano.style.borderColor = '#ffd700';
       btnTogglePurePiano.style.color = '#ffd700';
       btnTogglePurePiano.style.background = 'rgba(255, 215, 0, 0.15)';
-      if (txtPurePiano) txtPurePiano.textContent = '🎹 THUẦN PIANO: BẬT';
+      if (txtPurePiano) txtPurePiano.textContent = t('🎹 THUẦN PIANO: BẬT');
     } else {
       btnTogglePurePiano.style.borderColor = 'var(--border-color)';
       btnTogglePurePiano.style.color = 'var(--text-muted)';
       btnTogglePurePiano.style.background = 'var(--bg-input)';
-      if (txtPurePiano) txtPurePiano.textContent = '🎛️ DÀN NHẠC 5 BÈ: BẬT';
+      if (txtPurePiano) txtPurePiano.textContent = t('🎛️ DÀN NHẠC 5 BÈ: BẬT');
     }
   }
 
@@ -1862,6 +1863,39 @@
     syncPurePianoButton();
   }
 
+
+  function t(s, ...args) {
+    const dict = (window.RinTuneI18N && window.RinTuneI18N[state.lang]) || {};
+    let out = (dict[s] != null ? dict[s] : s);
+    args.forEach((a, i) => { out = out.split('{' + i + '}').join(String(a)); });
+    return out;
+  }
+
+  function applyLang() {
+    document.documentElement.lang = (state.lang === 'en' ? 'en' : 'vi');
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+      el.innerHTML = t(el.dataset.i18nHtml);
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+      el.placeholder = t(el.dataset.i18nPh);
+    });
+    const bvi = document.getElementById('btnLangVi');
+    const ben = document.getElementById('btnLangEn');
+    if (bvi) bvi.style.borderColor = state.lang === 'vi' ? 'var(--accent-gold)' : '';
+    if (ben) ben.style.borderColor = state.lang === 'en' ? 'var(--accent-gold)' : '';
+    updatePlayButtonUI(Synth.isPlaying);
+    updateHeaderBadges();
+    renderTimelineLane();
+  }
+
+  function setLang(l) {
+    state.lang = (l === 'en' ? 'en' : 'vi');
+    try { localStorage.setItem('rintune_lang_v1', state.lang); } catch (e) {}
+    applyLang();
+  }
 
   function syncVariationControls() {
     if (sliderVariation) sliderVariation.value = state.variation;
@@ -1907,7 +1941,7 @@
       else el.style.display = (id === 'dockTabs' || id === activeId) ? '' : 'none';
     }
     handleResize();
-    showToast(dockHidden ? '📜 Đã ẩn panel dưới' : '📜 Đã hiện panel dưới');
+    showToast(dockHidden ? t('📜 Đã ẩn panel dưới') : t('📜 Đã hiện panel dưới'));
   }
 
   function switchDock(id) {
@@ -1921,7 +1955,7 @@
   function scrollToArranger() {
     if (selectArrangerForm) {
       selectArrangerForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      showToast('🎼 Arranger ở sidebar trái — chọn form rồi Dựng Bài');
+      showToast(t('🎼 Arranger ở sidebar trái — chọn form rồi Dựng Bài'));
     }
   }
 
@@ -2098,7 +2132,7 @@
     try {
       localStorage.setItem(THEME_KEY, JSON.stringify(t));
     } catch (e) {
-      showToast('⚠️ Không lưu được theme (ảnh nền quá lớn?)');
+      showToast(t('⚠️ Không lưu được theme (ảnh nền quá lớn?)'));
       return;
     }
     applyThemeStore(t);
@@ -2115,7 +2149,7 @@
     } else {
       saveTheme({ name });
     }
-    showToast(`🎨 Theme: ${name}`);
+    showToast(t(`🎨 Theme: {0}`, name));
   }
 
   function openThemeEditor() {
@@ -2180,10 +2214,10 @@
         downscaleImage(String(rd.result)).then(dataUrl => {
           const cur = getThemeStore();
           saveTheme({ name: 'custom', accent: cur.accent || null, bg: dataUrl });
-          showToast('🖼️ Đã đặt ảnh nền (tự mờ + tối để dễ nhìn)');
-        }).catch(() => showToast('⚠️ Không đọc được ảnh'));
+          showToast(t('🖼️ Đã đặt ảnh nền (tự mờ + tối để dễ nhìn)'));
+        }).catch(() => showToast(t('⚠️ Không đọc được ảnh')));
       };
-      rd.onerror = () => showToast('⚠️ Không đọc được file ảnh');
+      rd.onerror = () => showToast(t('⚠️ Không đọc được file ảnh'));
       rd.readAsDataURL(f);
     };
     inp.click();
@@ -2192,7 +2226,7 @@
   function clearBackground() {
     const cur = getThemeStore();
     saveTheme({ name: (cur.name === 'midnight' || cur.name === 'sakura') ? cur.name : 'custom', accent: cur.accent || null, bg: null });
-    showToast('🧹 Đã xóa ảnh nền');
+    showToast(t('🧹 Đã xóa ảnh nền'));
   }
 
   function runMenuAction(act) {
@@ -2239,7 +2273,7 @@
       case 'arrange': scrollToArranger(); break;
       case 'motif': developMotif(); break;
       case 'transfer': transferStyle(); break;
-      case 'progedit-hint': showToast('🎹 Bấm vào từng chip hợp âm ở panel Vòng Hợp Âm (sidebar) để sửa', 4500); break;
+      case 'progedit-hint': showToast(t('🎹 Bấm vào từng chip hợp âm ở panel Vòng Hợp Âm (sidebar) để sửa'), 4500); break;
       case 'seed-copy': copySeed(); break;
       case 'seed-paste': pasteSeed(); break;
       case 'seed-daily': dailySeed(); break;
@@ -2248,7 +2282,7 @@
       case 'genre-extract': extractStyleFromSong(); break;
       case 'help-open': if (helpModal) helpModal.style.display = 'flex'; break;
       case 'check-update': checkUpdate(); break;
-      case 'about': showToast(`RinTune Studio v${APP_VERSION} by Rin0suke257 — Sinh nhạc ngẫu nhiên cho LMMS`, 5000); break;
+      case 'about': showToast(t(`RinTune Studio v{0} by Rin0suke257 — Sinh nhạc ngẫu nhiên cho LMMS`, APP_VERSION), 5000); break;
       default: break;
     }
   }
@@ -2327,35 +2361,35 @@
         }
       }
     } catch (e) {}
-    if (exportDirLabel && !exportDirCache) exportDirLabel.textContent = '(chọn mỗi lần)';
+    if (exportDirLabel && !exportDirCache) exportDirLabel.textContent = t('(chọn mỗi lần)');
   }
 
   async function changeExportDir() {
     try {
       if (!(window.rmgAPI && window.rmgAPI.setExportDir)) {
-        showToast('Chạy trong app RinTune để đổi thư mục xuất');
+        showToast(t('Chạy trong app RinTune để đổi thư mục xuất'));
         return;
       }
       const r = await window.rmgAPI.setExportDir();
       if (r && r.success) {
         exportDirCache = r.dir;
         if (exportDirLabel) exportDirLabel.textContent = r.dir;
-        showToast('📁 Thư mục xuất: ' + r.dir);
+        showToast(t('📁 Thư mục xuất: {0}', r.dir));
       }
     } catch (e) {
-      showToast('⚠️ ' + (e.message || e));
+      showToast(t('⚠️ {0}', e.message || e));
     }
   }
 
   async function openExportDir() {
     try {
       if (!(window.rmgAPI && window.rmgAPI.openFolder)) {
-        showToast('Chạy trong app RinTune để mở thư mục');
+        showToast(t('Chạy trong app RinTune để mở thư mục'));
         return;
       }
       await window.rmgAPI.openFolder({ folder: 'export' });
     } catch (e) {
-      showToast('⚠️ ' + (e.message || e));
+      showToast(t('⚠️ {0}', e.message || e));
     }
   }
 
@@ -2386,7 +2420,7 @@
 
   async function quickExport(kind) {
     if (!state.currentSong) {
-      showToast('⚠️ Chưa có bài nhạc!');
+      showToast(t('⚠️ Chưa có bài nhạc!'));
       return;
     }
     if (kind === 'wav') {
@@ -2403,14 +2437,14 @@
           : Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2);
         const r = await window.rmgAPI.saveFileDirect({ folder: 'export', fileName, data });
         if (r && r.success) {
-          showToast(`⚡ Đã xuất nhanh: ${r.filePath}`, 4000);
+          showToast(t(`⚡ Đã xuất nhanh: {0}`, r.filePath), 4000);
           refreshRecent();
           return;
         }
         throw new Error((r && r.error) || 'export failed');
       }
     } catch (e) {
-      showToast('⚠️ Xuất nhanh lỗi, chuyển sang dialog: ' + (e.message || e));
+      showToast(t('⚠️ Xuất nhanh lỗi, chuyển sang dialog: {0}', e.message || e));
     }
     if (isMidi) handleSaveMidi();
     else handleSaveMmp();
@@ -2435,16 +2469,16 @@
   }
 
   async function exportWav(useQuick) {    if (!state.currentSong) {
-      showToast('⚠️ Chưa có bài nhạc!');
+      showToast(t('⚠️ Chưa có bài nhạc!'));
       return;
     }
     const md = state.currentSong.metadata;
     const estSec = (md.lengthBars * (md.stepsPerBar || 16) * (60 / (md.bpm || 120) / 4)) + 2;
     if (estSec * 44100 * 4 > 150 * 1024 * 1024) {
-      showToast('⚠️ Bài quá dài để render WAV (>150MB). Hãy xuất MIDI/MMP.');
+      showToast(t('⚠️ Bài quá dài để render WAV (>150MB). Hãy xuất MIDI/MMP.'));
       return;
     }
-    showToast('🎧 Đang render WAV, chờ chút...', 6000);
+    showToast(t('🎧 Đang render WAV, chờ chút...'), 6000);
     try {
       if (Synth.isPlaying) {
         Synth.stop();
@@ -2456,7 +2490,7 @@
       if (useQuick && window.rmgAPI && window.rmgAPI.saveFileDirect) {
         const r = await saveLargeArray('export', fileName, wav);
         if (r && r.success) {
-          showToast(`🎧 WAV xong (${(wav.length / 1048576).toFixed(1)} MB): ${r.filePath}`, 6000);
+          showToast(t(`🎧 WAV xong ({0} MB): {1}`, (wav.length / 1048576).toFixed(1), r.filePath), 6000);
           refreshRecent();
           return;
         }
@@ -2464,7 +2498,7 @@
       if (window.rmgAPI && window.rmgAPI.saveFile) {
         const r = await window.rmgAPI.saveFile({ data: Array.from(wav), defaultName: fileName, type: 'wav' });
         if (r && r.success) {
-          showToast(`🎧 WAV xong: ${r.filePath}`, 5000);
+          showToast(t(`🎧 WAV xong: {0}`, r.filePath), 5000);
           refreshRecent();
         }
       } else {
@@ -2475,10 +2509,10 @@
         a.download = fileName;
         a.click();
         URL.revokeObjectURL(url);
-        showToast(`🎧 WAV xong: ${fileName}`, 5000);
+        showToast(t(`🎧 WAV xong: {0}`, fileName), 5000);
       }
     } catch (err) {
-      showToast('⚠️ Render WAV lỗi: ' + (err.message || err), 5000);
+      showToast(t('⚠️ Render WAV lỗi: {0}', err.message || err), 5000);
     }
   }
 
@@ -2486,7 +2520,7 @@
   async function finishSong() {
     const song = state.currentSong;
     if (!song) {
-      showToast('⚠️ Chưa có bài nhạc!');
+      showToast(t('⚠️ Chưa có bài nhạc!'));
       return;
     }
     pushUndo('finish');
@@ -2513,27 +2547,27 @@
         });
         if (mmp && mmp.success) done.push(mmp.filePath);
         if (done.length) {
-          showToast(`⚡ Finish xong (${done.length} file)${sf2 ? ' [SoundFont 🎻]' : ''}: ${done.join(' • ')}`, 6000);
+          showToast(t(`⚡ Finish xong ({0} file){1}: {2}`, done.length, sf2 ? ' [SoundFont 🎻]' : '', done.join(' • ')), 6000);
           refreshRecent();
           return;
         }
       }
     } catch (e) {}
-    showToast('⚠️ Finish cần chạy trong app RinTune (dùng nút xuất thường)');
+    showToast(t('⚠️ Finish cần chạy trong app RinTune (dùng nút xuất thường)'));
   }
 
 
   function transferStyle() {
     const song = state.currentSong;
     if (!song) {
-      showToast('⚠️ Chưa có bài nhạc! Mở MIDI trước.');
+      showToast(t('⚠️ Chưa có bài nhạc! Mở MIDI trước.'));
       return;
     }
     const target = state.genre;
     const gDef = Theory.GENRES[target];
     if (!gDef) return;
     if (song.metadata.genre === target) {
-      showToast('Bài đã đúng style ' + target + ' rồi — đổi genre khác rồi bấm lại');
+      showToast(t('Bài đã đúng style {0} rồi — đổi genre khác rồi bấm lại', target));
       return;
     }
     pushUndo('ép style');
@@ -2549,13 +2583,13 @@
     updateHeaderBadges();
     renderPianoRoll(Synth.currentStep || 0);
     renderHistory();
-    showToast(`🎭 Đã ép style ${gDef.name}: giữ melody, thay ${stat.added} nốt đệm`, 5000);
+    showToast(t(`🎭 Đã ép style {0}: giữ melody, thay {1} nốt đệm`, gDef.name, stat.added), 5000);
   }
 
 
   function copySeed() {
     if (!state.currentSong) {
-      showToast('⚠️ Chưa có bài nhạc!');
+      showToast(t('⚠️ Chưa có bài nhạc!'));
       return;
     }
     const md = state.currentSong.metadata;
@@ -2572,14 +2606,14 @@
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(s).then(
-          () => showToast('🔗 Đã copy seed — gửi cho ai nhập cũng ra đúng bài này!'),
-          () => showToast('⚠️ Không copy được clipboard')
+          () => showToast(t('🔗 Đã copy seed — gửi cho ai nhập cũng ra đúng bài này!')),
+          () => showToast(t('⚠️ Không copy được clipboard'))
         );
       } else {
-        showToast('Clipboard không khả dụng');
+        showToast(t('Clipboard không khả dụng'));
       }
     } catch (e) {
-      showToast('⚠️ ' + (e.message || e));
+      showToast(t('⚠️ {0}', e.message || e));
     }
   }
 
@@ -2625,18 +2659,18 @@
       Synth.play();
       updatePlayButtonUI(true);
     }
-    showToast('🌱 Đã gieo từ seed — cùng seed ra cùng bài!');
+    showToast(t('🌱 Đã gieo từ seed — cùng seed ra cùng bài!'));
   }
 
   function pasteSeed() {
-    const v = prompt('Dán seed JSON vào đây:', '');
+    const v = prompt(t('Dán seed JSON vào đây:'), '');
     if (v == null) return;
     try {
       const o = JSON.parse(v.trim());
       if (!o || o.v !== 1 || !Theory.GENRES[o.genre]) throw new Error('Seed không hợp lệ');
       applySeedOptions(o);
     } catch (e) {
-      showToast('⚠️ Seed không hợp lệ');
+      showToast(t('⚠️ Seed không hợp lệ'));
     }
   }
 
@@ -2651,7 +2685,7 @@
       fadeInBars: state.fadeInBars, fadeOutBars: state.fadeOutBars,
       trackTarget: state.trackTarget, seed
     });
-    showToast(`📅 Seed hôm nay: ${seed} — ai nhập seed này cũng ra cùng bài!`, 5000);
+    showToast(t(`📅 Seed hôm nay: {0} — ai nhập seed này cũng ra cùng bài!`, seed), 5000);
   }
 
   const APP_VERSION = '2.1.0';
@@ -2681,7 +2715,7 @@
 
   async function saveProject(quick) {
     if (!state.currentSong) {
-      showToast('⚠️ Chưa có bài nhạc!');
+      showToast(t('⚠️ Chưa có bài nhạc!'));
       return;
     }
     const data = JSON.stringify(projectPayload());
@@ -2691,7 +2725,7 @@
         const r = await window.rmgAPI.saveFileDirect({ folder: 'export', fileName, data });
         if (r && r.success) {
           lastProjectName = fileName;
-          showToast(`💾 Project xong: ${r.filePath}`, 4000);
+          showToast(t(`💾 Project xong: {0}`, r.filePath), 4000);
           refreshRecent();
           return;
         }
@@ -2702,7 +2736,7 @@
         const r = await window.rmgAPI.saveFile({ data, defaultName: fileName, type: 'rmg' });
         if (r && r.success) {
           lastProjectName = String(r.filePath || '').split(/[\\/]/).pop();
-          showToast(`💾 Project xong: ${r.filePath}`, 4000);
+          showToast(t(`💾 Project xong: {0}`, r.filePath), 4000);
           refreshRecent();
         }
         return;
@@ -2715,7 +2749,7 @@
     a.download = fileName;
     a.click();
     URL.revokeObjectURL(url);
-    showToast(`💾 Project xong: ${fileName}`);
+    showToast(t(`💾 Project xong: {0}`, fileName));
   }
 
   async function openProjectFile(name, bytes) {
@@ -2757,9 +2791,9 @@
       renderTimelineLane();
       renderHistory();
       lastProjectName = String(name || '').split(/[\\/]/).pop() || null;
-      showToast(`📂 Đã mở project: ${lastProjectName || name}`, 4000);
+      showToast(t(`📂 Đã mở project: {0}`, lastProjectName || name), 4000);
     } catch (err) {
-      showToast('⚠️ Không mở được project: ' + (err.message || err), 5000);
+      showToast(t('⚠️ Không mở được project: {0}', err.message || err), 5000);
     }
   }
 
@@ -2771,9 +2805,9 @@
           const base = String(res.filePath || 'song.rmg').split(/[\\/]/).pop();
           openProjectFile(base, Uint8Array.from(res.data || []));
         } else if (!res.cancelled) {
-          showToast('⚠️ ' + (res.error || 'Không mở được file'));
+          showToast(t('⚠️ {0}', res.error || t('Không mở được file')));
         }
-      }).catch(err => showToast('⚠️ Lỗi mở file: ' + err.message));
+      }).catch(err => showToast(t('⚠️ Lỗi mở file: {0}', err.message)));
     } else if (fileOpenMidi) {
       fileOpenMidi.click();
     }
@@ -2814,7 +2848,7 @@
         try {
           applySeedOptions(JSON.parse(item.seed));
         } catch (e) {
-          showToast('⚠️ Seed hỏng');
+          showToast(t('⚠️ Seed hỏng'));
         }
       });
       el.querySelector('.seed-del').addEventListener('click', (e) => {
@@ -2828,7 +2862,7 @@
 
   function saveSeedToGallery() {
     if (!state.currentSong) {
-      showToast('⚠️ Chưa có bài nhạc!');
+      showToast(t('⚠️ Chưa có bài nhạc!'));
       return;
     }
     const md = state.currentSong.metadata;
@@ -2848,17 +2882,17 @@
     saveSeedGallery(arr);
     renderSeedGallery();
     if (nameInput) nameInput.value = '';
-    showToast(`🌱 Đã lưu seed: ${name}`);
+    showToast(t(`🌱 Đã lưu seed: {0}`, name));
   }
 
   async function checkUpdate() {
     const verEl = document.getElementById('appVersionLabel');
     try {
       if (!UPDATE_CHECK_URL) {
-        showToast('Chưa cấu hình kênh cập nhật (cần GitHub repo). Bản hiện tại: v' + APP_VERSION, 5000);
+        showToast(t('Chưa cấu hình kênh cập nhật (cần GitHub repo). Bản hiện tại: v{0}', APP_VERSION), 5000);
         return;
       }
-      showToast('Đang kiểm tra cập nhật...');
+      showToast(t('Đang kiểm tra cập nhật...'));
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 15000);
       const res = await fetch(UPDATE_CHECK_URL, { signal: ctrl.signal });
@@ -2866,13 +2900,13 @@
       const info = await res.json();
       const tag = String(info.tag_name || info.version || '').replace(/^v/, '');
       if (tag && tag !== APP_VERSION) {
-        showToast(`🎉 Có bản mới v${tag}! (đang dùng v${APP_VERSION})`, 6000);
+        showToast(t(`🎉 Có bản mới v{0}! (đang dùng v{1})`, tag, APP_VERSION), 6000);
       } else {
-        showToast(`✓ Đang dùng bản mới nhất (v${APP_VERSION})`);
+        showToast(t(`✓ Đang dùng bản mới nhất (v{0})`, APP_VERSION));
       }
       if (verEl) verEl.textContent = 'v' + APP_VERSION;
     } catch (e) {
-      showToast('⚠️ Không kiểm tra được (mất mạng?): bản hiện tại v' + APP_VERSION);
+      showToast(t('⚠️ Không kiểm tra được (mất mạng?): bản hiện tại v{0}', APP_VERSION));
     }
   }
 
@@ -2883,7 +2917,7 @@
     if (sf2LocalPath) return sf2LocalPath;
     try {
       if (!(window.rmgAPI && window.rmgAPI.saveFileDirect && window.rmgAPI.listFiles)) {
-        showToast('Tải SoundFont cần chạy trong app RinTune');
+        showToast(t('Tải SoundFont cần chạy trong app RinTune'));
         return null;
       }
       const l = await window.rmgAPI.listFiles({ folder: 'soundfonts' });
@@ -2895,7 +2929,7 @@
       }
     } catch (e) {}
     try {
-      showToast('⬇️ Đang tải SoundFont tiếng thật (~30MB, 1 lần duy nhất)...', 6000);
+      showToast(t('⬇️ Đang tải SoundFont tiếng thật (~30MB, 1 lần duy nhất)...'), 6000);
       const res = await fetch(SF2_URL);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const buf = new Uint8Array(await res.arrayBuffer());
@@ -2903,7 +2937,7 @@
         throw new Error('File tải về không phải SoundFont');
       }
       await saveLargeArray('soundfonts', SF2_NAME, buf);
-      showToast('🎻 Tải SoundFont xong! Export từ giờ dùng tiếng thật.', 5000);
+      showToast(t('🎻 Tải SoundFont xong! Export từ giờ dùng tiếng thật.'), 5000);
       sf2LocalPath = null; // doc lai duong dan chuan
       try {
         const l2 = await window.rmgAPI.listFiles({ folder: 'soundfonts' });
@@ -2913,7 +2947,7 @@
       updateSfStatus();
       return sf2LocalPath;
     } catch (e) {
-      showToast('⚠️ Không tải được SoundFont (mất mạng?): dùng tiếng synth', 5000);
+      showToast(t('⚠️ Không tải được SoundFont (mất mạng?): dùng tiếng synth'), 5000);
       return null;
     }
   }
@@ -2921,7 +2955,7 @@
   function updateSfStatus() {
     const el = document.getElementById('sfStatus');
     if (!el) return;
-    el.textContent = sf2LocalPath ? 'có sẵn ✓' : 'chưa có';
+    el.textContent = sf2LocalPath ? t('có sẵn ✓') : t('chưa có');
   }
 
   async function resolveSf2() {
@@ -2946,14 +2980,14 @@
   }
 
   async function batchExportMidi() {    if (!songHistory.length) {
-      showToast('⚠️ Lịch sử trống, không có gì để xuất');
+      showToast(t('⚠️ Lịch sử trống, không có gì để xuất'));
       return;
     }
     if (!(window.rmgAPI && window.rmgAPI.saveFileDirect)) {
-      showToast('⚠️ Xuất hàng loạt cần chạy trong app RinTune');
+      showToast(t('⚠️ Xuất hàng loạt cần chạy trong app RinTune'));
       return;
     }
-    showToast(`🎵 Đang xuất ${songHistory.length} file MIDI...`);
+    showToast(t(`🎵 Đang xuất {0} file MIDI...`, songHistory.length));
     let ok = 0;
     for (const item of songHistory) {
       if (!item.songData) continue;
@@ -2965,7 +2999,7 @@
       } catch (e) {}
     }
     refreshRecent();
-    showToast(`🎵 Xuất xong ${ok}/${songHistory.length} file MIDI vào thư mục xuất`, 5000);
+    showToast(t(`🎵 Xuất xong {0}/{1} file MIDI vào thư mục xuất`, ok, songHistory.length), 5000);
   }
 
 
@@ -2984,7 +3018,7 @@
                 genre: md.genre, key: md.key, scale: md.scale, bpm: md.bpm,
                 lengthBars: md.lengthBars, section: md.section, songData: obj.song
               }, true);
-              showToast('💾 Đã khôi phục bài trước từ autosave', 4000);
+              showToast(t('💾 Đã khôi phục bài trước từ autosave'), 4000);
               return;
             }
           }
@@ -3054,7 +3088,7 @@
       updatePlayButtonUI(true);
     }
 
-    showToast(`🎲 Đã gieo nhạc mới (${state.section.toUpperCase()} • ${state.lengthBars} Bars [${state.timeSignature}] • ${Theory.GENRES[state.genre].name})`);
+    showToast(t(`🎲 Đã gieo nhạc mới ({0} • {1} Bars [{2}] • {3})`, state.section.toUpperCase(), state.lengthBars, state.timeSignature, Theory.GENRES[state.genre].name));
   }
 
 
@@ -3140,7 +3174,7 @@
         localStorage.setItem('rmg_history_v2', JSON.stringify(songHistory.slice(0, n)));
         if (n < 30 && !quotaWarned) {
           quotaWarned = true;
-          showToast(`⚠️ Lịch sử quá lớn, chỉ giữ được ${n} bản mới nhất trên máy này`, 4500);
+          showToast(t(`⚠️ Lịch sử quá lớn, chỉ giữ được {0} bản mới nhất trên máy này`, n), 4500);
         }
         return;
       } catch (e) {}
@@ -3230,7 +3264,7 @@
 
       el.querySelector('.history-item-info h4').addEventListener('dblclick', (e) => {
         e.stopPropagation();
-        const v = prompt('Tên mới cho bản này:', item.customTitle || item.title || '');
+        const v = prompt(t('Tên mới cho bản này:'), item.customTitle || item.title || '');
         if (v === null) return;
         const t = v.trim().slice(0, 60);
         if (t) {
@@ -3334,7 +3368,7 @@
     Synth.play();
     updatePlayButtonUI(true);
 
-    showToast(`📁 Đã tải lại: ${item.title}`);
+    showToast(t(`📁 Đã tải lại: {0}`, item.title));
   }
 
   function createContinuation(item) {
@@ -3352,14 +3386,14 @@
     state.bpm = item.bpm;
 
     generateNewSong(true);
-    showToast(`🔗 Đã tạo phân đoạn tiếp nối: ${nextSec.toUpperCase()}`);
+    showToast(t(`🔗 Đã tạo phân đoạn tiếp nối: {0}`, nextSec.toUpperCase()));
   }
 
   function deleteHistoryItem(id) {
     songHistory = songHistory.filter(i => i.id !== id);
     saveHistoryStorage();
     renderHistory();
-    showToast('🗑️ Đã xóa 1 mục lịch sử');
+    showToast(t('🗑️ Đã xóa 1 mục lịch sử'));
   }
 
   function clearHistory() {
@@ -3367,7 +3401,7 @@
     songHistory = [];
     saveHistoryStorage();
     renderHistory();
-    showToast('🗑️ Đã xóa toàn bộ lịch sử gieo nhạc');
+    showToast(t('🗑️ Đã xóa toàn bộ lịch sử gieo nhạc'));
   }
 
 
@@ -3424,7 +3458,7 @@
 
   function mergeAllHistoryItems() {
     if (songHistory.length < 2) {
-      showToast('⚠️ Cần ít nhất 2 phân đoạn trong lịch sử để ghép nối thành bài hát hoàn chỉnh!');
+      showToast(t('⚠️ Cần ít nhất 2 phân đoạn trong lịch sử để ghép nối thành bài hát hoàn chỉnh!'));
       return;
     }
 
@@ -3493,7 +3527,7 @@
     Synth.play();
     updatePlayButtonUI(true);
 
-    showToast(`🎴 Đã ghép nối thành công ${itemsToMerge.length} phân đoạn thành bài hát dài ${totalBars} Bars!`, 5000);
+    showToast(t(`🎴 Đã ghép nối thành công {0} phân đoạn thành bài hát dài {1} Bars!`, itemsToMerge.length, totalBars), 5000);
   }
 
 
@@ -3571,7 +3605,7 @@
       if (p.key && p.key !== state.key) s += ` (${p.key})`;
       return s;
     }).join(' • ');
-    arrangerInfo.textContent = `${seq} — Tổng ${total} bars`;
+    arrangerInfo.textContent = t('{0} — Tổng {1} bars', seq, total);
   }
 
 
@@ -3654,7 +3688,7 @@
     renderPianoRoll(0);
     renderTimelineLane();
     pushToHistory(song);
-    showToast(`📄 Bài trống ${bars} bars — soạn tay/đàn phím/REC, rồi Trích Style khi ưng!`, 4500);
+    showToast(t(`📄 Bài trống {0} bars — soạn tay/đàn phím/REC, rồi Trích Style khi ưng!`, bars), 4500);
   }
 
 
@@ -3684,7 +3718,7 @@
   function extractStyleFromSong() {
     const song = state.currentSong;
     if (!song) {
-      showToast('⚠️ Chưa có bài nhạc nào!');
+      showToast(t('⚠️ Chưa có bài nhạc nào!'));
       return;
     }
     const a = analyzeSongStyle(song);
@@ -3697,7 +3731,7 @@
     if (customTs && [...customTs.options].some(o => o.value === a.timeSignature)) customTs.value = a.timeSignature;
     if (customLead && [...customLead.options].some(o => o.value === a.leadStyle)) customLead.value = a.leadStyle;
     if (customProg) customProg.value = a.templates.map(t => t.join(' ')).join('\n');
-    showToast('🧬 Đã trích style từ bài này — xem lại rồi bấm Lưu style', 4500);
+    showToast(t('🧬 Đã trích style từ bài này — xem lại rồi bấm Lưu style'), 4500);
   }
 
   function arrangeSong() {
@@ -3803,7 +3837,7 @@
       Synth.play();
       updatePlayButtonUI(true);
     }
-    showToast(`🎼 Đã dựng bài ${form.name}: ${totalBars} bars, ${song.metadata.noteCount} nốt!`, 5000);
+    showToast(t(`🎼 Đã dựng bài {0}: {1} bars, {2} nốt!`, form.name, totalBars, song.metadata.noteCount), 5000);
   }
 
   function togglePlay() {
@@ -3830,11 +3864,11 @@
     state.isPlaying = isPlaying;
     if (isPlaying) {
       playIcon.textContent = '⏸';
-      playText.textContent = 'TẠM DỪNG (PAUSE)';
+      playText.textContent = t('TẠM DỪNG (PAUSE)');
       btnPlay.style.background = 'linear-gradient(135deg, #f39c12, #e67e22)';
     } else {
       playIcon.textContent = '▶';
-      playText.textContent = 'PHÁT NHẠC (PLAY)';
+      playText.textContent = t('PHÁT NHẠC (PLAY)');
       btnPlay.style.background = 'linear-gradient(135deg, #00f2fe, #4facfe)';
     }
   }
@@ -3883,7 +3917,7 @@
         updatePurePianoButtonUI();
         updateHeaderBadges();
         generateNewSong();
-        showToast(state.trackTarget === 'pure_piano' ? '🎹 Đã BẬT chế độ Thuần Concert Grand Piano 2 Tay!' : '🎛️ Đã BẬT chế độ Dàn nhạc đầy đủ 5 Bè!');
+        showToast(state.trackTarget === 'pure_piano' ? t('🎹 Đã BẬT chế độ Thuần Concert Grand Piano 2 Tay!') : t('🎛️ Đã BẬT chế độ Dàn nhạc đầy đủ 5 Bè!'));
       });
     }
 
@@ -3954,7 +3988,7 @@
           Synth.bpm = calculatedBpm;
           Synth.secondsPerStep = (60 / calculatedBpm) / 4;
           updateHeaderBadges();
-          showToast(`⏱ Tap BPM: ${calculatedBpm}`);
+          showToast(t(`⏱ Tap BPM: {0}`, calculatedBpm));
         }
       });
     }
@@ -4059,7 +4093,7 @@
         state.variation = parseInt(btn.dataset.varpreset, 10);
         syncVariationControls();
         generateNewSong();
-        showToast(`🎲 Variation ${state.variation}% — bài mới đã gieo theo độ biến tấu này`);
+        showToast(t(`🎲 Variation {0}% — bài mới đã gieo theo độ biến tấu này`, state.variation));
       });
     });
 
@@ -4083,7 +4117,7 @@
         abSlotB = null;
         abHearing = 'A';
         updateABButton();
-        showToast('📌 Đã ghim lại bản A');
+        showToast(t('📌 Đã ghim lại bản A'));
       });
     }
     btnGenerate.addEventListener('click', () => generateNewSong());
@@ -4096,7 +4130,7 @@
     if (btnUnlockAll) btnUnlockAll.addEventListener('click', unlockAllNotes);
     if (btnRegenRegion) btnRegenRegion.addEventListener('click', () => {
       if (!state.currentSong) {
-        showToast('⚠️ Chưa có bài nhạc nào! Hãy bấm Generate trước.');
+        showToast(t('⚠️ Chưa có bài nhạc nào! Hãy bấm Generate trước.'));
         return;
       }
       const total = state.currentSong.metadata.lengthBars;
@@ -4114,6 +4148,15 @@
     if (btnNewTake) btnNewTake.addEventListener('click', newTake);
     if (btnKeepTake) btnKeepTake.addEventListener('click', () => endTakeSession(false));
     if (btnRevertTake) btnRevertTake.addEventListener('click', revertTakeSession);
+    const btnLangVi = document.getElementById('btnLangVi');
+    const btnLangEn = document.getElementById('btnLangEn');
+    if (btnLangVi) btnLangVi.addEventListener('click', () => setLang('vi'));
+    if (btnLangEn) btnLangEn.addEventListener('click', () => setLang('en'));
+    try {
+      const saved = localStorage.getItem('rintune_lang_v1');
+      if (saved === 'en' || saved === 'vi') state.lang = saved;
+    } catch (e) {}
+    applyLang();
 
     const btnTimelineToggle = document.getElementById('btnTimelineToggle');
     if (btnTimelineToggle) btnTimelineToggle.addEventListener('click', toggleTimeline);
@@ -4153,7 +4196,7 @@
     if (checkLoopMode) {
       checkLoopMode.addEventListener('change', (e) => {
         state.loopMode = e.target.checked;
-        showToast(state.loopMode ? '🔁 Loop bật: áp dụng cho bài mới + bài dựng' : '🔁 Loop tắt: bài mới sẽ có hit kết');
+        showToast(state.loopMode ? t('🔁 Loop bật: áp dụng cho bài mới + bài dựng') : t('🔁 Loop tắt: bài mới sẽ có hit kết'));
       });
     }
 
@@ -4167,7 +4210,7 @@
           openAnyFile(f.name, new Uint8Array(reader.result));
           fileOpenMidi.value = '';
         };
-        reader.onerror = () => showToast('⚠️ Không đọc được file MIDI');
+        reader.onerror = () => showToast(t('⚠️ Không đọc được file MIDI'));
         reader.readAsArrayBuffer(f);
       });
     }
@@ -4226,7 +4269,7 @@
         bg: getThemeStore().bg || null
       });
       if (themeModal) themeModal.style.display = 'none';
-      showToast('🎨 Đã lưu theme tùy chỉnh');
+      showToast(t('🎨 Đã lưu theme tùy chỉnh'));
     });
     if (btnCancelTheme) btnCancelTheme.addEventListener('click', () => closeThemeEditor(true));
     if (themeModal) {
@@ -4241,7 +4284,7 @@
     if (checkFinalHit) {
       checkFinalHit.addEventListener('change', (e) => {
         state.finalHit = e.target.checked;
-        showToast(state.finalHit ? '🎯 Hit kết bài: BẬT' : '🎯 Hit kết bài: TẮT (kết tự nhiên)');
+        showToast(state.finalHit ? t('🎯 Hit kết bài: BẬT') : t('🎯 Hit kết bài: TẮT (kết tự nhiên)'));
       });
     }
 
@@ -4264,7 +4307,7 @@
       if (!btnDice) return;
       btnDice.addEventListener('click', () => {
         if (!state.currentSong) {
-          showToast('⚠️ Chưa có bài nhạc! Hãy bấm Generate trước.');
+          showToast(t('⚠️ Chưa có bài nhạc! Hãy bấm Generate trước.'));
           return;
         }
         applyRegenToSong(0, state.currentSong.metadata.lengthBars - 1, [channelEl.dataset.track]);
@@ -4339,7 +4382,7 @@
       } else if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
         e.preventDefault();
         state.pianoOctave = Math.max(1, Math.min(7, state.pianoOctave + (e.code === 'ArrowRight' ? 1 : -1)));
-        showToast(`🎹 Quãng đàn: C${state.pianoOctave} (hàng trên C${state.pianoOctave + 1})`);
+        showToast(t(`🎹 Quãng đàn: C{0} (hàng trên C{1})`, state.pianoOctave, state.pianoOctave + 1));
       } else if (!e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey && (e.code in PIANO_LOWER || e.code in PIANO_UPPER)) {
         playPianoKey(e.code);
       }
@@ -4386,7 +4429,7 @@
           }, 40);
         }
         generateNewSong();
-        showToast(state.contourEnabled ? '🎨 Đã BẬT Đường Cong Giai Điệu' : '⚪ Đã TẮT Đường Cong Giai Điệu');
+        showToast(state.contourEnabled ? t('🎨 Đã BẬT Đường Cong Giai Điệu') : t('⚪ Đã TẮT Đường Cong Giai Điệu'));
       });
     }
 
@@ -4417,7 +4460,7 @@
         state.contourPoints = [{ x: 0, y: 0.5 }, { x: 1.0, y: 0.5 }];
         renderContourCanvas();
         generateNewSong();
-        showToast('🗑️ Đã đặt lại đường thẳng ngang');
+        showToast(t('🗑️ Đã đặt lại đường thẳng ngang'));
       });
     }
 
@@ -4541,7 +4584,7 @@
           tab.classList.add('active');
           state.editingTrack = tab.dataset.track;
           renderPianoRoll(Synth.currentStep || 0);
-          showToast(`🎹 Đang soạn & chỉnh sửa bè: ${tab.textContent.trim()}`);
+          showToast(t(`🎹 Đang soạn & chỉnh sửa bè: {0}`, tab.textContent.trim()));
         });
       });
     }
@@ -4742,7 +4785,7 @@
     }
     selectedNotes.clear();
     refreshAfterEdit();
-    showToast('🗑️ Đã xóa các nốt đã chọn');
+    showToast(t('🗑️ Đã xóa các nốt đã chọn'));
   }
 
   function duplicateSelection() {
@@ -4776,7 +4819,7 @@
       for (const n of (t.notes || [])) delete n._dupMark;
     }
     refreshAfterEdit();
-    showToast(`📄 Đã nhân bản ${selectedNotes.size} nốt sang phải ${shift} steps`);
+    showToast(t(`📄 Đã nhân bản {0} nốt sang phải {1} steps`, selectedNotes.size, shift));
   }
 
   function copySelection() {
@@ -4789,7 +4832,7 @@
       if (!p) continue;
       copyBuffer.push({ trackKey: p.trackKey, dStep: n.step - minStep, duration: n.duration, midi: n.midi, velocity: n.velocity, pan: n.pan || 0, baseVel: (n.baseVel != null ? n.baseVel : n.velocity) });
     }
-    showToast(`📋 Đã copy ${copyBuffer.length} nốt (Ctrl+V để dán tại playhead)`);
+    showToast(t(`📋 Đã copy {0} nốt (Ctrl+V để dán tại playhead)`, copyBuffer.length));
   }
 
   function pasteSelection() {
@@ -4812,7 +4855,7 @@
       n++;
     }
     refreshAfterEdit();
-    showToast(`📋 Đã dán ${n} nốt tại bar ${Math.floor(atStep / spb) + 1}`);
+    showToast(t(`📋 Đã dán {0} nốt tại bar {1}`, n, Math.floor(atStep / spb) + 1));
   }
 
   function transposeSelection(delta) {
@@ -4893,7 +4936,7 @@
           }
         }
         renderPianoRoll(Synth.currentStep || 0);
-        if (selectedNotes.size) showToast(`⬚ Đã chọn ${selectedNotes.size} nốt (Del xóa • Ctrl+D nhân bản • kéo để di chuyển)`);
+        if (selectedNotes.size) showToast(t(`⬚ Đã chọn {0} nốt (Del xóa • Ctrl+D nhân bản • kéo để di chuyển)`, selectedNotes.size));
       } else {
         renderPianoRoll(Synth.currentStep || 0);
       }
@@ -4904,7 +4947,7 @@
 
   function cycleTab(dir) {
     if (songTabs.length < 2) {
-      showToast('⚠️ Chỉ có 1 tab (Ctrl+T để mở tab mới)');
+      showToast(t('⚠️ Chỉ có 1 tab (Ctrl+T để mở tab mới)'));
       return;
     }
     const ix = songTabs.findIndex(t => t.id === activeTabId);
@@ -4952,7 +4995,7 @@
     const hit = findNoteAtAnyTrack(coords);
     if (hit) {
       if (!splitNoteAt(hit, coords.step)) {
-        showToast('🔪 Bấm vào giữa thân nốt để cắt');
+        showToast(t('🔪 Bấm vào giữa thân nốt để cắt'));
       }
     }
   }
@@ -5134,7 +5177,7 @@
         Synth.loadSong(state.currentSong);
         updateHeaderBadges();
         renderPianoRoll(Synth.currentStep || 0);
-        showToast(`🗑️ Đã xóa nốt (${Theory.midiToNote(hit.note.midi)}) bè ${state.editingTrack.toUpperCase()}`);
+        showToast(t(`🗑️ Đã xóa nốt ({0}) bè {1}`, Theory.midiToNote(hit.note.midi), state.editingTrack.toUpperCase()));
       }
     });
 
@@ -5160,7 +5203,7 @@
     const tKey = state.editingTrack || 'lead';
     const clip = Exporter.generateLmmsMidiClip(state.currentSong, tKey);
     if (!clip.count) {
-      showToast(`⚠️ Bè ${tKey.toUpperCase()} chưa có nốt nào để chép`);
+      showToast(t(`⚠️ Bè {0} chưa có nốt nào để chép`, tKey.toUpperCase()));
       return;
     }
 
@@ -5168,24 +5211,24 @@
       if (window.rmgAPI && window.rmgAPI.copyLmmsClip) {
         const res = await window.rmgAPI.copyLmmsClip({ midiXml: clip.xml });
         if (res && res.success) {
-          showToast(`📋 Đã chép bè ${tKey.toUpperCase()} (${clip.count} nốt${res.verified ? ', đã kiểm tra' : ''}) — qua LMMS mở piano-roll rồi Ctrl+V!`, 5000);
+          showToast(t(`📋 Đã chép bè {0} ({1} nốt{2}) — qua LMMS mở piano-roll rồi Ctrl+V!`, tKey.toUpperCase(), clip.count, res.verified ? ', đã kiểm tra' : ''), 5000);
           return;
         }
         throw new Error((res && res.error) || 'copy failed');
       }
     } catch (err) {
-      showToast('⚠️ Lỗi chép clip: ' + (err.message || err));
+      showToast(t('⚠️ Lỗi chép clip: {0}', err.message || err));
       return;
     }
     try {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(clip.xml);
-        showToast('📋 Đã chép (text thô — LMMS có thể không nhận, dùng app desktop để chép chuẩn)');
+        showToast(t('📋 Đã chép (text thô — LMMS có thể không nhận, dùng app desktop để chép chuẩn)'));
       } else {
-        showToast('Clipboard không khả dụng trong môi trường hiện tại.');
+        showToast(t('Clipboard không khả dụng trong môi trường hiện tại.'));
       }
     } catch (err) {
-      showToast('Lỗi khi sao chép Clipboard: ' + err.message);
+      showToast(t('Lỗi khi sao chép Clipboard: {0}', err.message));
     }
   }
 
@@ -5201,7 +5244,7 @@
         type: 'midi'
       });
       if (res && res.success) {
-        showToast(`🎵 Đã lưu file MIDI thành công: "${res.filePath}"`);
+        showToast(t(`🎵 Đã lưu file MIDI thành công: "{0}"`, res.filePath));
         refreshRecent();
       }
     } else {
@@ -5212,7 +5255,7 @@
       a.download = defaultName;
       a.click();
       URL.revokeObjectURL(url);
-      showToast(`🎵 Đã tải xuống file MIDI: ${defaultName}`);
+      showToast(t(`🎵 Đã tải xuống file MIDI: {0}`, defaultName));
     }
   }
 
@@ -5229,7 +5272,7 @@
         type: 'mmp'
       });
       if (res && res.success) {
-        showToast(`💾 Đã lưu dự án LMMS thành công: "${res.filePath}"${sf2 ? ' [SoundFont 🎻]' : ''}`);
+        showToast(t(`💾 Đã lưu dự án LMMS thành công: "{0}"{1}`, res.filePath, sf2 ? ' [SoundFont 🎻]' : ''));
         refreshRecent();
       }
     } else {
@@ -5240,7 +5283,7 @@
       a.download = defaultName;
       a.click();
       URL.revokeObjectURL(url);
-      showToast(`💾 Đã tải xuống file LMMS: ${defaultName}`);
+      showToast(t(`💾 Đã tải xuống file LMMS: {0}`, defaultName));
     }
   }
 
@@ -5250,7 +5293,7 @@
     const mmpXml = Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2);
     const leadClip = Exporter.generateLmmsMidiClip(state.currentSong, 'lead');
 
-    showToast('🚀 Đang chuẩn bị kết nối LMMS...');
+    showToast(t('🚀 Đang chuẩn bị kết nối LMMS...'));
 
     if (window.rmgAPI && window.rmgAPI.launchLMMS) {
       const res = await window.rmgAPI.launchLMMS({
@@ -5260,12 +5303,12 @@
       });
 
       if (res && res.success) {
-        showToast(res.message || '🚀 Đã gửi dự án sang LMMS thành công!', 4500);
+        showToast(res.message || t('🚀 Đã gửi dự án sang LMMS thành công!'), 4500);
       } else {
-        showToast('⚠️ ' + (res.error || 'Không thể mở LMMS tự động. Hãy dùng nút "Lưu File LMMS" và mở thủ công!'), 5000);
+        showToast(t('⚠️ {0}', res.error || t('Không thể mở LMMS tự động. Hãy dùng nút "Lưu File LMMS" và mở thủ công!')), 5000);
       }
     } else {
-      showToast('Tính năng tương tác trực tiếp LMMS cần chạy trong ứng dụng Desktop RinTune.');
+      showToast(t('Tính năng tương tác trực tiếp LMMS cần chạy trong ứng dụng Desktop RinTune.'));
     }
   }
 

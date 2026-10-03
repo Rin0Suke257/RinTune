@@ -1,5 +1,12 @@
 # RinTune Changelog
 
+## Unreleased - Song ngu Viet/Anh + subtitle + installer Rin
+- Song ngữ VI/EN toàn app (menu, panel, toast, help): nút VI/EN trên menubar,
+  nhớ lựa chọn; thiếu key tự rớt về tiếng Việt
+- Subtitle gọn: "Thuật toán sinh nhạc thông minh"
+- Installer: ảnh linh vật Rin lên wizard cài/gỡ, tự xóa shortcut tên RMG cũ;
+  gỡ cài đặt chỉ xóa app + shortcut, không đụng dữ liệu người dùng
+
 ## Unreleased - Doi ten RinTune Studio + sach code
 - Doi ten san pham RMG -> RinTune Studio (title, exe, installer, xuat file);
   giu tuong thich file `.rmg` cu + du lieu `%LOCALAPPDATA%\RMG`

@@ -11,112 +11,116 @@
   <div class="app-container">
     
     <nav class="menubar" id="menubar">
-      <div class="menu-top" data-menu="file"><span>File</span>
+      <div class="menu-top" data-menu="file"><span data-i18n="File">File</span>
         <div class="menu-drop">
-          <button data-act="new-blank">📄 Bài trống</button>
-          <button data-act="open-midi">📂 Mở MIDI / Project…</button>
-          <button data-act="save-project">💾 Lưu Project…</button>
-          <button data-act="quicksave-project">💾 Lưu nhanh (Ctrl+S)</button>
+          <button data-act="new-blank" data-i18n="📄 Bài trống">📄 Bài trống</button>
+          <button data-act="open-midi" data-i18n="📂 Mở MIDI / Project…">📂 Mở MIDI / Project…</button>
+          <button data-act="save-project" data-i18n="💾 Lưu Project…">💾 Lưu Project…</button>
+          <button data-act="quicksave-project" data-i18n="💾 Lưu nhanh (Ctrl+S)">💾 Lưu nhanh (Ctrl+S)</button>
           <div class="menu-sep"></div>
-          <button data-act="exp-midi">🎵 Xuất MIDI…</button>
-          <button data-act="exp-mmp">💾 Xuất LMMS…</button>
-          <button data-act="exp-wav">🎧 Xuất WAV…</button>
-          <button data-act="exp-clip">📋 Sao chép Clip LMMS</button>
-          <button data-act="exp-quick-midi">⚡ Xuất nhanh MIDI</button>
-          <button data-act="exp-quick-mmp">⚡ Xuất nhanh MMP</button>
-          <button data-act="finish">⚡ Finish 1-click</button>
+          <button data-act="exp-midi" data-i18n="🎵 Xuất MIDI…">🎵 Xuất MIDI…</button>
+          <button data-act="exp-mmp" data-i18n="💾 Xuất LMMS…">💾 Xuất LMMS…</button>
+          <button data-act="exp-wav" data-i18n="🎧 Xuất WAV…">🎧 Xuất WAV…</button>
+          <button data-act="exp-clip" data-i18n="📋 Sao chép Clip LMMS">📋 Sao chép Clip LMMS</button>
+          <button data-act="exp-quick-midi" data-i18n="⚡ Xuất nhanh MIDI">⚡ Xuất nhanh MIDI</button>
+          <button data-act="exp-quick-mmp" data-i18n="⚡ Xuất nhanh MMP">⚡ Xuất nhanh MMP</button>
+          <button data-act="finish" data-i18n="⚡ Finish 1-click">⚡ Finish 1-click</button>
           <div class="menu-sep"></div>
-          <button data-act="launch-lmms">🚀 Mở vào LMMS</button>
+          <button data-act="launch-lmms" data-i18n="🚀 Mở vào LMMS">🚀 Mở vào LMMS</button>
           <div class="menu-sep"></div>
-          <button data-act="quit">✕ Thoát</button>
+          <button data-act="quit" data-i18n="✕ Thoát">✕ Thoát</button>
         </div>
       </div>
-      <div class="menu-top" data-menu="edit"><span>Sửa</span>
+      <div class="menu-top" data-menu="edit"><span data-i18n="Sửa">Sửa</span>
         <div class="menu-drop">
-          <button data-act="undo">↩ Undo (Ctrl+Z)</button>
-          <button data-act="redo">↪ Redo (Ctrl+Y)</button>
+          <button data-act="undo" data-i18n="↩ Undo (Ctrl+Z)">↩ Undo (Ctrl+Z)</button>
+          <button data-act="redo" data-i18n="↪ Redo (Ctrl+Y)">↪ Redo (Ctrl+Y)</button>
           <div class="menu-sep"></div>
-          <button data-act="tool-select">⬚ Công cụ Select</button>
-          <button data-act="tool-draw">✏️ Công cụ Draw</button>
-          <button data-act="tool-knife">🔪 Công cụ Knife</button>
-          <button data-act="tool-erase">🧽 Công cụ Erase</button>
+          <button data-act="tool-select" data-i18n="⬚ Công cụ Select">⬚ Công cụ Select</button>
+          <button data-act="tool-draw" data-i18n="✏️ Công cụ Draw">✏️ Công cụ Draw</button>
+          <button data-act="tool-knife" data-i18n="🔪 Công cụ Knife">🔪 Công cụ Knife</button>
+          <button data-act="tool-erase" data-i18n="🧽 Công cụ Erase">🧽 Công cụ Erase</button>
           <div class="menu-sep"></div>
-          <button data-act="sel-delete">🗑️ Xóa đã chọn (Del)</button>
-          <button data-act="sel-dup">📄 Nhân bản (Ctrl+D)</button>
-          <button data-act="sel-copy">📋 Copy (Ctrl+C)</button>
-          <button data-act="sel-paste">📌 Paste (Ctrl+V)</button>
+          <button data-act="sel-delete" data-i18n="🗑️ Xóa đã chọn (Del)">🗑️ Xóa đã chọn (Del)</button>
+          <button data-act="sel-dup" data-i18n="📄 Nhân bản (Ctrl+D)">📄 Nhân bản (Ctrl+D)</button>
+          <button data-act="sel-copy" data-i18n="📋 Copy (Ctrl+C)">📋 Copy (Ctrl+C)</button>
+          <button data-act="sel-paste" data-i18n="📌 Paste (Ctrl+V)">📌 Paste (Ctrl+V)</button>
           <div class="menu-sep"></div>
-          <button data-act="oct-down">🎹 Quãng −1</button>
-          <button data-act="oct-up">🎹 Quãng +1</button>
-          <button data-act="vel-down">🔉 Velocity −10</button>
-          <button data-act="vel-up">🔊 Velocity +10</button>
+          <button data-act="oct-down" data-i18n="🎹 Quãng −1">🎹 Quãng −1</button>
+          <button data-act="oct-up" data-i18n="🎹 Quãng +1">🎹 Quãng +1</button>
+          <button data-act="vel-down" data-i18n="🔉 Velocity −10">🔉 Velocity −10</button>
+          <button data-act="vel-up" data-i18n="🔊 Velocity +10">🔊 Velocity +10</button>
         </div>
       </div>
-      <div class="menu-top" data-menu="view"><span>Xem</span>
+      <div class="menu-top" data-menu="view"><span data-i18n="Xem">Xem</span>
         <div class="menu-drop">
-          <button data-act="zoom-fit">🔍 Zoom vừa khít</button>
-          <button data-act="zoom-1x">🔍 Zoom 1x</button>
-          <button data-act="zoom-2x">🔍 Zoom 2x</button>
+          <button data-act="zoom-fit" data-i18n="🔍 Zoom vừa khít">🔍 Zoom vừa khít</button>
+          <button data-act="zoom-1x" data-i18n="🔍 Zoom 1x">🔍 Zoom 1x</button>
+          <button data-act="zoom-2x" data-i18n="🔍 Zoom 2x">🔍 Zoom 2x</button>
           <div class="menu-sep"></div>
-          <button data-act="theme-neon">🌃 Theme: Neon Dark</button>
-          <button data-act="theme-midnight">🌌 Theme: Midnight</button>
-          <button data-act="theme-sakura">🌸 Theme: Sakura (sáng)</button>
-          <button data-act="theme-custom">🎨 Theme: Tùy chỉnh…</button>
-          <button data-act="bg-upload">🖼️ Ảnh nền riêng…</button>
-          <button data-act="bg-clear">🧹 Xóa ảnh nền</button>
+          <button data-act="theme-neon" data-i18n="🌃 Theme: Neon Dark">🌃 Theme: Neon Dark</button>
+          <button data-act="theme-midnight" data-i18n="🌌 Theme: Midnight">🌌 Theme: Midnight</button>
+          <button data-act="theme-sakura" data-i18n="🌸 Theme: Sakura (sáng)">🌸 Theme: Sakura (sáng)</button>
+          <button data-act="theme-custom" data-i18n="🎨 Theme: Tùy chỉnh…">🎨 Theme: Tùy chỉnh…</button>
+          <button data-act="bg-upload" data-i18n="🖼️ Ảnh nền riêng…">🖼️ Ảnh nền riêng…</button>
+          <button data-act="bg-clear" data-i18n="🧹 Xóa ảnh nền">🧹 Xóa ảnh nền</button>
           <div class="menu-sep"></div>
-          <button data-act="view-sidebar">📐 Thanh bên trái</button>
-          <button data-act="view-mixer">🎚️ Mixer</button>
-          <button data-act="view-dock">📜 Panel dưới (sử/file/seed)</button>
+          <button data-act="view-sidebar" data-i18n="📐 Thanh bên trái">📐 Thanh bên trái</button>
+          <button data-act="view-mixer" data-i18n="🎚️ Mixer">🎚️ Mixer</button>
+          <button data-act="view-dock" data-i18n="📜 Panel dưới (sử/file/seed)">📜 Panel dưới (sử/file/seed)</button>
         </div>
       </div>
-      <div class="menu-top" data-menu="tools"><span>Công cụ</span>
+      <div class="menu-top" data-menu="tools"><span data-i18n="Công cụ">Công cụ</span>
         <div class="menu-drop">
-          <button data-act="arrange">🎼 Dựng bài (Arranger)</button>
-          <button data-act="motif">🌱 Motif → Bài</button>
-          <button data-act="transfer">🎭 Ép style hiện tại</button>
-          <button data-act="progedit-hint">🎹 Sửa hợp âm (bấm chip)</button>
+          <button data-act="arrange" data-i18n="🎼 Dựng bài (Arranger)">🎼 Dựng bài (Arranger)</button>
+          <button data-act="motif" data-i18n="🌱 Motif → Bài">🌱 Motif → Bài</button>
+          <button data-act="transfer" data-i18n="🎭 Ép style hiện tại">🎭 Ép style hiện tại</button>
+          <button data-act="progedit-hint" data-i18n="🎹 Sửa hợp âm (bấm chip)">🎹 Sửa hợp âm (bấm chip)</button>
           <div class="menu-sep"></div>
-          <button data-act="seed-copy">🔗 Copy seed</button>
-          <button data-act="seed-paste">📥 Nhập seed…</button>
-          <button data-act="seed-daily">📅 Seed hôm nay</button>
-          <button data-act="seed-save">🌱 Lưu seed vào sổ</button>
+          <button data-act="seed-copy" data-i18n="🔗 Copy seed">🔗 Copy seed</button>
+          <button data-act="seed-paste" data-i18n="📥 Nhập seed…">📥 Nhập seed…</button>
+          <button data-act="seed-daily" data-i18n="📅 Seed hôm nay">📅 Seed hôm nay</button>
+          <button data-act="seed-save" data-i18n="🌱 Lưu seed vào sổ">🌱 Lưu seed vào sổ</button>
           <div class="menu-sep"></div>
-          <button data-act="genre-custom">🎨 Style riêng…</button>
-          <button data-act="genre-extract">🧬 Trích style từ bài</button>
+          <button data-act="genre-custom" data-i18n="🎨 Style riêng…">🎨 Style riêng…</button>
+          <button data-act="genre-extract" data-i18n="🧬 Trích style từ bài">🧬 Trích style từ bài</button>
         </div>
       </div>
-      <div class="menu-top" data-menu="help"><span>Giúp đỡ</span>
+      <div class="menu-top" data-menu="help"><span data-i18n="Giúp đỡ">Giúp đỡ</span>
         <div class="menu-drop">
-          <button data-act="help-open">📖 Hướng dẫn</button>
-          <button data-act="check-update">↻ Kiểm tra cập nhật</button>
-          <button data-act="about">ℹ️ Giới thiệu</button>
+          <button data-act="help-open" data-i18n="📖 Hướng dẫn">📖 Hướng dẫn</button>
+          <button data-act="check-update" data-i18n="↻ Kiểm tra cập nhật">↻ Kiểm tra cập nhật</button>
+          <button data-act="about" data-i18n="ℹ️ Giới thiệu">ℹ️ Giới thiệu</button>
         </div>
       </div>
       <div class="menubar-title">RinTune Studio</div>
+      <div class="menubar-lang" style="margin-left:auto; display:flex; gap:4px; align-items:center;">
+        <button id="btnLangVi" class="btn-secondary" style="padding:2px 8px;" title="Tiếng Việt">VI</button>
+        <button id="btnLangEn" class="btn-secondary" style="padding:2px 8px;" title="English">EN</button>
+      </div>
     </nav>
     
     <header class="app-header">
       <div class="brand-section">
         <img src="assets/Icon/SmallLogo.png" alt="RinTune Logo" class="app-logo" onerror="this.src='assets/Icon/rmg_icon.png'">
         <div class="brand-titles">
-          <h1>RINTUNE STUDIO v2.0</h1>
-          <p>Thuật toán sinh âm nhạc thông minh • Không lặp lại • Đúng chuẩn Lý thuyết Âm nhạc</p>
+          <h1 data-i18n="RINTUNE STUDIO v2.0">RINTUNE STUDIO v2.0</h1>
+          <p data-i18n="Thuật toán sinh nhạc thông minh">Thuật toán sinh nhạc thông minh</p>
         </div>
       </div>
       <div class="header-status-badges">
         <div class="status-badge" id="sectionBadge">
           <span class="status-dot"></span>
-          <span id="badgeSectionText">Toàn Bài</span>
+          <span id="badgeSectionText" data-i18n="Toàn Bài">Toàn Bài</span>
         </div>
         <div class="status-badge" id="scaleBadge">
-          <span id="badgeScaleText">Touhou Minor (A)</span>
+          <span id="badgeScaleText" data-i18n="Touhou Minor (A)">Touhou Minor (A)</span>
         </div>
         <div class="status-badge" id="bpmBadge">
-          <span id="badgeBpmText">165 BPM</span>
+          <span id="badgeBpmText" data-i18n="165 BPM">165 BPM</span>
         </div>
         <div class="status-badge" id="lmmsStatusBadge" title="Trạng thái LMMS">
-          <span>🎹 LMMS: Ready</span>
+          <span data-i18n="🎹 LMMS: Ready">🎹 LMMS: Ready</span>
         </div>
         <button id="btnHelp" class="btn-icon" style="width:30px; height:30px;" title="Hướng dẫn sử dụng">?</button>
       </div>
@@ -129,54 +133,54 @@
         
         <div class="glass-panel sidebar-card">
           <div class="card-title">
-            <span>Phong Cách Âm Nhạc</span>
-            <button id="btnOpenCustomGenre" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Tạo style nhạc riêng">＋ Style riêng</button>
-            <button id="btnExtractStyle" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Trích style từ bài đang mở">🧬 Trích Style</button>
+            <span data-i18n="Phong Cách Âm Nhạc">Phong Cách Âm Nhạc</span>
+            <button id="btnOpenCustomGenre" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Tạo style nhạc riêng" data-i18n="＋ Style riêng">＋ Style riêng</button>
+            <button id="btnExtractStyle" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Trích style từ bài đang mở" data-i18n="🧬 Trích Style">🧬 Trích Style</button>
           </div>
           <div class="genre-grid" id="genreGrid">
             <div class="genre-card active" data-genre="fiery_piano">
-              <span class="genre-name">🎹 Fiery Piano</span>
-              <span class="genre-desc">Virtuoso runs, 10th bass</span>
+              <span class="genre-name" data-i18n="🎹 Fiery Piano">🎹 Fiery Piano</span>
+              <span class="genre-desc" data-i18n="Virtuoso runs, 10th bass">Virtuoso runs, 10th bass</span>
             </div>
             <div class="genre-card" data-genre="sasakure_uk">
-              <span class="genre-name">🤖 sasakure.UK</span>
-              <span class="genre-desc">7/8 Math, Chiptune-Fusion</span>
+              <span class="genre-name" data-i18n="🤖 sasakure.UK">🤖 sasakure.UK</span>
+              <span class="genre-desc" data-i18n="7/8 Math, Chiptune-Fusion">7/8 Math, Chiptune-Fusion</span>
             </div>
             <div class="genre-card" data-genre="touhou">
-              <span class="genre-name">🌸 Touhou ZUN</span>
-              <span class="genre-desc">Trumpet lead, piano fast run</span>
+              <span class="genre-name" data-i18n="🌸 Touhou ZUN">🌸 Touhou ZUN</span>
+              <span class="genre-desc" data-i18n="Trumpet lead, piano fast run">Trumpet lead, piano fast run</span>
             </div>
             <div class="genre-card" data-genre="dark_fantasy">
-              <span class="genre-name">🏰 Dark Fantasy</span>
-              <span class="genre-desc">Souls / Gothic RPG, Pipe Organ & Choir</span>
+              <span class="genre-name" data-i18n="🏰 Dark Fantasy">🏰 Dark Fantasy</span>
+              <span class="genre-desc" data-i18n="Souls / Gothic RPG, Pipe Organ &amp; Choir">Souls / Gothic RPG, Pipe Organ & Choir</span>
             </div>
             <div class="genre-card" data-genre="synthwave">
-              <span class="genre-name">🌆 Synthwave</span>
-              <span class="genre-desc">80s rolling bass, neon pads</span>
+              <span class="genre-name" data-i18n="🌆 Synthwave">🌆 Synthwave</span>
+              <span class="genre-desc" data-i18n="80s rolling bass, neon pads">80s rolling bass, neon pads</span>
             </div>
             <div class="genre-card" data-genre="lofi">
-              <span class="genre-name">☕ Lofi Chill</span>
-              <span class="genre-desc">Jazz 7th/9th, laid-back swing</span>
+              <span class="genre-name" data-i18n="☕ Lofi Chill">☕ Lofi Chill</span>
+              <span class="genre-desc" data-i18n="Jazz 7th/9th, laid-back swing">Jazz 7th/9th, laid-back swing</span>
             </div>
             <div class="genre-card" data-genre="chiptune">
-              <span class="genre-name">👾 8-Bit Arcade</span>
-              <span class="genre-desc">NES square wave, fast arps</span>
+              <span class="genre-name" data-i18n="👾 8-Bit Arcade">👾 8-Bit Arcade</span>
+              <span class="genre-desc" data-i18n="NES square wave, fast arps">NES square wave, fast arps</span>
             </div>
             <div class="genre-card" data-genre="cyberpunk">
-              <span class="genre-name">⚡ Cyberpunk</span>
-              <span class="genre-desc">Darksynth phrygian bass</span>
+              <span class="genre-name" data-i18n="⚡ Cyberpunk">⚡ Cyberpunk</span>
+              <span class="genre-desc" data-i18n="Darksynth phrygian bass">Darksynth phrygian bass</span>
             </div>
             <div class="genre-card" data-genre="epic">
-              <span class="genre-name">⚔️ Epic Orchestral</span>
-              <span class="genre-desc">Cinematic strings & taiko</span>
+              <span class="genre-name" data-i18n="⚔️ Epic Orchestral">⚔️ Epic Orchestral</span>
+              <span class="genre-desc" data-i18n="Cinematic strings &amp; taiko">Cinematic strings & taiko</span>
             </div>
             <div class="genre-card" data-genre="cinematic">
-              <span class="genre-name">🎬 Cinematic Journey</span>
-              <span class="genre-desc">Sử thi chữa lành, outro trầm</span>
+              <span class="genre-name" data-i18n="🎬 Cinematic Journey">🎬 Cinematic Journey</span>
+              <span class="genre-desc" data-i18n="Sử thi chữa lành, outro trầm">Sử thi chữa lành, outro trầm</span>
             </div>
             <div class="genre-card" data-genre="anime">
-              <span class="genre-name">✨ Anime Pop</span>
-              <span class="genre-desc">Oudou Royal Road IV-V-iii-vi</span>
+              <span class="genre-name" data-i18n="✨ Anime Pop">✨ Anime Pop</span>
+              <span class="genre-desc" data-i18n="Oudou Royal Road IV-V-iii-vi">Oudou Royal Road IV-V-iii-vi</span>
             </div>
           </div>
         </div>
@@ -184,83 +188,83 @@
         
         <div class="glass-panel sidebar-card">
           <div class="card-title">
-            <span>Phân Đoạn, Cao Trào & Motif</span>
+            <span data-i18n="Phân Đoạn, Cao Trào &amp; Motif">Phân Đoạn, Cao Trào & Motif</span>
           </div>
 
           
           <div class="control-row">
             <div class="control-label">
-              <span>PHÂN ĐOẠN SINH NHẠC (SECTION)</span>
+              <span data-i18n="PHÂN ĐOẠN SINH NHẠC (SECTION)">PHÂN ĐOẠN SINH NHẠC (SECTION)</span>
             </div>
             <select id="selectSection">
-              <option value="none" selected>None (Bình thường / Toàn bài 🎵)</option>
-              <option value="intro">Intro (Phần Mở Đầu / Atmosphere Build-up 🌅)</option>
-              <option value="verse">Verse (Thân Bài / Main Theme 🌿)</option>
-              <option value="chorus">Chorus (Điệp Khúc / High-Energy ⚡)</option>
-              <option value="outro">Outro (Phần Kết Thúc / Giảm Dần Final Hit 🌆)</option>
-              <option value="merged">Merged (Bài Hát Ghép Nối Hoàn Chỉnh 🎴)</option>
+              <option value="none" selected data-i18n="None (Bình thường / Toàn bài 🎵)">None (Bình thường / Toàn bài 🎵)</option>
+              <option value="intro" data-i18n="Intro (Phần Mở Đầu / Atmosphere Build-up 🌅)">Intro (Phần Mở Đầu / Atmosphere Build-up 🌅)</option>
+              <option value="verse" data-i18n="Verse (Thân Bài / Main Theme 🌿)">Verse (Thân Bài / Main Theme 🌿)</option>
+              <option value="chorus" data-i18n="Chorus (Điệp Khúc / High-Energy ⚡)">Chorus (Điệp Khúc / High-Energy ⚡)</option>
+              <option value="outro" data-i18n="Outro (Phần Kết Thúc / Giảm Dần Final Hit 🌆)">Outro (Phần Kết Thúc / Giảm Dần Final Hit 🌆)</option>
+              <option value="merged" data-i18n="Merged (Bài Hát Ghép Nối Hoàn Chỉnh 🎴)">Merged (Bài Hát Ghép Nối Hoàn Chỉnh 🎴)</option>
             </select>
           </div>
 
           
           <div class="control-row">
             <div class="control-label">
-              <span>ĐƯỜNG CONG CAO TRÀO (CLIMAX & FIRE)</span>
+              <span data-i18n="ĐƯỜNG CONG CAO TRÀO (CLIMAX &amp; FIRE)">ĐƯỜNG CONG CAO TRÀO (CLIMAX & FIRE)</span>
             </div>
             <select id="selectClimaxCurve">
-              <option value="none" selected>➖ None (Phẳng / Đồng đều Tự Nhiên)</option>
-              <option value="climax_explosion">🔥 Cao Trào Bùng Nổ (Climax Explosion & Double Octaves)</option>
-              <option value="crescendo">📈 Dồn Dập Tăng Tiến (Epic Crescendo Build-up)</option>
-              <option value="emotional_wave">🌊 Sóng Cảm Xúc (Emotional Waves Verse-Chorus)</option>
-              <option value="full_fire">⚡ Siêu Cháy Liên Tục (Non-Stop 100% Fire Energy)</option>
+              <option value="none" selected data-i18n="➖ None (Phẳng / Đồng đều Tự Nhiên)">➖ None (Phẳng / Đồng đều Tự Nhiên)</option>
+              <option value="climax_explosion" data-i18n="🔥 Cao Trào Bùng Nổ (Climax Explosion &amp; Double Octaves)">🔥 Cao Trào Bùng Nổ (Climax Explosion & Double Octaves)</option>
+              <option value="crescendo" data-i18n="📈 Dồn Dập Tăng Tiến (Epic Crescendo Build-up)">📈 Dồn Dập Tăng Tiến (Epic Crescendo Build-up)</option>
+              <option value="emotional_wave" data-i18n="🌊 Sóng Cảm Xúc (Emotional Waves Verse-Chorus)">🌊 Sóng Cảm Xúc (Emotional Waves Verse-Chorus)</option>
+              <option value="full_fire" data-i18n="⚡ Siêu Cháy Liên Tục (Non-Stop 100% Fire Energy)">⚡ Siêu Cháy Liên Tục (Non-Stop 100% Fire Energy)</option>
             </select>
           </div>
 
           
           <div class="control-row">
             <div class="control-label">
-              <span>CẤU TRÚC LẶP MOTIF (MELODY)</span>
+              <span data-i18n="CẤU TRÚC LẶP MOTIF (MELODY)">CẤU TRÚC LẶP MOTIF (MELODY)</span>
             </div>
             <select id="selectMotifStructure">
-              <option value="none" selected>None (Tự do / Ngẫu nhiên từng bar)</option>
-              <option value="smart_adaptive">⭐ Lặp Tự Động Theo Số Bars (Smart Adaptive Phrase 🧠)</option>
-              <option value="4bars_aabb">Lặp Khúc 4 Bars (A-A'-B-B' 🎼 Cụm 4 Bars Chuẩn)</option>
-              <option value="8bars_abab">Lặp Khúc 8 Bars (A-B-A-B' 🎼 Khúc 8 Bars Dài)</option>
-              <option value="qa_question_answer">A-A' Câu Hỏi & Câu Trả Lời (Question & Answer Form 🗨️)</option>
-              <option value="4bars_abac">Cấu Trúc Bài Hát 4-Bars A-B-A-C (Popular Song Form 🎵)</option>
-              <option value="2bars_abab">Lặp Cụm 2 Bars (A-B-A-B 🔄 Ngắn)</option>
-              <option value="2bars_aaba">Lặp Biến Tấu 2 Bars (A-A'-B-A' 🎵)</option>
-              <option value="1bar_ostinato">Lặp Ostinato 1 Bar (1-Bar Short Loop 🔁)</option>
+              <option value="none" selected data-i18n="None (Tự do / Ngẫu nhiên từng bar)">None (Tự do / Ngẫu nhiên từng bar)</option>
+              <option value="smart_adaptive" data-i18n="⭐ Lặp Tự Động Theo Số Bars (Smart Adaptive Phrase 🧠)">⭐ Lặp Tự Động Theo Số Bars (Smart Adaptive Phrase 🧠)</option>
+              <option value="4bars_aabb" data-i18n="Lặp Khúc 4 Bars (A-A'-B-B' 🎼 Cụm 4 Bars Chuẩn)">Lặp Khúc 4 Bars (A-A'-B-B' 🎼 Cụm 4 Bars Chuẩn)</option>
+              <option value="8bars_abab" data-i18n="Lặp Khúc 8 Bars (A-B-A-B' 🎼 Khúc 8 Bars Dài)">Lặp Khúc 8 Bars (A-B-A-B' 🎼 Khúc 8 Bars Dài)</option>
+              <option value="qa_question_answer" data-i18n="A-A' Câu Hỏi &amp; Câu Trả Lời (Question &amp; Answer Form 🗨️)">A-A' Câu Hỏi & Câu Trả Lời (Question & Answer Form 🗨️)</option>
+              <option value="4bars_abac" data-i18n="Cấu Trúc Bài Hát 4-Bars A-B-A-C (Popular Song Form 🎵)">Cấu Trúc Bài Hát 4-Bars A-B-A-C (Popular Song Form 🎵)</option>
+              <option value="2bars_abab" data-i18n="Lặp Cụm 2 Bars (A-B-A-B 🔄 Ngắn)">Lặp Cụm 2 Bars (A-B-A-B 🔄 Ngắn)</option>
+              <option value="2bars_aaba" data-i18n="Lặp Biến Tấu 2 Bars (A-A'-B-A' 🎵)">Lặp Biến Tấu 2 Bars (A-A'-B-A' 🎵)</option>
+              <option value="1bar_ostinato" data-i18n="Lặp Ostinato 1 Bar (1-Bar Short Loop 🔁)">Lặp Ostinato 1 Bar (1-Bar Short Loop 🔁)</option>
             </select>
           </div>
 
           
           <div class="control-row">
             <div class="control-label">
-              <span>KIỂU DIỄN TẤU NỐT (ARTICULATION)</span>
+              <span data-i18n="KIỂU DIỄN TẤU NỐT (ARTICULATION)">KIỂU DIỄN TẤU NỐT (ARTICULATION)</span>
             </div>
             <select id="selectArticulation">
-              <option value="auto" selected>Auto (Tự Động Theo Phong Cách 🎹)</option>
-              <option value="legato">Legato (Ngân Vang Mượt Mà, Nối Dài 🌊)</option>
-              <option value="staccato">Staccato (Nảy Nốt, Ngắn Gọn Giòn Giã ⚡)</option>
-              <option value="touhou_fast">Touhou Speed (Chạy Nốt Chớp Nhoáng 🌸)</option>
-              <option value="balanced">Balanced (Cân Bằng Tiêu Chuẩn)</option>
+              <option value="auto" selected data-i18n="Auto (Tự Động Theo Phong Cách 🎹)">Auto (Tự Động Theo Phong Cách 🎹)</option>
+              <option value="legato" data-i18n="Legato (Ngân Vang Mượt Mà, Nối Dài 🌊)">Legato (Ngân Vang Mượt Mà, Nối Dài 🌊)</option>
+              <option value="staccato" data-i18n="Staccato (Nảy Nốt, Ngắn Gọn Giòn Giã ⚡)">Staccato (Nảy Nốt, Ngắn Gọn Giòn Giã ⚡)</option>
+              <option value="touhou_fast" data-i18n="Touhou Speed (Chạy Nốt Chớp Nhoáng 🌸)">Touhou Speed (Chạy Nốt Chớp Nhoáng 🌸)</option>
+              <option value="balanced" data-i18n="Balanced (Cân Bằng Tiêu Chuẩn)">Balanced (Cân Bằng Tiêu Chuẩn)</option>
             </select>
           </div>
 
           
           <div class="control-row">
             <div class="control-label">
-              <span>CHẾ ĐỘ SINH BÈ (TRACK TARGET)</span>
+              <span data-i18n="CHẾ ĐỘ SINH BÈ (TRACK TARGET)">CHẾ ĐỘ SINH BÈ (TRACK TARGET)</span>
             </div>
             <select id="selectTrackTarget">
-              <option value="pure_piano" selected>🎹 Thuần Piano Solo 2 Tay (Pure Concert Grand ⭐)</option>
-              <option value="all">Toàn bộ 5 Bè (Full Multi-Track 🎶)</option>
-              <option value="lead">Chỉ Lead Melody (Giai điệu chính 🎵)</option>
-              <option value="bass">Chỉ Bassline (Bè trầm 🎸)</option>
-              <option value="chords">Chỉ Harmony & Chords (Hợp âm đệm 🎹)</option>
-              <option value="arp">Chỉ Arpeggio (Rải nốt hoa mỹ ✨)</option>
-              <option value="drums">Chỉ Drums & Percussion (Bộ gõ 🥁)</option>
+              <option value="pure_piano" selected data-i18n="🎹 Thuần Piano Solo 2 Tay (Pure Concert Grand ⭐)">🎹 Thuần Piano Solo 2 Tay (Pure Concert Grand ⭐)</option>
+              <option value="all" data-i18n="Toàn bộ 5 Bè (Full Multi-Track 🎶)">Toàn bộ 5 Bè (Full Multi-Track 🎶)</option>
+              <option value="lead" data-i18n="Chỉ Lead Melody (Giai điệu chính 🎵)">Chỉ Lead Melody (Giai điệu chính 🎵)</option>
+              <option value="bass" data-i18n="Chỉ Bassline (Bè trầm 🎸)">Chỉ Bassline (Bè trầm 🎸)</option>
+              <option value="chords" data-i18n="Chỉ Harmony &amp; Chords (Hợp âm đệm 🎹)">Chỉ Harmony & Chords (Hợp âm đệm 🎹)</option>
+              <option value="arp" data-i18n="Chỉ Arpeggio (Rải nốt hoa mỹ ✨)">Chỉ Arpeggio (Rải nốt hoa mỹ ✨)</option>
+              <option value="drums" data-i18n="Chỉ Drums &amp; Percussion (Bộ gõ 🥁)">Chỉ Drums & Percussion (Bộ gõ 🥁)</option>
             </select>
           </div>
         </div>
@@ -268,29 +272,29 @@
         
         <div class="glass-panel sidebar-card">
           <div class="card-title">
-            <span>🎼 Dựng Bài 1-Click (Arranger)</span>
+            <span data-i18n="🎼 Dựng Bài 1-Click (Arranger)">🎼 Dựng Bài 1-Click (Arranger)</span>
           </div>
           <div class="control-row">
             <div class="control-label">
-              <span>CẤU TRÚC BÀI (FORM)</span>
+              <span data-i18n="CẤU TRÚC BÀI (FORM)">CẤU TRÚC BÀI (FORM)</span>
             </div>
             <select id="selectArrangerForm">
-              <option value="pop_standard" selected>Pop chuẩn (I – V – C – V – C – O)</option>
-              <option value="compact">Gọn (V – C – V – C)</option>
-              <option value="epic_journey">Epic (I – V – C – B – C – O)</option>
-              <option value="concerto">Concerto (Tutti – Solo – Cadenza)</option>
+              <option value="pop_standard" selected data-i18n="Pop chuẩn (I – V – C – V – C – O)">Pop chuẩn (I – V – C – V – C – O)</option>
+              <option value="compact" data-i18n="Gọn (V – C – V – C)">Gọn (V – C – V – C)</option>
+              <option value="epic_journey" data-i18n="Epic (I – V – C – B – C – O)">Epic (I – V – C – B – C – O)</option>
+              <option value="concerto" data-i18n="Concerto (Tutti – Solo – Cadenza)">Concerto (Tutti – Solo – Cadenza)</option>
             </select>
           </div>
           <div style="font-size:0.7rem; color:var(--text-muted); margin:2px 0 8px;" id="arrangerInfo"></div>
           <label style="display:flex; align-items:center; gap:6px; font-size:0.72rem; color:var(--text-muted); cursor:pointer; margin-bottom:8px;">
             <input type="checkbox" id="checkLoopMode">
-            <span>🔁 Loop liền mạch (game BGM: bỏ hit cuối, bar cuối hạ nhiệt)</span>
+            <span data-i18n="🔁 Loop liền mạch (game BGM: bỏ hit cuối, bar cuối hạ nhiệt)">🔁 Loop liền mạch (game BGM: bỏ hit cuối, bar cuối hạ nhiệt)</span>
           </label>
           <label style="display:flex; align-items:center; gap:6px; font-size:0.72rem; color:var(--text-muted); cursor:pointer; margin-bottom:8px;">
             <input type="checkbox" id="checkFinalHit" checked>
-            <span>🎯 Hit kết bài (tắt = kết tự nhiên)</span>
+            <span data-i18n="🎯 Hit kết bài (tắt = kết tự nhiên)">🎯 Hit kết bài (tắt = kết tự nhiên)</span>
           </label>
-          <button id="btnArrange" class="btn-secondary" style="width:100%; padding:8px;">
+          <button id="btnArrange" class="btn-secondary" style="width:100%; padding:8px;" data-i18n="🎼 Dựng Bài Hoàn Chỉnh">
             🎼 Dựng Bài Hoàn Chỉnh
           </button>
         </div>
@@ -298,88 +302,88 @@
         
         <div class="glass-panel sidebar-card">
           <div class="card-title">
-            <span>Thiết Lập Lý Thuyết, Nhịp & Fade</span>
+            <span data-i18n="Thiết Lập Lý Thuyết, Nhịp &amp; Fade">Thiết Lập Lý Thuyết, Nhịp & Fade</span>
           </div>
 
           
           <div class="control-row">
             <div class="control-label">
-              <span>NHỊP ĐIỆU (TIME SIGNATURE)</span>
+              <span data-i18n="NHỊP ĐIỆU (TIME SIGNATURE)">NHỊP ĐIỆU (TIME SIGNATURE)</span>
               <span class="control-value" id="valTimeSig">4/4</span>
             </div>
             <select id="selectTimeSignature">
-              <option value="4/4" selected>4/4 (Nhịp Tiêu Chuẩn 16 Steps / Bar)</option>
-              <option value="7/8">7/8 (Nhịp Lẻ sasakure.UK Math-Rock: 14 Steps / Bar ⚡)</option>
-              <option value="6/8">6/8 (Nhịp Ba Hào Hùng / Epic Waltz: 12 Steps / Bar 🌊)</option>
-              <option value="5/8">5/8 (Nhịp Lẻ Biến Ảo / Odd Meter: 10 Steps / Bar 🌀)</option>
+              <option value="4/4" selected data-i18n="4/4 (Nhịp Tiêu Chuẩn 16 Steps / Bar)">4/4 (Nhịp Tiêu Chuẩn 16 Steps / Bar)</option>
+              <option value="7/8" data-i18n="7/8 (Nhịp Lẻ sasakure.UK Math-Rock: 14 Steps / Bar ⚡)">7/8 (Nhịp Lẻ sasakure.UK Math-Rock: 14 Steps / Bar ⚡)</option>
+              <option value="6/8" data-i18n="6/8 (Nhịp Ba Hào Hùng / Epic Waltz: 12 Steps / Bar 🌊)">6/8 (Nhịp Ba Hào Hùng / Epic Waltz: 12 Steps / Bar 🌊)</option>
+              <option value="5/8" data-i18n="5/8 (Nhịp Lẻ Biến Ảo / Odd Meter: 10 Steps / Bar 🌀)">5/8 (Nhịp Lẻ Biến Ảo / Odd Meter: 10 Steps / Bar 🌀)</option>
             </select>
           </div>
 
           
           <div class="control-row">
             <div class="control-label">
-              <span>Nốt Chủ (Root Key)</span>
+              <span data-i18n="Nốt Chủ (Root Key)">Nốt Chủ (Root Key)</span>
               <span class="control-value" id="valKey">A</span>
             </div>
             <select id="selectKey">
-              <option value="C">C (Đô)</option>
-              <option value="C#">C# / Db</option>
-              <option value="D">D (Rê)</option>
-              <option value="D#">D# / Eb</option>
-              <option value="E">E (Mi)</option>
-              <option value="F">F (Fa)</option>
-              <option value="F#">F# / Gb</option>
-              <option value="G">G (Sol)</option>
-              <option value="G#">G# / Ab</option>
-              <option value="A" selected>A (La)</option>
-              <option value="A#">A# / Bb</option>
-              <option value="B">B (Si)</option>
+              <option value="C" data-i18n="C (Đô)">C (Đô)</option>
+              <option value="C#" data-i18n="C# / Db">C# / Db</option>
+              <option value="D" data-i18n="D (Rê)">D (Rê)</option>
+              <option value="D#" data-i18n="D# / Eb">D# / Eb</option>
+              <option value="E" data-i18n="E (Mi)">E (Mi)</option>
+              <option value="F" data-i18n="F (Fa)">F (Fa)</option>
+              <option value="F#" data-i18n="F# / Gb">F# / Gb</option>
+              <option value="G" data-i18n="G (Sol)">G (Sol)</option>
+              <option value="G#" data-i18n="G# / Ab">G# / Ab</option>
+              <option value="A" selected data-i18n="A (La)">A (La)</option>
+              <option value="A#" data-i18n="A# / Bb">A# / Bb</option>
+              <option value="B" data-i18n="B (Si)">B (Si)</option>
             </select>
           </div>
 
           
           <div class="control-row">
             <div class="control-label">
-              <span>Thang Âm (Scale / Mode)</span>
+              <span data-i18n="Thang Âm (Scale / Mode)">Thang Âm (Scale / Mode)</span>
             </div>
             <select id="selectScale">
-              <option value="touhou_yonanuki" selected>🌸 Touhou Yonanuki Minor (ZUN Signature)</option>
-              <option value="lydian_augmented">🌌 Lydian Augmented (sasakure.UK Sci-Fi)</option>
-              <option value="dorian_b2">🧬 Dorian b2 (Math-Rock Fusion)</option>
-              <option value="melodic_minor">🎷 Melodic Minor (Jazz Fusion)</option>
-              <option value="phrygian_dominant">🏰 Phrygian Dominant (Dark Fantasy / Souls / Castlevania)</option>
-              <option value="gothic_harmonic_minor">🕯️ Gothic Harmonic Minor (Dark Dungeon / Vampire)</option>
-              <option value="byzantine">📜 Byzantine / Double Harmonic (Ancient Tomb)</option>
-              <option value="touhou_insen">🏮 Insen (Japanese Mystical)</option>
-              <option value="hirajoshi">🎋 Hirajoshi (Japanese Folk)</option>
-              <option value="natural_minor">Natural Minor (Aeolian)</option>
-              <option value="harmonic_minor">Harmonic Minor (Gothic Tension)</option>
-              <option value="dorian">Dorian Mode (Synthwave / Funk)</option>
-              <option value="major">Major (Ionian / Anime Pop)</option>
-              <option value="pentatonic_minor">Minor Pentatonic</option>
-              <option value="jazz_neosoul">Neo-Soul / Jazz Color</option>
-              <option value="phrygian">Phrygian Mode (Cyber Dark)</option>
+              <option value="touhou_yonanuki" selected data-i18n="🌸 Touhou Yonanuki Minor (ZUN Signature)">🌸 Touhou Yonanuki Minor (ZUN Signature)</option>
+              <option value="lydian_augmented" data-i18n="🌌 Lydian Augmented (sasakure.UK Sci-Fi)">🌌 Lydian Augmented (sasakure.UK Sci-Fi)</option>
+              <option value="dorian_b2" data-i18n="🧬 Dorian b2 (Math-Rock Fusion)">🧬 Dorian b2 (Math-Rock Fusion)</option>
+              <option value="melodic_minor" data-i18n="🎷 Melodic Minor (Jazz Fusion)">🎷 Melodic Minor (Jazz Fusion)</option>
+              <option value="phrygian_dominant" data-i18n="🏰 Phrygian Dominant (Dark Fantasy / Souls / Castlevania)">🏰 Phrygian Dominant (Dark Fantasy / Souls / Castlevania)</option>
+              <option value="gothic_harmonic_minor" data-i18n="🕯️ Gothic Harmonic Minor (Dark Dungeon / Vampire)">🕯️ Gothic Harmonic Minor (Dark Dungeon / Vampire)</option>
+              <option value="byzantine" data-i18n="📜 Byzantine / Double Harmonic (Ancient Tomb)">📜 Byzantine / Double Harmonic (Ancient Tomb)</option>
+              <option value="touhou_insen" data-i18n="🏮 Insen (Japanese Mystical)">🏮 Insen (Japanese Mystical)</option>
+              <option value="hirajoshi" data-i18n="🎋 Hirajoshi (Japanese Folk)">🎋 Hirajoshi (Japanese Folk)</option>
+              <option value="natural_minor" data-i18n="Natural Minor (Aeolian)">Natural Minor (Aeolian)</option>
+              <option value="harmonic_minor" data-i18n="Harmonic Minor (Gothic Tension)">Harmonic Minor (Gothic Tension)</option>
+              <option value="dorian" data-i18n="Dorian Mode (Synthwave / Funk)">Dorian Mode (Synthwave / Funk)</option>
+              <option value="major" data-i18n="Major (Ionian / Anime Pop)">Major (Ionian / Anime Pop)</option>
+              <option value="pentatonic_minor" data-i18n="Minor Pentatonic">Minor Pentatonic</option>
+              <option value="jazz_neosoul" data-i18n="Neo-Soul / Jazz Color">Neo-Soul / Jazz Color</option>
+              <option value="phrygian" data-i18n="Phrygian Mode (Cyber Dark)">Phrygian Mode (Cyber Dark)</option>
             </select>
           </div>
 
           
           <div class="control-row">
             <div class="control-label">
-              <span>Tốc Độ (Tempo / BPM)</span>
-              <span class="control-value" id="valBpm">170 BPM</span>
+              <span data-i18n="Tốc Độ (Tempo / BPM)">Tốc Độ (Tempo / BPM)</span>
+              <span class="control-value" id="valBpm" data-i18n="170 BPM">170 BPM</span>
             </div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;">
               <input type="number" id="inputCustomBpm" min="30" max="350" value="170" style="width:75px; padding:5px 8px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--accent-cyan); font-weight:bold; border-radius:4px; text-align:center;">
               <input type="range" id="sliderBpm" min="40" max="280" value="170" style="flex:1;">
-              <button id="btnTapTempo" class="btn-preset-bar" style="flex:0 0 45px; padding:5px 0;" title="Bấm nhịp theo bài hát">TAP</button>
+              <button id="btnTapTempo" class="btn-preset-bar" style="flex:0 0 45px; padding:5px 0;" title="Bấm nhịp theo bài hát" data-i18n="TAP">TAP</button>
             </div>
           </div>
 
           
           <div class="control-row">
             <div class="control-label">
-              <span>Độ Dài Tùy Chỉnh (Số Bars)</span>
-              <span class="control-value" id="valBars">8 Bars</span>
+              <span data-i18n="Độ Dài Tùy Chỉnh (Số Bars)">Độ Dài Tùy Chỉnh (Số Bars)</span>
+              <span class="control-value" id="valBars" data-i18n="8 Bars">8 Bars</span>
             </div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input type="number" id="inputCustomBars" min="1" max="256" value="8" style="width:75px; padding:5px 8px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--accent-cyan); font-weight:bold; border-radius:4px; text-align:center;">
@@ -400,15 +404,15 @@
           <div class="control-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
             <div>
               <div class="control-label">
-                <span>Fade In</span>
-                <span class="control-value" id="valFadeIn">0 Bar</span>
+                <span data-i18n="Fade In">Fade In</span>
+                <span class="control-value" id="valFadeIn" data-i18n="0 Bar">0 Bar</span>
               </div>
               <input type="range" id="sliderFadeIn" min="0" max="8" value="0">
             </div>
             <div>
               <div class="control-label">
-                <span>Fade Out</span>
-                <span class="control-value" id="valFadeOut">0 Bar</span>
+                <span data-i18n="Fade Out">Fade Out</span>
+                <span class="control-value" id="valFadeOut" data-i18n="0 Bar">0 Bar</span>
               </div>
               <input type="range" id="sliderFadeOut" min="0" max="8" value="0">
             </div>
@@ -417,7 +421,7 @@
           
           <div class="control-row">
             <div class="control-label">
-              <span>Độ Đột Biến (Chaos %)</span>
+              <span data-i18n="Độ Đột Biến (Chaos %)">Độ Đột Biến (Chaos %)</span>
               <span class="control-value" id="valChaos">25%</span>
             </div>
             <input type="range" id="sliderChaos" min="0" max="100" value="25">
@@ -426,7 +430,7 @@
           
           <div class="control-row">
             <div class="control-label">
-              <span>Mật Độ Nốt (Density %)</span>
+              <span data-i18n="Mật Độ Nốt (Density %)">Mật Độ Nốt (Density %)</span>
               <span class="control-value" id="valDensity">75%</span>
             </div>
             <input type="range" id="sliderDensity" min="20" max="100" value="75">
@@ -435,23 +439,23 @@
           
           <div class="control-row">
             <div class="control-label">
-              <span>🎲 Biến Tấu (Variation %)</span>
+              <span data-i18n="🎲 Biến Tấu (Variation %)">🎲 Biến Tấu (Variation %)</span>
               <span class="control-value" id="valVariation">70%</span>
             </div>
             <input type="range" id="sliderVariation" min="0" max="100" value="70" title="0% = gieo lại gần như giữ nguyên khung, 100% = đảo mạnh mỗi take">
             <div style="display:flex; gap:6px; margin-top:4px;">
-              <button class="btn-secondary" data-varpreset="20" style="flex:1; padding:3px 0; font-size:0.68rem;" title="Giữ khung, chỉ đổi chi tiết nhỏ">An toàn 20</button>
-              <button class="btn-secondary" data-varpreset="70" style="flex:1; padding:3px 0; font-size:0.68rem;" title="Mặc định">Cân bằng 70</button>
-              <button class="btn-secondary" data-varpreset="100" style="flex:1; padding:3px 0; font-size:0.68rem;" title="Đảo mạnh mỗi take">Điên 100</button>
+              <button class="btn-secondary" data-varpreset="20" style="flex:1; padding:3px 0; font-size:0.68rem;" title="Giữ khung, chỉ đổi chi tiết nhỏ" data-i18n="An toàn 20">An toàn 20</button>
+              <button class="btn-secondary" data-varpreset="70" style="flex:1; padding:3px 0; font-size:0.68rem;" title="Mặc định" data-i18n="Cân bằng 70">Cân bằng 70</button>
+              <button class="btn-secondary" data-varpreset="100" style="flex:1; padding:3px 0; font-size:0.68rem;" title="Đảo mạnh mỗi take" data-i18n="Điên 100">Điên 100</button>
             </div>
             <details style="margin-top:4px; font-size:0.7rem; color:var(--text-muted);">
-              <summary style="cursor:pointer;">Tỉ lệ từng bè (× với slider tổng)</summary>
+              <summary style="cursor:pointer;" data-i18n="Tỉ lệ từng bè (× với slider tổng)">Tỉ lệ từng bè (× với slider tổng)</summary>
               <div style="display:grid; grid-template-columns:1fr auto; gap:2px 8px; align-items:center; margin-top:4px;">
-                <span>Lead</span><span><input type="range" id="sliderVar_lead" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_lead">100%</b></span>
-                <span>Chords</span><span><input type="range" id="sliderVar_chords" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_chords">100%</b></span>
-                <span>Arp</span><span><input type="range" id="sliderVar_arp" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_arp">100%</b></span>
-                <span>Bass</span><span><input type="range" id="sliderVar_bass" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_bass">100%</b></span>
-                <span>Drums</span><span><input type="range" id="sliderVar_drums" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_drums">100%</b></span>
+                <span data-i18n="Lead">Lead</span><span><input type="range" id="sliderVar_lead" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_lead">100%</b></span>
+                <span data-i18n="Chords">Chords</span><span><input type="range" id="sliderVar_chords" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_chords">100%</b></span>
+                <span data-i18n="Arp">Arp</span><span><input type="range" id="sliderVar_arp" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_arp">100%</b></span>
+                <span data-i18n="Bass">Bass</span><span><input type="range" id="sliderVar_bass" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_bass">100%</b></span>
+                <span data-i18n="Drums">Drums</span><span><input type="range" id="sliderVar_drums" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_drums">100%</b></span>
               </div>
             </details>
           </div>
@@ -459,7 +463,7 @@
           
           <div class="control-row">
             <div class="control-label">
-              <span>Swing / Shuffle (lơi nhịp)</span>
+              <span data-i18n="Swing / Shuffle (lơi nhịp)">Swing / Shuffle (lơi nhịp)</span>
               <span class="control-value" id="valSwing">0%</span>
             </div>
             <input type="range" id="sliderSwing" min="0" max="60" value="0" title="Trễ offbeat 8th - chỉ ảnh hưởng phát nhạc + xuất MIDI/MMP">
@@ -468,7 +472,7 @@
           
           <div class="control-row" style="margin-top: 10px;">
             <div class="control-label">
-              <span>Vòng Hợp Âm Đang Áp Dụng:</span>
+              <span data-i18n="Vòng Hợp Âm Đang Áp Dụng:">Vòng Hợp Âm Đang Áp Dụng:</span>
             </div>
             <div class="progression-display" id="progressionDisplay">
               <div class="chord-chip active">VI (F)</div>
@@ -477,11 +481,11 @@
               <div class="chord-chip">III (C)</div>
             </div>
             <div class="progression-editor" id="progressionEditor" style="display:none; margin-top:8px; padding:8px; background:var(--bg-input); border:1px solid var(--accent-cyan); border-radius:6px;">
-              <div style="font-size:0.72rem; color:var(--accent-cyan); margin-bottom:6px; font-weight:700;" id="progressionEditorTitle">Sửa hợp âm Bar 1</div>
+              <div style="font-size:0.72rem; color:var(--accent-cyan); margin-bottom:6px; font-weight:700;" id="progressionEditorTitle" data-i18n="Sửa hợp âm Bar 1">Sửa hợp âm Bar 1</div>
               <div style="display:flex; gap:6px;">
                 <select id="selectProgChord" style="flex:1;"></select>
-                <button id="btnApplyProgChord" class="btn-secondary" style="padding:4px 10px;">Áp dụng & gieo lại</button>
-                <button id="btnCancelProgChord" class="btn-secondary" style="padding:4px 10px;">Hủy</button>
+                <button id="btnApplyProgChord" class="btn-secondary" style="padding:4px 10px;" data-i18n="Áp dụng &amp; gieo lại">Áp dụng & gieo lại</button>
+                <button id="btnCancelProgChord" class="btn-secondary" style="padding:4px 10px;" data-i18n="Hủy">Hủy</button>
               </div>
               <div style="font-size:0.65rem; color:var(--text-dim); margin-top:4px;">💡 Bấm chip hợp âm phía trên để sửa từng bar. Áp dụng sẽ gieo lại các bè đã chọn ở toolbar vùng, giữ nguyên nốt 🔒.</div>
             </div>
@@ -497,21 +501,21 @@
           <div class="transport-buttons">
             <button id="btnPlay" class="btn-primary">
               <span id="playIcon">▶</span>
-              <span id="playText">PHÁT NHẠC (PLAY)</span>
+              <span id="playText" data-i18n="PHÁT NHẠC (PLAY)">PHÁT NHẠC (PLAY)</span>
             </button>
             <button id="btnStop" class="btn-icon" title="Dừng và về đầu">⏹</button>
             <button id="btnRec" class="btn-icon" title="REC: bật để đàn phím ghi nốt vào bè đang soạn (khi đang phát)">●</button>
             <button id="btnUndo" class="btn-icon" title="Undo (Ctrl+Z)" disabled>↩</button>
             <button id="btnRedo" class="btn-icon" title="Redo (Ctrl+Y)" disabled>↪</button>
-            <button id="btnAB" class="btn-icon" style="width:auto; padding:0 8px; font-size:0.72rem; font-weight:700;" title="A/B: bấm để ghim bản A, bấm nữa để so với bản đang sửa (double-click để ghim lại)">A/B</button>
+            <button id="btnAB" class="btn-icon" style="width:auto; padding:0 8px; font-size:0.72rem; font-weight:700;" title="A/B: bấm để ghim bản A, bấm nữa để so với bản đang sửa (double-click để ghim lại)" data-i18n="A/B">A/B</button>
             <button id="btnGenerate" class="btn-secondary" style="border-color: var(--accent-cyan);">
-              <span>🎲 TẠO BÀI MỚI (GENERATE)</span>
+              <span data-i18n="🎲 TẠO BÀI MỚI (GENERATE)">🎲 TẠO BÀI MỚI (GENERATE)</span>
             </button>
             <button id="btnBlank" class="btn-secondary" title="Bài trống: xóa hết nốt để tự soạn từ đầu (giữ settings)">
-              <span>📄 BÀI TRỐNG</span>
+              <span data-i18n="📄 BÀI TRỐNG">📄 BÀI TRỐNG</span>
             </button>
             <button id="btnTogglePurePiano" class="btn-secondary active" style="border-color: #ffd700; color: #ffd700; background: rgba(255, 215, 0, 0.12);" title="Bật/Tắt chế độ Thuần Piano Solo 2 Tay">
-              <span id="txtPurePiano">🎹 THUẦN PIANO: BẬT</span>
+              <span id="txtPurePiano" data-i18n="🎹 THUẦN PIANO: BẬT">🎹 THUẦN PIANO: BẬT</span>
             </button>
           </div>
 
@@ -529,21 +533,21 @@
                 <input type="checkbox" id="checkEnableContour" style="opacity:0; width:0; height:0;">
                 <span class="slider-round"></span>
               </label>
-              <span style="font-weight:700; font-size:0.82rem; color:var(--accent-cyan); letter-spacing:0.5px;">
+              <span style="font-weight:700; font-size:0.82rem; color:var(--accent-cyan); letter-spacing:0.5px;" data-i18n="🎨 ĐƯỜNG CONG GIAI ĐIỆU (MELODY CONTOUR ENVELOPE)">
                 🎨 ĐƯỜNG CONG GIAI ĐIỆU (MELODY CONTOUR ENVELOPE)
               </span>
-              <span class="badge-optional" style="font-size:0.62rem; background:rgba(0,242,254,0.12); color:var(--accent-cyan); padding:2px 6px; border-radius:10px; border:1px solid rgba(0,242,254,0.25);">
+              <span class="badge-optional" style="font-size:0.62rem; background:rgba(0,242,254,0.12); color:var(--accent-cyan); padding:2px 6px; border-radius:10px; border:1px solid rgba(0,242,254,0.25);" data-i18n="Tùy Chọn Mở Rộng">
                 Tùy Chọn Mở Rộng
               </span>
             </div>
 
             <div class="contour-presets" id="contourPresets" style="display:none; gap:4px; align-items:center;">
-              <button class="btn-contour-pill btn-contour-preset" data-preset="arch" title="Leo núi cao trào">⛰️ Leo Núi</button>
-              <button class="btn-contour-pill btn-contour-preset" data-preset="wave" title="Lượn sóng">🌊 Sóng</button>
-              <button class="btn-contour-pill btn-contour-preset" data-preset="climax" title="Cao trào cuối">⚡ Cao Trào</button>
-              <button class="btn-contour-pill btn-contour-preset" data-preset="qa" title="Hỏi & Đáp">🗨️ Q&A</button>
-              <button class="btn-contour-pill btn-contour-preset" data-preset="flat" title="Đường thẳng ngang">➖ Thẳng</button>
-              <button class="btn-contour-pill" id="btnClearContour" title="Xóa hết các điểm giữa">🗑️ Xóa</button>
+              <button class="btn-contour-pill btn-contour-preset" data-preset="arch" title="Leo núi cao trào" data-i18n="⛰️ Leo Núi">⛰️ Leo Núi</button>
+              <button class="btn-contour-pill btn-contour-preset" data-preset="wave" title="Lượn sóng" data-i18n="🌊 Sóng">🌊 Sóng</button>
+              <button class="btn-contour-pill btn-contour-preset" data-preset="climax" title="Cao trào cuối" data-i18n="⚡ Cao Trào">⚡ Cao Trào</button>
+              <button class="btn-contour-pill btn-contour-preset" data-preset="qa" title="Hỏi & Đáp" data-i18n="🗨️ Q&amp;A">🗨️ Q&A</button>
+              <button class="btn-contour-pill btn-contour-preset" data-preset="flat" title="Đường thẳng ngang" data-i18n="➖ Thẳng">➖ Thẳng</button>
+              <button class="btn-contour-pill" id="btnClearContour" title="Xóa hết các điểm giữa" data-i18n="🗑️ Xóa">🗑️ Xóa</button>
             </div>
           </div>
 
@@ -561,46 +565,46 @@
         <div class="glass-panel pianoroll-wrapper">
           <div class="pianoroll-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding-bottom: 6px;">
             <div class="studio-track-tabs" id="studioTrackTabs" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-              <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 700; margin-right: 2px;">BÈ ĐANG SOẠN:</span>
-              <button class="btn-track-tab active" data-track="lead" style="--track-color:#00f2fe;">🎵 Lead</button>
-              <button class="btn-track-tab" data-track="chords" style="--track-color:#9b51e0;">🎹 Chords</button>
-              <button class="btn-track-tab" data-track="arp" style="--track-color:#4facfe;">✨ Arp</button>
-              <button class="btn-track-tab" data-track="bass" style="--track-color:#f39c12;">🎸 Bass</button>
-              <button class="btn-track-tab" data-track="drums" style="--track-color:#e74c3c;">🥁 Drums</button>
+              <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 700; margin-right: 2px;" data-i18n="BÈ ĐANG SOẠN:">BÈ ĐANG SOẠN:</span>
+              <button class="btn-track-tab active" data-track="lead" style="--track-color:#00f2fe;" data-i18n="🎵 Lead">🎵 Lead</button>
+              <button class="btn-track-tab" data-track="chords" style="--track-color:#9b51e0;" data-i18n="🎹 Chords">🎹 Chords</button>
+              <button class="btn-track-tab" data-track="arp" style="--track-color:#4facfe;" data-i18n="✨ Arp">✨ Arp</button>
+              <button class="btn-track-tab" data-track="bass" style="--track-color:#f39c12;" data-i18n="🎸 Bass">🎸 Bass</button>
+              <button class="btn-track-tab" data-track="drums" style="--track-color:#e74c3c;" data-i18n="🥁 Drums">🥁 Drums</button>
             </div>
 
             <div class="studio-tools" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
               <div style="display:flex; align-items:center; gap:4px;">
-                <span style="font-size:0.72rem; color:var(--text-muted); font-weight:700;">TOOLS:</span>
-                <button class="btn-track-tab tool-tab" data-tool="select" title="Select: kéo khung chọn nhiều nốt">⬚ Select</button>
-                <button class="btn-track-tab tool-tab active" data-tool="draw" title="Draw: thêm/kéo/co giãn nốt">✏️ Draw</button>
-                <button class="btn-track-tab tool-tab" data-tool="knife" title="Knife: bấm vào nốt để cắt đôi">🔪 Knife</button>
-                <button class="btn-track-tab tool-tab" data-tool="erase" title="Erase: bấm để xóa nốt">🧽 Erase</button>
-                <button class="btn-track-tab" id="btnOctDown" title="Dịch quãng xuống 1 (nốt chọn hoặc cả bè)">8va−</button>
-                <button class="btn-track-tab" id="btnOctUp" title="Dịch quãng lên 1 (nốt chọn hoặc cả bè)">8va+</button>
-                <button class="btn-track-tab" id="btnVelDown" title="Giảm velocity 10">Vel−</button>
-                <button class="btn-track-tab" id="btnVelUp" title="Tăng velocity 10">Vel+</button>
+                <span style="font-size:0.72rem; color:var(--text-muted); font-weight:700;" data-i18n="TOOLS:">TOOLS:</span>
+                <button class="btn-track-tab tool-tab" data-tool="select" title="Select: kéo khung chọn nhiều nốt" data-i18n="⬚ Select">⬚ Select</button>
+                <button class="btn-track-tab tool-tab active" data-tool="draw" title="Draw: thêm/kéo/co giãn nốt" data-i18n="✏️ Draw">✏️ Draw</button>
+                <button class="btn-track-tab tool-tab" data-tool="knife" title="Knife: bấm vào nốt để cắt đôi" data-i18n="🔪 Knife">🔪 Knife</button>
+                <button class="btn-track-tab tool-tab" data-tool="erase" title="Erase: bấm để xóa nốt" data-i18n="🧽 Erase">🧽 Erase</button>
+                <button class="btn-track-tab" id="btnOctDown" title="Dịch quãng xuống 1 (nốt chọn hoặc cả bè)" data-i18n="8va−">8va−</button>
+                <button class="btn-track-tab" id="btnOctUp" title="Dịch quãng lên 1 (nốt chọn hoặc cả bè)" data-i18n="8va+">8va+</button>
+                <button class="btn-track-tab" id="btnVelDown" title="Giảm velocity 10" data-i18n="Vel−">Vel−</button>
+                <button class="btn-track-tab" id="btnVelUp" title="Tăng velocity 10" data-i18n="Vel+">Vel+</button>
                 <span id="selectionInfo" style="font-size:0.7rem; color:var(--accent-cyan); font-weight:700;"></span>
               </div>
               <label style="display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--text-muted); cursor: pointer;">
                 <input type="checkbox" id="checkGhostNotes" checked>
-                <span>👻 Ghost Notes</span>
+                <span data-i18n="👻 Ghost Notes">👻 Ghost Notes</span>
               </label>
               <label style="display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--text-muted); cursor: pointer;" title="Thu phóng piano-roll khi bài dài">
-                <span>🔍 Zoom</span>
+                <span data-i18n="🔍 Zoom">🔍 Zoom</span>
                 <select id="selectZoom" style="padding:2px 4px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-main); border-radius:4px; font-size:0.7rem;">
-                  <option value="fit" selected>Vừa khít</option>
-                  <option value="1x">1x</option>
-                  <option value="2x">2x</option>
+                  <option value="fit" selected data-i18n="Vừa khít">Vừa khít</option>
+                  <option value="1x" data-i18n="1x">1x</option>
+                  <option value="2x" data-i18n="2x">2x</option>
                 </select>
               </label>
-              <span class="studio-hint" style="font-size: 0.67rem; color: var(--accent-cyan); background: rgba(0, 242, 254, 0.08); border: 1px solid rgba(0, 242, 254, 0.2); padding: 2px 8px; border-radius: 4px;" title="Đàn phím: Z–M quãng thấp • Q–U quãng cao • ←/→ đổi quãng • G tạo bài • Bật ● REC rồi đàn khi đang phát để ghi nốt">
+              <span class="studio-hint" style="font-size: 0.67rem; color: var(--accent-cyan); background: rgba(0, 242, 254, 0.08); border: 1px solid rgba(0, 242, 254, 0.2); padding: 2px 8px; border-radius: 4px;" title="Đàn phím: Z–M quãng thấp • Q–U quãng cao • ←/→ đổi quãng • G tạo bài • Bật ● REC rồi đàn khi đang phát để ghi nốt" data-i18n="💡 Click: Thêm | Kéo thân: Đổi cao độ/phách | Kéo mép: Co giãn | Chuột phải: Xóa | 🎹 Z–M/Q–U đàn phím">
                 💡 Click: Thêm | Kéo thân: Đổi cao độ/phách | Kéo mép: Co giãn | Chuột phải: Xóa | 🎹 Z–M/Q–U đàn phím
               </span>
             </div>
             <div class="regen-toolbar" id="regenToolbar" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; padding-top: 6px; font-size: 0.72rem; color: var(--text-muted);">
-              <span style="font-weight: 700; color: var(--accent-cyan);">🔁 GIEO LẠI VÙNG:</span>
-              <label style="display:flex; align-items:center; gap:4px;">Bar
+              <span style="font-weight: 700; color: var(--accent-cyan);" data-i18n="🔁 GIEO LẠI VÙNG:">🔁 GIEO LẠI VÙNG:</span>
+              <label style="display:flex; align-items:center; gap:4px;"><span data-i18n="Bar">Bar</span>
                 <input type="number" id="inputRegenFrom" min="1" value="1" style="width:52px; padding:4px 6px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--accent-cyan); font-weight:bold; border-radius:4px; text-align:center;">
                 <span>–</span>
                 <input type="number" id="inputRegenTo" min="1" value="4" style="width:52px; padding:4px 6px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--accent-cyan); font-weight:bold; border-radius:4px; text-align:center;">
@@ -610,39 +614,39 @@
               <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" class="regen-track" value="arp" checked> Arp</label>
               <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" class="regen-track" value="bass" checked> Bass</label>
               <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" class="regen-track" value="drums"> Drums</label>
-              <button id="btnRegenRegion" class="btn-secondary" style="padding:4px 12px;">🎲 Gieo lại</button>
-              <button id="btnNewTake" class="btn-secondary" style="padding:4px 10px;" title="Gieo take mới vào khay thử, nghe từng take rồi giữ bản ưng nhất">🎬 Take mới</button>
-              <button id="btnMotif" class="btn-secondary" style="padding:4px 10px;" title="Lấy nốt lead đã khóa trong 2 bars đầu làm motif, phát triển thành cả bài">🌱 Motif→Bài</button>
-              <button id="btnUnlockAll" class="btn-secondary" style="padding:4px 10px;" title="Mở khóa mọi nốt đã soạn tay">🔓 Mở khóa hết</button>
+              <button id="btnRegenRegion" class="btn-secondary" style="padding:4px 12px;" data-i18n="🎲 Gieo lại">🎲 Gieo lại</button>
+              <button id="btnNewTake" class="btn-secondary" style="padding:4px 10px;" title="Gieo take mới vào khay thử, nghe từng take rồi giữ bản ưng nhất" data-i18n="🎬 Take mới">🎬 Take mới</button>
+              <button id="btnMotif" class="btn-secondary" style="padding:4px 10px;" title="Lấy nốt lead đã khóa trong 2 bars đầu làm motif, phát triển thành cả bài" data-i18n="🌱 Motif→Bài">🌱 Motif→Bài</button>
+              <button id="btnUnlockAll" class="btn-secondary" style="padding:4px 10px;" title="Mở khóa mọi nốt đã soạn tay" data-i18n="🔓 Mở khóa hết">🔓 Mở khóa hết</button>
             </div>
             <div class="regen-toolbar" id="takeStrip" style="display:none; align-items:center; gap:6px; flex-wrap:wrap; width:100%; padding-top:6px; font-size:0.72rem; color:var(--text-muted);">
-              <span style="font-weight:700; color:var(--accent-gold);">🎬 KHAY TAKE:</span>
+              <span style="font-weight:700; color:var(--accent-gold);" data-i18n="🎬 KHAY TAKE:">🎬 KHAY TAKE:</span>
               <span id="takeButtons" style="display:flex; gap:6px; flex-wrap:wrap;"></span>
-              <button id="btnKeepTake" class="btn-secondary" style="padding:4px 10px;" title="Giữ take đang nghe, đóng khay">📌 Giữ bản này</button>
-              <button id="btnRevertTake" class="btn-secondary" style="padding:4px 10px;" title="Trả về bản trước khi thử take">↩ Bản gốc</button>
+              <button id="btnKeepTake" class="btn-secondary" style="padding:4px 10px;" title="Giữ take đang nghe, đóng khay" data-i18n="📌 Giữ bản này">📌 Giữ bản này</button>
+              <button id="btnRevertTake" class="btn-secondary" style="padding:4px 10px;" title="Trả về bản trước khi thử take" data-i18n="↩ Bản gốc">↩ Bản gốc</button>
             </div>
             <div id="timelinePanel" style="width:100%; padding-top:6px; font-size:0.72rem; color:var(--text-muted);">
               <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                 <button id="btnTimelineToggle" class="btn-secondary" style="padding:2px 8px;" title="Thu/mở lane clips">▼</button>
-                <span style="font-weight:700; color:var(--accent-cyan);">🎬 TIMELINE CLIPS</span>
+                <span style="font-weight:700; color:var(--accent-cyan);" data-i18n="🎬 TIMELINE CLIPS">🎬 TIMELINE CLIPS</span>
                 <span id="clipInfo"></span>
                 <span style="flex:1;"></span>
-                <label style="display:flex; align-items:center; gap:4px;">Tách tại bar
+                <label style="display:flex; align-items:center; gap:4px;"><span data-i18n="Tách tại bar">Tách tại bar</span>
                   <input type="number" id="inputClipSplit" min="1" value="5" style="width:52px; padding:4px 6px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--accent-cyan); font-weight:bold; border-radius:4px; text-align:center;">
                 </label>
-                <button id="btnClipSplit" class="btn-secondary" style="padding:4px 10px;" title="Tách đoạn đang chứa bar này thành 2 (cắt cứng)">✂ Tách</button>
-                <button id="btnClipDup" class="btn-secondary" style="padding:4px 10px;" title="Nhân đôi đoạn đang chọn ngay sau nó">⧉ Nhân đôi</button>
-                <button id="btnClipMerge" class="btn-secondary" style="padding:4px 10px;" title="Gộp đoạn đang chọn với đoạn kế tiếp">⛓ Gộp</button>
-                <button id="btnClipRest" class="btn-secondary" style="padding:4px 10px;" title="Chèn khoảng lặng (đoạn trống) sau đoạn đang chọn">☕ +Lặng</button>
-                <button id="btnClipDel" class="btn-secondary" style="padding:4px 10px;" title="Xóa đoạn đang chọn, các đoạn sau dồn lên">🗑 Xóa</button>
+                <button id="btnClipSplit" class="btn-secondary" style="padding:4px 10px;" title="Tách đoạn đang chứa bar này thành 2 (cắt cứng)" data-i18n="✂ Tách">✂ Tách</button>
+                <button id="btnClipDup" class="btn-secondary" style="padding:4px 10px;" title="Nhân đôi đoạn đang chọn ngay sau nó" data-i18n="⧉ Nhân đôi">⧉ Nhân đôi</button>
+                <button id="btnClipMerge" class="btn-secondary" style="padding:4px 10px;" title="Gộp đoạn đang chọn với đoạn kế tiếp" data-i18n="⛓ Gộp">⛓ Gộp</button>
+                <button id="btnClipRest" class="btn-secondary" style="padding:4px 10px;" title="Chèn khoảng lặng (đoạn trống) sau đoạn đang chọn" data-i18n="☕ +Lặng">☕ +Lặng</button>
+                <button id="btnClipDel" class="btn-secondary" style="padding:4px 10px;" title="Xóa đoạn đang chọn, các đoạn sau dồn lên" data-i18n="🗑 Xóa">🗑 Xóa</button>
                 <button id="btnClipLeft" class="btn-secondary" style="padding:4px 8px;" title="Dời đoạn lên trước">◀</button>
                 <button id="btnClipRight" class="btn-secondary" style="padding:4px 8px;" title="Dời đoạn xuống sau">▶</button>
-                <button id="btnClipMute" class="btn-secondary" style="padding:4px 10px;" title="Tắt/mở tiếng đoạn (nốt giữ lại)">🔇 Mute</button>
-                <button id="btnClipRename" class="btn-secondary" style="padding:4px 10px;" title="Đổi tên đoạn">✏ Tên</button>
+                <button id="btnClipMute" class="btn-secondary" style="padding:4px 10px;" title="Tắt/mở tiếng đoạn (nốt giữ lại)" data-i18n="🔇 Mute">🔇 Mute</button>
+                <button id="btnClipRename" class="btn-secondary" style="padding:4px 10px;" title="Đổi tên đoạn" data-i18n="✏ Tên">✏ Tên</button>
               </div>
               <div id="timelineBody">
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:4px;">
-                <span style="color:var(--text-dim);">Bè trong đoạn đang chọn:</span>
+                <span style="color:var(--text-dim);" data-i18n="Bè trong đoạn đang chọn:">Bè trong đoạn đang chọn:</span>
                 <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="clipTrack_lead" checked> Lead</label>
                 <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="clipTrack_chords" checked> Chords</label>
                 <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="clipTrack_arp" checked> Arp</label>
@@ -663,7 +667,7 @@
         <div class="glass-panel mixer-rack">
           <div class="mixer-channel" data-track="lead">
             <div class="channel-header">
-              <span class="channel-name" style="color:#00f2fe;">🎵 Lead</span>
+              <span class="channel-name" style="color:#00f2fe;" data-i18n="🎵 Lead">🎵 Lead</span>
               <div class="channel-toggles">
                 <button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>
                 <button class="btn-mini btn-mute" title="Mute">M</button>
@@ -682,7 +686,7 @@
 
           <div class="mixer-channel" data-track="chords">
             <div class="channel-header">
-              <span class="channel-name" style="color:#9b51e0;">🎹 Chords</span>
+              <span class="channel-name" style="color:#9b51e0;" data-i18n="🎹 Chords">🎹 Chords</span>
               <div class="channel-toggles">
                 <button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>
                 <button class="btn-mini btn-mute" title="Mute">M</button>
@@ -701,7 +705,7 @@
 
           <div class="mixer-channel" data-track="arp">
             <div class="channel-header">
-              <span class="channel-name" style="color:#4facfe;">✨ Arp</span>
+              <span class="channel-name" style="color:#4facfe;" data-i18n="✨ Arp">✨ Arp</span>
               <div class="channel-toggles">
                 <button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>
                 <button class="btn-mini btn-mute" title="Mute">M</button>
@@ -720,7 +724,7 @@
 
           <div class="mixer-channel" data-track="bass">
             <div class="channel-header">
-              <span class="channel-name" style="color:#f39c12;">🎸 Bass</span>
+              <span class="channel-name" style="color:#f39c12;" data-i18n="🎸 Bass">🎸 Bass</span>
               <div class="channel-toggles">
                 <button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>
                 <button class="btn-mini btn-mute" title="Mute">M</button>
@@ -739,7 +743,7 @@
 
           <div class="mixer-channel" data-track="drums">
             <div class="channel-header">
-              <span class="channel-name" style="color:#e74c3c;">🥁 Drums</span>
+              <span class="channel-name" style="color:#e74c3c;" data-i18n="🥁 Drums">🥁 Drums</span>
               <div class="channel-toggles">
                 <button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>
                 <button class="btn-mini btn-mute" title="Mute">M</button>
@@ -759,24 +763,24 @@
 
         
         <div class="dock-tabs" id="dockTabs">
-          <button class="dock-tab active" data-dock="historyPanel">📜 Lịch sử</button>
-          <button class="dock-tab" data-dock="recentPanel">📁 File xuất</button>
-          <button class="dock-tab" data-dock="seedPanel">🌱 Sổ Seed</button>
+          <button class="dock-tab active" data-dock="historyPanel" data-i18n="📜 Lịch sử">📜 Lịch sử</button>
+          <button class="dock-tab" data-dock="recentPanel" data-i18n="📁 File xuất">📁 File xuất</button>
+          <button class="dock-tab" data-dock="seedPanel" data-i18n="🌱 Sổ Seed">🌱 Sổ Seed</button>
         </div>
 
         
         <div class="glass-panel history-panel" id="historyPanel">
           <div class="history-header">
             <div class="history-title">
-              <span>📜 Lịch Sử Gieo Nhạc (Generation History)</span>
+              <span data-i18n="📜 Lịch Sử Gieo Nhạc (Generation History)">📜 Lịch Sử Gieo Nhạc (Generation History)</span>
             </div>
             <div style="display:flex; gap:6px; align-items:center;">
               <select id="historyFilter" title="Lọc lịch sử" style="padding:3px 6px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-main); border-radius:4px; font-size:0.7rem;">
-                <option value="all">Tất cả</option>
-                <option value="fav">★ Yêu thích</option>
+                <option value="all" data-i18n="Tất cả">Tất cả</option>
+                <option value="fav" data-i18n="★ Yêu thích">★ Yêu thích</option>
               </select>
-              <button id="btnBatchMidi" class="btn-secondary" style="padding:3px 10px; font-size:0.7rem;" title="Xuất toàn bộ lịch sử ra MIDI (vào thư mục mặc định)">🎵 Xuất hết MIDI</button>
-              <button id="btnClearHistory" class="btn-clear-history">Xóa Lịch Sử</button>
+              <button id="btnBatchMidi" class="btn-secondary" style="padding:3px 10px; font-size:0.7rem;" title="Xuất toàn bộ lịch sử ra MIDI (vào thư mục mặc định)" data-i18n="🎵 Xuất hết MIDI">🎵 Xuất hết MIDI</button>
+              <button id="btnClearHistory" class="btn-clear-history" data-i18n="Xóa Lịch Sử">Xóa Lịch Sử</button>
             </div>
           </div>
           <div class="history-list" id="historyList">
@@ -788,9 +792,9 @@
         <div class="glass-panel history-panel" id="recentPanel" style="display:none;">
           <div class="history-header">
             <div class="history-title">
-              <span>📁 File Đã Xuất</span>
+              <span data-i18n="📁 File Đã Xuất">📁 File Đã Xuất</span>
             </div>
-            <button id="btnRefreshRecent" class="btn-secondary" style="padding:3px 10px; font-size:0.7rem;" title="Tải lại danh sách">↻ Tải lại</button>
+            <button id="btnRefreshRecent" class="btn-secondary" style="padding:3px 10px; font-size:0.7rem;" title="Tải lại danh sách" data-i18n="↻ Tải lại">↻ Tải lại</button>
           </div>
           <div class="history-list" id="recentList">
           </div>
@@ -800,12 +804,12 @@
         <div class="glass-panel history-panel" id="seedPanel" style="display:none;">
           <div class="history-header">
             <div class="history-title">
-              <span>🌱 Sổ Seed</span>
+              <span data-i18n="🌱 Sổ Seed">🌱 Sổ Seed</span>
             </div>
           </div>
           <div style="display:flex; gap:6px; padding:0 12px 6px;">
             <input id="seedName" maxlength="50" placeholder="Tên seed (VD: Boss hay nhất)..." style="flex:1; padding:4px 8px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-main); border-radius:4px; font-size:0.72rem;">
-            <button id="btnSaveSeed" class="btn-secondary" style="padding:3px 10px; font-size:0.7rem;" title="Lưu seed bài hiện tại">Lưu seed</button>
+            <button id="btnSaveSeed" class="btn-secondary" style="padding:3px 10px; font-size:0.7rem;" title="Lưu seed bài hiện tại" data-i18n="Lưu seed">Lưu seed</button>
           </div>
           <div class="history-list" id="seedList">
           </div>
@@ -816,62 +820,62 @@
     
     <footer class="action-export-bar">
       <div style="font-size: 0.76rem; color: var(--text-muted);">
-        <span id="songInfoLabel">RinTune v3.5 • Sẵn sàng xuất sang DAW</span>
+        <span id="songInfoLabel" data-i18n="RinTune v3.5 • Sẵn sàng xuất sang DAW">RinTune v3.5 • Sẵn sàng xuất sang DAW</span>
         <div style="margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-          <span>📁 <span id="exportDirLabel">(chọn mỗi lần)</span></span>
-          <button id="btnChangeExportDir" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Chọn thư mục xuất mặc định">Đổi</button>
-          <button id="btnOpenExportDir" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Mở thư mục xuất">Mở thư mục</button>
+          <span>📁 <span id="exportDirLabel" data-i18n="(chọn mỗi lần)">(chọn mỗi lần)</span></span>
+          <button id="btnChangeExportDir" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Chọn thư mục xuất mặc định" data-i18n="Đổi">Đổi</button>
+          <button id="btnOpenExportDir" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Mở thư mục xuất" data-i18n="Mở thư mục">Mở thư mục</button>
         </div>
         <div style="margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
           <label style="display:flex; align-items:center; gap:5px; cursor:pointer;" title="Xuất MMP dùng SoundFont tiếng thật (tải 1 lần ~30MB)">
             <input type="checkbox" id="checkUseSf2">
-            <span>🎻 Tiếng thật (SF2)</span>
+            <span data-i18n="🎻 Tiếng thật (SF2)">🎻 Tiếng thật (SF2)</span>
           </label>
-          <span id="sfStatus" style="color:var(--text-dim);">(chưa có)</span>
+          <span id="sfStatus" style="color:var(--text-dim);" data-i18n="(chưa có)">(chưa có)</span>
         </div>
         <div style="margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-          <span>🌱 Seed:</span>
-          <button id="btnCopySeed" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Copy seed bài này để chia sẻ">Copy</button>
-          <button id="btnPasteSeed" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Nhập seed để gieo đúng bài đó">Nhập</button>
-          <button id="btnDailySeed" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Gieo bài theo seed ngày hôm nay">📅 Hôm nay</button>
+          <span data-i18n="🌱 Seed:">🌱 Seed:</span>
+          <button id="btnCopySeed" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Copy seed bài này để chia sẻ" data-i18n="Copy">Copy</button>
+          <button id="btnPasteSeed" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Nhập seed để gieo đúng bài đó" data-i18n="Nhập">Nhập</button>
+          <button id="btnDailySeed" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Gieo bài theo seed ngày hôm nay" data-i18n="📅 Hôm nay">📅 Hôm nay</button>
         </div>
       </div>
       <div class="export-actions">
-        <button id="btnQuickMidi" class="btn-secondary" title="Xuất nhanh MIDI vào thư mục mặc định (không hỏi)">
+        <button id="btnQuickMidi" class="btn-secondary" title="Xuất nhanh MIDI vào thư mục mặc định (không hỏi)" data-i18n="⚡MIDI">
           ⚡MIDI
         </button>
-        <button id="btnQuickMmp" class="btn-secondary" title="Xuất nhanh LMMS vào thư mục mặc định (không hỏi)">
+        <button id="btnQuickMmp" class="btn-secondary" title="Xuất nhanh LMMS vào thư mục mặc định (không hỏi)" data-i18n="⚡MMP">
           ⚡MMP
         </button>
-        <button id="btnExportWav" class="btn-secondary" title="Render tiếng preview ra file WAV demo">
+        <button id="btnExportWav" class="btn-secondary" title="Render tiếng preview ra file WAV demo" data-i18n="🎧WAV">
           🎧WAV
         </button>
-        <button id="btnFinish" class="btn-secondary btn-lmms" title="Hoàn thiện 1-click: kiểm tra + final hit + xuất MIDI & MMP">
+        <button id="btnFinish" class="btn-secondary btn-lmms" title="Hoàn thiện 1-click: kiểm tra + final hit + xuất MIDI & MMP" data-i18n="⚡Finish">
           ⚡Finish
         </button>
-        <button id="btnTransferStyle" class="btn-secondary" title="Ép style đang chọn vào bài đang mở (giữ melody, thay đệm)">
+        <button id="btnTransferStyle" class="btn-secondary" title="Ép style đang chọn vào bài đang mở (giữ melody, thay đệm)" data-i18n="🎭 Ép Style">
           🎭 Ép Style
         </button>
-        <button id="btnOpenMidi" class="btn-secondary" title="Mở file MIDI (.mid) có sẵn để sửa tiếp trong RinTune">
+        <button id="btnOpenMidi" class="btn-secondary" title="Mở file MIDI (.mid) có sẵn để sửa tiếp trong RinTune" data-i18n="📂 Mở MIDI">
           📂 Mở MIDI
         </button>
-        <button id="btnSaveProject" class="btn-secondary" title="Lưu project (.rmg: nhạc + settings)">
+        <button id="btnSaveProject" class="btn-secondary" title="Lưu project (.rmg: nhạc + settings)" data-i18n="💾 Project">
           💾 Project
         </button>
-        <button id="btnOpenProject" class="btn-secondary" title="Mở project (.rmg)">
+        <button id="btnOpenProject" class="btn-secondary" title="Mở project (.rmg)" data-i18n="📂 Project">
           📂 Project
         </button>
         <input type="file" id="fileOpenMidi" accept=".mid,.midi,.rmg" style="display:none;">
-        <button id="btnCopyClip" class="btn-secondary" title="Sao chép Clip vào Clipboard để dán trực tiếp Ctrl+V trong LMMS">
+        <button id="btnCopyClip" class="btn-secondary" title="Sao chép Clip vào Clipboard để dán trực tiếp Ctrl+V trong LMMS" data-i18n="📋 Sao Chép Clip LMMS">
           📋 Sao Chép Clip LMMS
         </button>
-        <button id="btnSaveMidi" class="btn-secondary" title="Xuất file Standard MIDI đa bè tương thích mọi DAW">
+        <button id="btnSaveMidi" class="btn-secondary" title="Xuất file Standard MIDI đa bè tương thích mọi DAW" data-i18n="🎵 Xuất File MIDI (.mid)">
           🎵 Xuất File MIDI (.mid)
         </button>
-        <button id="btnSaveMmp" class="btn-secondary" title="Lưu toàn bộ dự án định dạng LMMS Project (.mmp)">
+        <button id="btnSaveMmp" class="btn-secondary" title="Lưu toàn bộ dự án định dạng LMMS Project (.mmp)" data-i18n="💾 Lưu File LMMS (.mmp)">
           💾 Lưu File LMMS (.mmp)
         </button>
-        <button id="btnLaunchLmms" class="btn-secondary btn-lmms" title="Tự động mở LMMS hoặc chèn nhạc ngay vào LMMS đang bật">
+        <button id="btnLaunchLmms" class="btn-secondary btn-lmms" title="Tự động mở LMMS hoặc chèn nhạc ngay vào LMMS đang bật" data-i18n="🚀 Mở Trực Tiếp Vào LMMS">
           🚀 Mở Trực Tiếp Vào LMMS
         </button>
       </div>
@@ -881,31 +885,31 @@
   
   <div class="modal-overlay" id="genreModal" style="display:none;">
     <div class="modal-box">
-      <h3 style="margin:0 0 10px; color:var(--accent-cyan);">🎨 Style nhạc riêng</h3>
-      <label class="modal-label">Tên style
-        <input id="customName" maxlength="40" placeholder="VD: Vina House">
+      <h3 style="margin:0 0 10px; color:var(--accent-cyan);" data-i18n="🎨 Style nhạc riêng">🎨 Style nhạc riêng</h3>
+      <label class="modal-label"><span data-i18n="Tên style">Tên style</span>
+        <input id="customName" maxlength="40" placeholder="VD: Vina House" data-i18n-ph="VD: Vina House">
       </label>
-      <label class="modal-label">Mô tả ngắn
-        <input id="customDesc" maxlength="80" placeholder="VD: Bass nảy, hook bắt tai">
+      <label class="modal-label"><span data-i18n="Mô tả ngắn">Mô tả ngắn</span>
+        <input id="customDesc" maxlength="80" placeholder="VD: Bass nảy, hook bắt tai" data-i18n-ph="VD: Bass nảy, hook bắt tai">
       </label>
       <div class="modal-row">
-        <label class="modal-label">BPM
+        <label class="modal-label"><span data-i18n="BPM">BPM</span>
           <input id="customBpm" type="number" min="30" max="350" value="128">
         </label>
-        <label class="modal-label">Key
+        <label class="modal-label"><span data-i18n="Key">Key</span>
           <select id="customKey">
-            <option value="C">C</option><option value="C#">C#</option><option value="D">D</option>
-            <option value="D#">D#</option><option value="E">E</option><option value="F">F</option>
-            <option value="F#">F#</option><option value="G">G</option><option value="G#">G#</option>
-            <option value="A" selected>A</option><option value="A#">A#</option><option value="B">B</option>
+            <option value="C">C</option><option value="C#" data-i18n="C#">C#</option><option value="D">D</option>
+            <option value="D#" data-i18n="D#">D#</option><option value="E">E</option><option value="F">F</option>
+            <option value="F#" data-i18n="F#">F#</option><option value="G">G</option><option value="G#" data-i18n="G#">G#</option>
+            <option value="A" selected>A</option><option value="A#" data-i18n="A#">A#</option><option value="B">B</option>
           </select>
         </label>
       </div>
       <div class="modal-row">
-        <label class="modal-label">Scale
+        <label class="modal-label"><span data-i18n="Scale">Scale</span>
           <select id="customScale"></select>
         </label>
-        <label class="modal-label">Nhịp
+        <label class="modal-label"><span data-i18n="Nhịp">Nhịp</span>
           <select id="customTs">
             <option value="4/4" selected>4/4</option>
             <option value="7/8">7/8</option>
@@ -915,29 +919,29 @@
         </label>
       </div>
       <div class="modal-row">
-        <label class="modal-label">Lead sound
+        <label class="modal-label"><span data-i18n="Lead sound">Lead sound</span>
           <select id="customLead">
-            <option value="square_8bit">Square 8-bit</option>
-            <option value="synth_saw_lead" selected>Saw Lead</option>
-            <option value="zun_trumpet">Trumpet (ZUN)</option>
-            <option value="grand_piano_lead">Grand Piano</option>
-            <option value="pipe_organ_lead">Pipe Organ</option>
-            <option value="chiptune_fm_epiano">FM E-Piano</option>
-            <option value="sparkle_arp">Sparkle Arp</option>
-            <option value="mellow_epiano">Mellow E-Piano</option>
-            <option value="fusion_bright_grand">Bright Grand</option>
-            <option value="distorted_lead">Distorted Lead</option>
-            <option value="orchestral_strings">Strings</option>
-            <option value="anime_bell_lead">Bell Lead</option>
+            <option value="square_8bit" data-i18n="Square 8-bit">Square 8-bit</option>
+            <option value="synth_saw_lead" selected data-i18n="Saw Lead">Saw Lead</option>
+            <option value="zun_trumpet" data-i18n="Trumpet (ZUN)">Trumpet (ZUN)</option>
+            <option value="grand_piano_lead" data-i18n="Grand Piano">Grand Piano</option>
+            <option value="pipe_organ_lead" data-i18n="Pipe Organ">Pipe Organ</option>
+            <option value="chiptune_fm_epiano" data-i18n="FM E-Piano">FM E-Piano</option>
+            <option value="sparkle_arp" data-i18n="Sparkle Arp">Sparkle Arp</option>
+            <option value="mellow_epiano" data-i18n="Mellow E-Piano">Mellow E-Piano</option>
+            <option value="fusion_bright_grand" data-i18n="Bright Grand">Bright Grand</option>
+            <option value="distorted_lead" data-i18n="Distorted Lead">Distorted Lead</option>
+            <option value="orchestral_strings" data-i18n="Strings">Strings</option>
+            <option value="anime_bell_lead" data-i18n="Bell Lead">Bell Lead</option>
           </select>
         </label>
       </div>
-      <label class="modal-label">Vòng hợp âm (mỗi dòng 1 vòng, ký hiệu cách nhau bởi khoảng trắng)
+      <label class="modal-label"><span data-i18n="Vòng hợp âm (mỗi dòng 1 vòng, ký hiệu cách nhau bởi khoảng trắng)">Vòng hợp âm (mỗi dòng 1 vòng, ký hiệu cách nhau bởi khoảng trắng)</span>
         <textarea id="customProg" rows="4">i VI VII i&#10;i VII VI V</textarea>
       </label>
       <div class="modal-actions">
-        <button id="btnSaveCustomGenre" class="btn-secondary">💾 Lưu style</button>
-        <button id="btnCancelCustomGenre" class="btn-secondary">Hủy</button>
+        <button id="btnSaveCustomGenre" class="btn-secondary" data-i18n="💾 Lưu style">💾 Lưu style</button>
+        <button id="btnCancelCustomGenre" class="btn-secondary" data-i18n="Hủy">Hủy</button>
       </div>
     </div>
   </div>
@@ -945,8 +949,8 @@
   
   <div class="modal-overlay" id="helpModal" style="display:none;">
     <div class="modal-box" style="width:560px;">
-      <h3 style="margin:0 0 10px; color:var(--accent-cyan);">📖 Hướng dẫn RinTune (5 phút)</h3>
-      <div style="font-size:0.76rem; color:var(--text-main); line-height:1.65;">
+      <h3 style="margin:0 0 10px; color:var(--accent-cyan);" data-i18n="📖 Hướng dẫn RinTune (5 phút)">📖 Hướng dẫn RinTune (5 phút)</h3>
+      <div style="font-size:0.76rem; color:var(--text-main); line-height:1.65;" data-i18n-html="helpBody">
         <b>1. Gieo nhạc:</b> chọn style → 🎲 Generate (G). Mỗi lần gieo là một bài mới không trùng.<br>
         <b>2. Nghe &amp; sửa:</b> ▶ Play (Space). Bấm chip hợp âm để đổi hòa âm từng bar. Toolbar 🔁 gieo lại vùng. Nốt viền vàng là nốt khóa (giữ khi gieo lại).<br>
         <b>3. Soạn tay:</b> Tools Select/Draw/Knife/Erase. Đàn bằng phím Z–M, Q–U (←/→ đổi quãng), bật ● REC để ghi khi đang phát. Ctrl+Z/Y undo/redo.<br>
@@ -957,9 +961,9 @@
         <b>Phím tắt:</b> Space phát/dừng • G gieo bài • Alt+T ẩn/hiện timeline • Ctrl+N/O/E/B/L/T tab mới • Ctrl+Tab chuyển tab • Ctrl+1..5 chọn bè • Ctrl+D/C/V nhân bản/copy/paste • Del xóa chọn • Shift+↑/↓ dịch cao độ • Ctrl+S lưu project • Home về đầu • Esc đóng menu.
       </div>
       <div class="modal-actions">
-        <span id="appVersionLabel" style="font-size:0.72rem; color:var(--text-dim); margin-right:auto;">v2.1.0</span>
-        <button id="btnCheckUpdate" class="btn-secondary">↻ Kiểm tra cập nhật</button>
-        <button id="btnCloseHelp" class="btn-secondary">Đóng</button>
+        <span id="appVersionLabel" style="font-size:0.72rem; color:var(--text-dim); margin-right:auto;" data-i18n="v2.1.0">v2.1.0</span>
+        <button id="btnCheckUpdate" class="btn-secondary" data-i18n="↻ Kiểm tra cập nhật">↻ Kiểm tra cập nhật</button>
+        <button id="btnCloseHelp" class="btn-secondary" data-i18n="Đóng">Đóng</button>
       </div>
     </div>
   </div>
@@ -967,27 +971,27 @@
   
   <div class="modal-overlay" id="themeModal" style="display:none;">
     <div class="modal-box">
-      <h3 style="margin:0 0 10px; color:var(--accent-cyan);">🎨 Theme tùy chỉnh</h3>
+      <h3 style="margin:0 0 10px; color:var(--accent-cyan);" data-i18n="🎨 Theme tùy chỉnh">🎨 Theme tùy chỉnh</h3>
       <div class="modal-row">
-        <label class="modal-label">Màu nhấn (chữ/nút)
+        <label class="modal-label"><span data-i18n="Màu nhấn (chữ/nút)">Màu nhấn (chữ/nút)</span>
           <input type="color" id="themeAccent" value="#00f2fe">
         </label>
-        <label class="modal-label">Màu nền chính
+        <label class="modal-label"><span data-i18n="Màu nền chính">Màu nền chính</span>
           <input type="color" id="themeBg" value="#08090e">
         </label>
       </div>
       <div class="modal-row">
-        <label class="modal-label">Màu thẻ panel
+        <label class="modal-label"><span data-i18n="Màu thẻ panel">Màu thẻ panel</span>
           <input type="color" id="themeCard" value="#161a26">
         </label>
-        <label class="modal-label">Độ tối phủ ảnh nền (%)
+        <label class="modal-label"><span data-i18n="Độ tối phủ ảnh nền (%)">Độ tối phủ ảnh nền (%)</span>
           <input type="number" id="themeScrim" min="30" max="92" value="62">
         </label>
       </div>
-      <div style="font-size:0.68rem; color:var(--text-dim); margin-bottom:4px;">Xem trước trực tiếp khi chỉnh. Ảnh nền: menu Xem → Ảnh nền riêng.</div>
+      <div style="font-size:0.68rem; color:var(--text-dim); margin-bottom:4px;" data-i18n="Xem trước trực tiếp khi chỉnh. Ảnh nền: menu Xem → Ảnh nền riêng.">Xem trước trực tiếp khi chỉnh. Ảnh nền: menu Xem → Ảnh nền riêng.</div>
       <div class="modal-actions">
-        <button id="btnSaveTheme" class="btn-secondary">💾 Lưu theme</button>
-        <button id="btnCancelTheme" class="btn-secondary">Hủy</button>
+        <button id="btnSaveTheme" class="btn-secondary" data-i18n="💾 Lưu theme">💾 Lưu theme</button>
+        <button id="btnCancelTheme" class="btn-secondary" data-i18n="Hủy">Hủy</button>
       </div>
     </div>
   </div>
@@ -1001,6 +1005,7 @@
   <script src="engine/synth.js"></script>
   <script src="engine/exporter.js"></script>
   <script src="engine/midi.js"></script>
+  <script src="i18n.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>
