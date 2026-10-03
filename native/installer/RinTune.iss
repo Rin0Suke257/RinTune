@@ -1,4 +1,4 @@
-
+﻿
 #define AppVersion "2.1.0"
 
 [Setup]
@@ -60,8 +60,7 @@ Filename: "{app}\RinTune.exe"; Description: "Chay RinTune ngay"; Flags: nowait p
 
 [Code]
 const
-  WebView2ClientID = '{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}';
-  WebView2Reg = 'SOFTWARE\Microsoft\EdgeUpdate\Clients\' + WebView2ClientID;
+  WebView2ClientID = '{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}';  WebView2Reg = 'SOFTWARE\Microsoft\EdgeUpdate\Clients\' + WebView2ClientID;
   WebView2URL = 'https://go.microsoft.com/fwlink/p/?LinkId=2124703';
 
 function IsWebView2Installed(): Boolean;
@@ -92,3 +91,6 @@ begin
   else if Res = IDCANCEL then
     Result := False;
 end;
+
+[Messages]
+ConfirmUninstall=Rin sẽ nhớ bạn!%n%NChỉ gỡ phần mềm + shortcut. Bài nhạc, SoundFont và lịch sử của bạn ĐƯỢC GIỮ NGUYÊN.%n%NHẹn gặp lại sớm nhé!%n%NTiếp tục gỡ RinTune Studio?
