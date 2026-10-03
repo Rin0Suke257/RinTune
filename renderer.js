@@ -1356,10 +1356,49 @@
     }
   }
 
+  function hexToHsl(hex) {
+    let h = String(hex || '').replace('#', '');
+    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    const n = parseInt(h, 16);
+    if (isNaN(n)) return null;
+    const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    let hh = 0, s = 0;
+    const l = (mx + mn) / 2;
+    if (mx !== mn) {
+      const d = mx - mn;
+      s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+      if (mx === r) hh = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+      else if (mx === g) hh = ((b - r) / d + 2) / 6;
+      else hh = ((r - g) / d + 4) / 6;
+    }
+    return { h: Math.round(hh * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+  }
+
+  function hslToHex(h, s, l) {
+    h = ((h % 360) + 360) % 360;
+    s = Math.max(0, Math.min(100, s)) / 100;
+    l = Math.max(0, Math.min(100, l)) / 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    const to = x => Math.round(x * 255).toString(16).padStart(2, '0');
+    return `#${to(f(0))}${to(f(8))}${to(f(4))}`;
+  }
+
+  function rotateHue(hex, deg) {
+    const c = hexToHsl(hex);
+    if (!c) return null;
+    return hslToHex(c.h + deg, Math.max(45, c.s), Math.min(65, Math.max(40, c.l)));
+  }
+
   function applyThemeStore(t) {
     const root = document.documentElement;
     root.removeAttribute('data-theme');
     root.style.removeProperty('--accent-cyan');
+    root.style.removeProperty('--accent-blue');
+    root.style.removeProperty('--accent-purple');
+    root.style.removeProperty('--accent-touhou');
     root.style.removeProperty('--border-glow');
     root.style.removeProperty('--bg-primary');
     root.style.removeProperty('--bg-card');
@@ -1368,7 +1407,11 @@
       root.setAttribute('data-theme', t.name);
     } else if (t && t.name === 'custom') {
       if (t.accent) {
+        // Sinh full palette tu accent (do/vang/xanh la giu nguyen vi mang nghia)
         root.style.setProperty('--accent-cyan', t.accent);
+        root.style.setProperty('--accent-blue', rotateHue(t.accent, 30) || '#4facfe');
+        root.style.setProperty('--accent-purple', rotateHue(t.accent, 70) || '#9b51e0');
+        root.style.setProperty('--accent-touhou', rotateHue(t.accent, -45) || '#ff2a6d');
         root.style.setProperty('--border-glow', hexToRgba(t.accent, 0.25));
       }
       if (t.bgPrimary) root.style.setProperty('--bg-primary', t.bgPrimary);

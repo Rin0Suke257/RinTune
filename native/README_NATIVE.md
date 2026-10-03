@@ -72,8 +72,8 @@ Copy ca thu muc `out\RMG` la chay duoc (portable, khong can cai dat).
 - MCP 10 tools (regen vung, sua hop am, arrange) + seed deterministic.
 - Finish 1-click, ep style giu melody, seed chia se/daily, help tieng Viet.
 - Tabs nhieu bai + A/B compare; swing toan cuc + render WAV demo.
-- Menu bar File/Edit/View/Tools/Help + themes (Neon/Midnight/Sakura/custom) +
-  anh nen mo + sidebar gap + dock tabs + layout chong tran.
+- Menu bar File/Edit/View/Tools/Help + themes (Neon/Midnight/Sakura/custom full
+  palette tu sinh + anh nen sau app) + sidebar gap + dock tabs + layout chong tran.
 - Phim tat day du (Ctrl+N/O/E/B/L/T/Tab/1-5/S, Home, Del...) hien trong menu + Help.
 - Project `.rmg` (Ctrl+S) + SoundFont export (GeneralUser GS, Sf2 player)
   + So Seed + version 2.1.0.
