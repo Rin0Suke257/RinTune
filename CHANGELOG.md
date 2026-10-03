@@ -1,5 +1,9 @@
 # RinTune Changelog
 
+## Unreleased - MIDI automation theo doan
+- File .mid co CC7 Volume theo energy tung doan (+ ramp fade in/out) va CC10
+  Pan theo be — mo trong LMMS hien lane Volume/Panning nhu MIDI xin
+
 ## Unreleased - Xuat MMP theo sections
 - Moi doan thanh 1 clip rieng dung vi tri (pos), cho tat/be nghi thi trong;
   bar cuoi luon giu hit ket; flat/app/lane/export khop 100% so not

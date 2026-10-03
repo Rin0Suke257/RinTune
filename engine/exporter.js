@@ -353,6 +353,30 @@
           rawEvents.push({ time: 0, priority: 0, data: [0xC0 | ch, prog] });
         }
 
+        const trackPan = Math.max(0, Math.min(127, Math.round(64 + ((track.notes[0] && track.notes[0].pan) || 0) * 0.64)));
+        rawEvents.push({ time: 0, priority: 3, data: [0xB0 | ch, 10, trackPan] });
+        const zones = (metadata.sectionMap && metadata.sectionMap.length)
+          ? metadata.sectionMap
+          : [{ name: 'verse', from: 0, bars: metadata.lengthBars || 8, energy: 0.8 }];
+        const spb = metadata.stepsPerBar || 16;
+        for (const z of zones) {
+          const zt = (z.from || 0) * spb * ticksPerStep;
+          const vol = Math.max(0, Math.min(127, Math.round(70 + (z.energy != null ? z.energy : 0.8) * 57)));
+          rawEvents.push({ time: zt, priority: 3, data: [0xB0 | ch, 7, vol] });
+        }
+        if (metadata.fadeInBars > 0) {
+          const fz = zones[0] || { energy: 0.8 };
+          const v0 = Math.max(0, Math.min(127, Math.round(70 + (fz.energy != null ? fz.energy : 0.8) * 57)));
+          rawEvents.push({ time: 0, priority: 3, data: [0xB0 | ch, 7, 40] });
+          rawEvents.push({ time: Math.round(metadata.fadeInBars * spb * ticksPerStep / 2), priority: 3, data: [0xB0 | ch, 7, Math.round((40 + v0) / 2)] });
+        }
+        if (metadata.fadeOutBars > 0) {
+          const totalSteps = (metadata.lengthBars || 8) * spb;
+          const fStart = Math.max(0, totalSteps - metadata.fadeOutBars * spb) * ticksPerStep;
+          rawEvents.push({ time: Math.round(fStart), priority: 3, data: [0xB0 | ch, 7, 80] });
+          rawEvents.push({ time: Math.round(totalSteps * ticksPerStep), priority: 3, data: [0xB0 | ch, 7, 30] });
+        }
+
         for (const note of track.notes) {
           const sw = Exporter._swingTicks(note.step, swing, ticksPerStep);
           const startTick = Math.round(note.step * ticksPerStep) + sw;
