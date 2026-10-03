@@ -72,6 +72,8 @@ Copy ca thu muc `out\RMG` la chay duoc (portable, khong can cai dat).
 - MCP 10 tools (regen vung, sua hop am, arrange) + seed deterministic.
 - Finish 1-click, ep style giu melody, seed chia se/daily, help tieng Viet.
 - Tabs nhieu bai + A/B compare; swing toan cuc + render WAV demo.
+- Project `.rmg` (Ctrl+S) + SoundFont export (GeneralUser GS, Sf2 player)
+  + So Seed + version 2.1.0.
 - Bugfix round: Sasakure het am nhi 7/8 (khai 4/4 + reset + khoi phuc tu lich su);
   localStorage tran co trim-retry; merge/load chiu genre da xoa; MMP dung nhi;
   phim dan uu tien hon shortcut tool; import major dung degree; WAV chunk 512KB;
