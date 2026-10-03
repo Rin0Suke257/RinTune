@@ -318,7 +318,8 @@ static const wchar_t* kBridgeShim = LR"SHIM(
     getExportDir: function () { return call('getExportDir', {}); },
     setExportDir: function () { return call('setExportDir', {}); },
     openFolder: function (o) { return call('openFolder', o || {}); },
-    quitApp: function () { return call('quitApp', {}); }
+    quitApp: function () { return call('quitApp', {}); },
+    copyLmmsClip: function (o) { return call('copyLmmsClip', o || {}); }
   };
   window.__rmgResolve = function (id, result) {
     var r = pending[id];
@@ -420,6 +421,67 @@ static json HandleSaveFile(const json& payload) {
   return json{{"success", true}, {"filePath", WideToUtf8(outPath)}};
 }
 
+static UINT GetLmmsClipboardFormat() {
+  static UINT fmt = 0;
+  if (!fmt) fmt = RegisterClipboardFormatW(L"application/x-lmms-clipboard");
+  return fmt;
+}
+
+// Ghi clip LMMS dung chuan: text thuong (de xem) + MIME application/x-lmms-clipboard
+// (de Ctrl+V trong piano-roll LMMS nhan). Tra ve verified khi doc lai khop.
+static bool CopyLmmsClipToSystem(const std::string& xmlUtf8, bool& verified) {
+  verified = false;
+  if (xmlUtf8.empty() || xmlUtf8.size() > 16 * 1024 * 1024) return false;
+  if (!OpenClipboard(g_hwnd)) return false;
+  EmptyClipboard();
+
+  bool okText = false, okMime = false;
+  std::wstring xmlW = Utf8ToWide(xmlUtf8);
+
+  HGLOBAL h1 = GlobalAlloc(GMEM_MOVEABLE, (xmlW.size() + 1) * sizeof(wchar_t));
+  if (h1) {
+    memcpy(GlobalLock(h1), xmlW.c_str(), (xmlW.size() + 1) * sizeof(wchar_t));
+    GlobalUnlock(h1);
+    if (SetClipboardData(CF_UNICODETEXT, h1)) okText = true;
+    else GlobalFree(h1);
+  }
+
+  UINT fmt = GetLmmsClipboardFormat();
+  if (fmt) {
+    HGLOBAL h2 = GlobalAlloc(GMEM_MOVEABLE, xmlUtf8.size() + 1);
+    if (h2) {
+      memcpy(GlobalLock(h2), xmlUtf8.c_str(), xmlUtf8.size() + 1);
+      GlobalUnlock(h2);
+      if (SetClipboardData(fmt, h2)) okMime = true;
+      else GlobalFree(h2);
+    }
+  }
+
+  if (okMime && fmt) {
+    HANDLE rd = GetClipboardData(fmt);
+    if (rd) {
+      const char* p = (const char*)GlobalLock(rd);
+      if (p) {
+        verified = (strcmp(p, xmlUtf8.c_str()) == 0);
+        GlobalUnlock(rd);
+      }
+    }
+  }
+
+  CloseClipboard();
+  return okMime;
+}
+
+static json HandleCopyLmmsClip(const json& payload) {
+  std::string xml = payload.value("midiXml", std::string(""));
+  if (xml.empty()) return json{{"success", false}, {"error", "Clip rong"}};
+  bool verified = false;
+  if (!CopyLmmsClipToSystem(xml, verified)) {
+    return json{{"success", false}, {"error", "Khong ghi duoc clipboard (dang bi app khac giu?)"}};
+  }
+  return json{{"success", true}, {"bytes", (long long)xml.size()}, {"verified", verified}};
+}
+
 static json HandleLaunchLmms(const json& payload) {
   std::string mmp = payload.value("mmpContent", std::string(""));
   std::string clip = payload.value("trackClipXml", std::string(""));
@@ -439,14 +501,23 @@ static json HandleLaunchLmms(const json& payload) {
   }
 
   if (IsLmmsRunning()) {
-    if (!clip.empty()) SetClipboardTextW(g_hwnd, Utf8ToWide(clip));
+    bool verified = false;
+    bool clipOk = false;
+    if (!clip.empty()) clipOk = CopyLmmsClipToSystem(clip, verified);
     FocusLmmsAndPaste();
+    std::string msg = "Ban LMMS da duoc bat! ";
+    if (clipOk) {
+      int count = payload.value("trackClipCount", 0);
+      msg += "Da chen be Lead (" + std::to_string(count) + " not" + (verified ? ", da kiem tra" : "") + ") - mo piano-roll va Ctrl+V. Full bai nam o file du an ben duoi.";
+    } else {
+      msg += "Khong chep duoc clip - mo file du an ben duoi de lay full bai.";
+    }
     return json{
       {"success", true},
       {"lmmsAlreadyRunning", true},
       {"filePath", WideToUtf8(mmpPath)},
       {"detectedPath", WideToUtf8(lmmsPath)},
-      {"message", "Ban LMMS da duoc bat! Da tu dong chen Track & Giai dieu moi vao phien LMMS dang chay!"}
+      {"message", msg}
     };
   }
 
@@ -827,6 +898,7 @@ static void OnWebMessage(const std::wstring& msgJsonW) {
     else if (method == "setExportDir") res = HandleSetExportDir(payload);
     else if (method == "openFolder") res = HandleOpenFolder(payload);
     else if (method == "quitApp") res = HandleQuitApp(payload);
+    else if (method == "copyLmmsClip") res = HandleCopyLmmsClip(payload);
       else res = json{{"success", false}, {"error", "Unknown method: " + method}};
     } catch (const std::exception& e) {
       res = json{{"success", false}, {"error", e.what()}};

@@ -92,12 +92,10 @@
     return { bank: 0, patch: 81 }; // saw lead fallback
   }
 
-  function xmlEscape(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function xmlEscape(s) {    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  function sf2InstrumentXml(src, bank, patch, isDrums, indent) {
-    const pad = indent || '          ';
+  function sf2InstrumentXml(src, bank, patch, isDrums, indent) {    const pad = indent || '          ';
     // reverb nhe cho nhac cu (khong cho drums) de bot choi
     const verb = isDrums ? ' reverbOn="0"' : ' reverbOn="1"';
     return `${pad}<instrument name="sf2player">\n` +
@@ -241,6 +239,32 @@
 
       xml += `</lmms-clipboard>\n`;
       return xml;
+    }
+
+    /**
+     * Generate single-track LMMS MIDI clip XML for REAL piano-roll paste.
+     * Format khop LMMS (midiclip node): <midiclip type="1" name autoresize
+     * off muted steps len pos="-1"> + <note key vol pan len pos type="0"/>.
+     * Ghi qua native clipboard voi MIME application/x-lmms-clipboard.
+     */
+    static generateLmmsMidiClip(songData, trackKey) {
+      const ticksPerStep = 12;
+      const track = songData.tracks ? songData.tracks[trackKey] : null;
+      const notes = (track && track.notes ? track.notes.slice() : []).sort((a, b) => a.step - b.step);
+      const spb = (songData.metadata && songData.metadata.stepsPerBar) || 16;
+      const bars = (songData.metadata && songData.metadata.lengthBars) || 8;
+      const totalSteps = bars * spb;
+      const safeName = String((track && track.name) || trackKey).replace(/[<>&"]/g, '');
+      let xml = `<midiclip type="1" name="RMG ${safeName}" autoresize="1" off="0" muted="0" steps="${totalSteps}" len="${totalSteps * ticksPerStep}" pos="-1">\n`;
+      for (const note of notes) {
+        const posTicks = Math.round(note.step * ticksPerStep);
+        const lenTicks = Math.max(ticksPerStep, Math.round(note.duration * ticksPerStep));
+        const vol = Math.max(1, Math.min(100, Math.round((note.velocity || 90) * (100 / 127))));
+        const key = Math.max(0, Math.min(127, note.midi));
+        xml += `  <note key="${key}" vol="${vol}" pan="${note.pan || 0}" len="${lenTicks}" pos="${posTicks}" type="0"/>\n`;
+      }
+      xml += `</midiclip>`;
+      return { xml, count: notes.length };
     }
 
     /**

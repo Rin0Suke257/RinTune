@@ -900,6 +900,34 @@
     </div>
   </div>
 
+  <!-- Theme Editor Modal -->
+  <div class="modal-overlay" id="themeModal" style="display:none;">
+    <div class="modal-box">
+      <h3 style="margin:0 0 10px; color:var(--accent-cyan);">🎨 Theme tùy chỉnh</h3>
+      <div class="modal-row">
+        <label class="modal-label">Màu nhấn (chữ/nút)
+          <input type="color" id="themeAccent" value="#00f2fe">
+        </label>
+        <label class="modal-label">Màu nền chính
+          <input type="color" id="themeBg" value="#08090e">
+        </label>
+      </div>
+      <div class="modal-row">
+        <label class="modal-label">Màu thẻ panel
+          <input type="color" id="themeCard" value="#161a26">
+        </label>
+        <label class="modal-label">Độ tối phủ ảnh nền (%)
+          <input type="number" id="themeScrim" min="30" max="92" value="62">
+        </label>
+      </div>
+      <div style="font-size:0.68rem; color:var(--text-dim); margin-bottom:4px;">Xem trước trực tiếp khi chỉnh. Ảnh nền: menu Xem → Ảnh nền riêng.</div>
+      <div class="modal-actions">
+        <button id="btnSaveTheme" class="btn-secondary">💾 Lưu theme</button>
+        <button id="btnCancelTheme" class="btn-secondary">Hủy</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 

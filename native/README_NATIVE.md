@@ -76,6 +76,9 @@ Copy ca thu muc `out\RMG` la chay duoc (portable, khong can cai dat).
   anh nen mo + sidebar gap + dock tabs + layout chong tran.
 - Project `.rmg` (Ctrl+S) + SoundFont export (GeneralUser GS, Sf2 player)
   + So Seed + version 2.1.0.
+- Clip LMMS chuan (MIME application/x-lmms-clipboard + midiclip XML, native
+  ghi + verify, chep theo be dang soan); nen manh hon + panel dac + theme
+  editor (accent/nen/the) + scrim tuy chinh.
 - Bugfix round: Sasakure het am nhi 7/8 (khai 4/4 + reset + khoi phuc tu lich su);
   localStorage tran co trim-retry; merge/load chiu genre da xoa; MMP dung nhi;
   phim dan uu tien hon shortcut tool; import major dung degree; WAV chunk 512KB;

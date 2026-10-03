@@ -208,6 +208,13 @@
   const btnHelp = document.getElementById('btnHelp');
   const helpModal = document.getElementById('helpModal');
   const btnCloseHelp = document.getElementById('btnCloseHelp');
+  const themeModal = document.getElementById('themeModal');
+  const themeAccent = document.getElementById('themeAccent');
+  const themeBg = document.getElementById('themeBg');
+  const themeCard = document.getElementById('themeCard');
+  const themeScrim = document.getElementById('themeScrim');
+  const btnSaveTheme = document.getElementById('btnSaveTheme');
+  const btnCancelTheme = document.getElementById('btnCancelTheme');
 
   // Song tabs (nhieu bai cung luc)
   let songTabs = [];
@@ -1354,15 +1361,26 @@
     root.removeAttribute('data-theme');
     root.style.removeProperty('--accent-cyan');
     root.style.removeProperty('--border-glow');
+    root.style.removeProperty('--bg-primary');
+    root.style.removeProperty('--bg-card');
+    root.style.removeProperty('--bg-scrim');
     if (t && (t.name === 'midnight' || t.name === 'sakura')) {
       root.setAttribute('data-theme', t.name);
-    } else if (t && t.name === 'custom' && t.accent) {
-      root.style.setProperty('--accent-cyan', t.accent);
-      root.style.setProperty('--border-glow', hexToRgba(t.accent, 0.25));
+    } else if (t && t.name === 'custom') {
+      if (t.accent) {
+        root.style.setProperty('--accent-cyan', t.accent);
+        root.style.setProperty('--border-glow', hexToRgba(t.accent, 0.25));
+      }
+      if (t.bgPrimary) root.style.setProperty('--bg-primary', t.bgPrimary);
+      if (t.bgCard) root.style.setProperty('--bg-card', t.bgCard);
+      if (t.scrim != null) root.style.setProperty('--bg-scrim', Math.max(0.3, Math.min(0.92, t.scrim)));
     }
     document.body.classList.toggle('has-bg', !!(t && t.bg));
     const bg = document.getElementById('bgLayer');
-    if (bg) bg.style.backgroundImage = (t && t.bg) ? `url(${t.bg})` : 'none';
+    if (bg) {
+      if (t && t.bg) bg.style.setProperty('--bg-img', `url(${t.bg})`);
+      else bg.style.removeProperty('--bg-img');
+    }
   }
 
   function saveTheme(t) {
@@ -1389,16 +1407,33 @@
     showToast(`🎨 Theme: ${name}`);
   }
 
+  function openThemeEditor() {
+    const t = getThemeStore();
+    if (themeAccent) themeAccent.value = /^#[0-9a-fA-F]{6}$/.test(t.accent || '') ? t.accent : '#00f2fe';
+    if (themeBg) themeBg.value = /^#[0-9a-fA-F]{6}$/.test(t.bgPrimary || '') ? t.bgPrimary : '#08090e';
+    if (themeCard) themeCard.value = /^#[0-9a-fA-F]{6}$/.test(t.bgCard || '') ? t.bgCard : '#161a26';
+    if (themeScrim) themeScrim.value = Math.round((t.scrim != null ? t.scrim : 0.62) * 100);
+    if (themeModal) themeModal.style.display = 'flex';
+  }
+
+  function closeThemeEditor(restore) {
+    if (restore) applyThemeStore(getThemeStore());
+    if (themeModal) themeModal.style.display = 'none';
+  }
+
+  function previewThemeDraft() {
+    applyThemeStore({
+      name: 'custom',
+      accent: themeAccent ? themeAccent.value : null,
+      bgPrimary: themeBg ? themeBg.value : null,
+      bgCard: themeCard ? themeCard.value : null,
+      scrim: themeScrim ? (parseInt(themeScrim.value, 10) || 62) / 100 : 0.62,
+      bg: getThemeStore().bg || null
+    });
+  }
+
   function openThemeCustom() {
-    const inp = document.createElement('input');
-    inp.type = 'color';
-    inp.value = (getThemeStore().accent) || '#00f2fe';
-    inp.onchange = () => {
-      const cur = getThemeStore();
-      saveTheme({ name: 'custom', accent: inp.value, bg: cur.bg || null });
-      showToast(`🎨 Accent: ${inp.value}`);
-    };
-    inp.click();
+    openThemeEditor();
   }
 
   function downscaleImage(dataUrl) {
@@ -1406,13 +1441,13 @@
       const img = new Image();
       img.onload = () => {
         try {
-          const maxW = 1280;
+          const maxW = 960;
           const sc = Math.min(1, maxW / (img.width || maxW));
           const c = document.createElement('canvas');
           c.width = Math.max(1, Math.round(img.width * sc));
           c.height = Math.max(1, Math.round(img.height * sc));
           c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-          resolve(c.toDataURL('image/jpeg', 0.72));
+          resolve(c.toDataURL('image/jpeg', 0.68));
         } catch (e) {
           reject(e);
         }
@@ -3445,6 +3480,29 @@
       });
     }
 
+    // Theme editor modal
+    if (btnSaveTheme) btnSaveTheme.addEventListener('click', () => {
+      saveTheme({
+        name: 'custom',
+        accent: themeAccent ? themeAccent.value : null,
+        bgPrimary: themeBg ? themeBg.value : null,
+        bgCard: themeCard ? themeCard.value : null,
+        scrim: themeScrim ? Math.max(30, Math.min(92, parseInt(themeScrim.value, 10) || 62)) / 100 : 0.62,
+        bg: getThemeStore().bg || null
+      });
+      if (themeModal) themeModal.style.display = 'none';
+      showToast('🎨 Đã lưu theme tùy chỉnh');
+    });
+    if (btnCancelTheme) btnCancelTheme.addEventListener('click', () => closeThemeEditor(true));
+    if (themeModal) {
+      themeModal.addEventListener('click', (e) => {
+        if (e.target === themeModal) closeThemeEditor(true);
+      });
+      for (const el of [themeAccent, themeBg, themeCard, themeScrim]) {
+        if (el) el.addEventListener('input', previewThemeDraft);
+      }
+    }
+
     // Final hit toggle
     if (checkFinalHit) {
       checkFinalHit.addEventListener('change', (e) => {
@@ -4332,12 +4390,32 @@
 
   async function handleCopyClip() {
     if (!state.currentSong) return;
-    const clipXml = Exporter.generateLmmsClipboardClip(state.currentSong, getMix());
+    const tKey = state.editingTrack || 'lead';
+    const clip = Exporter.generateLmmsMidiClip(state.currentSong, tKey);
+    if (!clip.count) {
+      showToast(`⚠️ Bè ${tKey.toUpperCase()} chưa có nốt nào để chép`);
+      return;
+    }
 
+    // Duong native: ghi dung MIME application/x-lmms-clipboard de LMMS nhan
+    try {
+      if (window.rmgAPI && window.rmgAPI.copyLmmsClip) {
+        const res = await window.rmgAPI.copyLmmsClip({ midiXml: clip.xml });
+        if (res && res.success) {
+          showToast(`📋 Đã chép bè ${tKey.toUpperCase()} (${clip.count} nốt${res.verified ? ', đã kiểm tra' : ''}) — qua LMMS mở piano-roll rồi Ctrl+V!`, 5000);
+          return;
+        }
+        throw new Error((res && res.error) || 'copy failed');
+      }
+    } catch (err) {
+      showToast('⚠️ Lỗi chép clip: ' + (err.message || err));
+      return;
+    }
+    // Fallback trinh duyet (text tho - LMMS co the khong nhan)
     try {
       if (navigator.clipboard) {
-        await navigator.clipboard.writeText(clipXml);
-        showToast('📋 Đã sao chép Clip LMMS vào Clipboard! Chuyển sang LMMS và ấn Ctrl+V!');
+        await navigator.clipboard.writeText(clip.xml);
+        showToast('📋 Đã chép (text thô — LMMS có thể không nhận, dùng app desktop để chép chuẩn)');
       } else {
         showToast('Clipboard không khả dụng trong môi trường hiện tại.');
       }
@@ -4405,14 +4483,16 @@
     if (!state.currentSong) return;
     const sf2 = await resolveSf2();
     const mmpXml = Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2);
-    const trackClipXml = Exporter.generateLmmsClipboardClip(state.currentSong, getMix());
+    // Dan piano-roll LMMS chi nhan 1 clip -> dan be Lead (full bai nam trong file .mmp)
+    const leadClip = Exporter.generateLmmsMidiClip(state.currentSong, 'lead');
 
     showToast('🚀 Đang chuẩn bị kết nối LMMS...');
 
     if (window.rmgAPI && window.rmgAPI.launchLMMS) {
       const res = await window.rmgAPI.launchLMMS({
         mmpContent: mmpXml,
-        trackClipXml: trackClipXml
+        trackClipXml: leadClip.xml,
+        trackClipCount: leadClip.count
       });
 
       if (res && res.success) {

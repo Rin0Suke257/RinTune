@@ -928,8 +928,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* ===== Themes ===== */
 [data-theme="midnight"] { --bg-primary: #040814; --bg-secondary: #0a1230; --bg-card: rgba(16, 28, 64, 0.8); --bg-card-hover: rgba(24, 40, 88, 0.92); --bg-input: #0d1530; --accent-cyan: #4facfe; --border-glow: rgba(79, 172, 254, 0.3); }
 [data-theme="sakura"] { --bg-primary: #f6f1f7; --bg-secondary: #ffffff; --bg-card: rgba(255, 255, 255, 0.92); --bg-card-hover: rgba(255, 240, 246, 0.98); --bg-input: #f3ecf5; --border-color: rgba(120, 40, 90, 0.16); --border-glow: rgba(255, 42, 109, 0.25); --accent-cyan: #c2145b; --accent-blue: #7b5cff; --accent-purple: #9b51e0; --text-main: #33222e; --text-muted: #7a5f74; --text-dim: #a98fa2; }
-#bgLayer { position: fixed; inset: 0; z-index: 0; background-size: cover; background-position: center; filter: blur(14px) brightness(0.42); transform: scale(1.06); pointer-events: none; display: none; }
+#bgLayer { position: fixed; inset: 0; z-index: 0; background-size: cover; background-position: center; background-image: linear-gradient(rgba(5,6,10,var(--bg-scrim,0.62)), rgba(5,6,10,var(--bg-scrim,0.62))), var(--bg-img, none); filter: blur(18px) brightness(0.6) saturate(0.85); transform: scale(1.06); pointer-events: none; display: none; }
 body.has-bg #bgLayer { display: block; }
+body.has-bg { --bg-card: rgba(17, 21, 33, 0.94); --bg-secondary: rgba(13, 16, 24, 0.96); }
 body.has-bg .app-container { background: transparent; }
 body.has-bg { background-color: #05060a; }
 
