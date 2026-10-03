@@ -1,5 +1,8 @@
 # RinTune Changelog
 
+## Unreleased - Bo song ngu (ve Viet thuan)
+- Go sach i18n (khung + tu dien + nut VI/EN), app Viet 100% nhu cu
+
 ## Unreleased - Song ngu Viet/Anh + subtitle + installer Rin
 - Song ngữ VI/EN toàn app (menu, panel, toast, help): nút VI/EN trên menubar,
   nhớ lựa chọn; thiếu key tự rớt về tiếng Việt
