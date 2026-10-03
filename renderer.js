@@ -197,6 +197,14 @@
   const btnRefreshRecent = document.getElementById('btnRefreshRecent');
   const historyFilter = document.getElementById('historyFilter');
   const btnBatchMidi = document.getElementById('btnBatchMidi');
+  const btnFinish = document.getElementById('btnFinish');
+  const btnTransferStyle = document.getElementById('btnTransferStyle');
+  const btnCopySeed = document.getElementById('btnCopySeed');
+  const btnPasteSeed = document.getElementById('btnPasteSeed');
+  const btnDailySeed = document.getElementById('btnDailySeed');
+  const btnHelp = document.getElementById('btnHelp');
+  const helpModal = document.getElementById('helpModal');
+  const btnCloseHelp = document.getElementById('btnCloseHelp');
 
   // Song tabs (nhieu bai cung luc)
   let songTabs = [];
@@ -598,6 +606,27 @@
 
   const MidiParser = window.RMGMidi;
 
+  function gmProgramToInstrument(prog) {
+    if (prog == null) return null;
+    const p = prog | 0;
+    if (p <= 7) return 'grand_piano_lead';
+    if (p <= 15) return 'anime_bell_lead';
+    if (p <= 23) return 'pipe_organ_lead';
+    if (p <= 31) return 'synth_saw_lead';
+    if (p <= 39) return 'sub_saw_bass';
+    if (p <= 55) return 'orchestral_strings';
+    if (p <= 63) return 'zun_trumpet';
+    if (p <= 71) return 'synth_saw_lead';
+    if (p <= 79) return 'fusion_bright_grand';
+    if (p === 80) return 'square_8bit';
+    if (p <= 87) return 'synth_saw_lead';
+    if (p <= 95) return 'mellow_epiano';
+    if (p <= 103) return 'chiptune_fm_epiano';
+    if (p <= 111) return 'anime_bell_lead';
+    if (p <= 119) return 'sparkle_arp';
+    return 'square_8bit';
+  }
+
   function degreeToSymbol(semi, isMajor) {
     if (isMajor) {
       const map = { 0: 'I', 1: 'bII', 2: 'ii', 3: 'bIII', 4: 'iii', 5: 'IV', 6: 'bII', 7: 'V', 8: 'bVI', 9: 'vi', 10: 'bVII', 11: 'vii°' };
@@ -633,13 +662,32 @@
     const chanMap = {};
     chanOrder.forEach((ch, i) => { chanMap[ch] = i < order.length ? order[i] : 'lead'; });
 
+    // Program change dau tien moi channel -> instrument tuong duong (giu tieng goc)
+    const chanProg = {};
+    for (const t of parsed.tracks) {
+      for (const [ch, prog] of Object.entries(t.programs || {})) {
+        if (chanProg[ch] == null) chanProg[ch] = prog;
+      }
+    }
+    const repChan = { lead: chanOrder[0], chords: chanOrder[1], arp: chanOrder[2], bass: chanOrder[3] };
+    const instFor = (rk, fallback) => {
+      const c = repChan[rk];
+      if (c != null && chanProg[c] != null) return gmProgramToInstrument(chanProg[c]) || fallback;
+      return fallback;
+    };
+    // Ten track MIDI goc (neu co nghia)
+    let midiTitle = '';
+    for (const t of parsed.tracks) {
+      if (t.name && t.name.length > 3 && !/^track\s*\d+$/i.test(t.name)) { midiTitle = t.name.slice(0, 40); break; }
+    }
+
     const gDef = Theory.GENRES[state.genre] || Theory.GENRES['touhou'];
     const mkTrack = (name, type, instrument, color) => ({ name, type, instrument, color, notes: [] });
     const tracks = {
-      lead: mkTrack('Lead Melody (import)', 'synth_lead', gDef.leadStyle || 'square_lead', '#00f2fe'),
-      chords: mkTrack('Harmony (import)', 'poly_synth', 'analog_pad', '#9b51e0'),
-      arp: mkTrack('Arpeggio (import)', 'pluck_synth', 'sparkle_arp', '#4facfe'),
-      bass: mkTrack('Bassline (import)', 'mono_bass', 'sub_saw_bass', '#f39c12'),
+      lead: mkTrack((midiTitle ? midiTitle + ' ' : '') + 'Lead (import)', 'synth_lead', instFor('lead', gDef.leadStyle || 'square_lead'), '#00f2fe'),
+      chords: mkTrack('Harmony (import)', 'poly_synth', instFor('chords', 'analog_pad'), '#9b51e0'),
+      arp: mkTrack('Arpeggio (import)', 'pluck_synth', instFor('arp', 'sparkle_arp'), '#4facfe'),
+      bass: mkTrack('Bassline (import)', 'mono_bass', instFor('bass', 'sub_saw_bass'), '#f39c12'),
       drums: mkTrack('Drums (import)', 'drum_kit', 'standard_kit', '#e74c3c')
     };
 
@@ -1383,8 +1431,178 @@
     }
   }
 
-  async function batchExportMidi() {
-    if (!songHistory.length) {
+  /**
+   * Finish 1-click: validate + final hit + xuat MIDI & MMP vao thu muc xuat
+   */
+  async function finishSong() {
+    const song = state.currentSong;
+    if (!song) {
+      showToast('⚠️ Chưa có bài nhạc!');
+      return;
+    }
+    pushUndo('finish');
+    Generator.MusicGenerator.prototype.arrangeFinal(song, { finalHit: state.finalHit });
+    stampBaseVel(song);
+    Synth.loadSong(song);
+    updateHeaderBadges();
+    updateProgressionUI(song.progression);
+    renderPianoRoll(Synth.currentStep || 0);
+    renderHistory();
+    const base = sanitizeFileName(song.metadata.title);
+    try {
+      if (window.rmgAPI && window.rmgAPI.saveFileDirect) {
+        const done = [];
+        const mid = await window.rmgAPI.saveFileDirect({
+          folder: 'export', fileName: base + '.mid',
+          data: Array.from(Exporter.generateMidiFile(song, getMix(), state.swing))
+        });
+        if (mid && mid.success) done.push(mid.filePath);
+        const mmp = await window.rmgAPI.saveFileDirect({
+          folder: 'export', fileName: base + '.mmp',
+          data: Exporter.generateLmmsProject(song, getMix(), state.swing)
+        });
+        if (mmp && mmp.success) done.push(mmp.filePath);
+        if (done.length) {
+          showToast(`⚡ Finish xong (${done.length} file): ${done.join(' • ')}`, 6000);
+          refreshRecent();
+          return;
+        }
+      }
+    } catch (e) {}
+    showToast('⚠️ Finish cần chạy trong app RMG (dùng nút xuất thường)');
+  }
+
+  /**
+   * Ep style hien tai vao bai dang mo: giu melody, thay arp/bass/drums/chords
+   */
+  function transferStyle() {
+    const song = state.currentSong;
+    if (!song) {
+      showToast('⚠️ Chưa có bài nhạc! Mở MIDI trước.');
+      return;
+    }
+    const target = state.genre;
+    const gDef = Theory.GENRES[target];
+    if (!gDef) return;
+    if (song.metadata.genre === target) {
+      showToast('Bài đã đúng style ' + target + ' rồi — đổi genre khác rồi bấm lại');
+      return;
+    }
+    pushUndo('ép style');
+    song.metadata.genre = target;
+    song.metadata.genreName = gDef.name;
+    const gen = generatorFromSong(song);
+    const res = gen.regenerateRegion(song, {
+      fromBar: 0, toBar: song.metadata.lengthBars - 1,
+      tracks: ['chords', 'arp', 'bass', 'drums']
+    });
+    const stat = spliceRegenResult(song, res);
+    Synth.loadSong(song);
+    updateHeaderBadges();
+    renderPianoRoll(Synth.currentStep || 0);
+    renderHistory();
+    showToast(`🎭 Đã ép style ${gDef.name}: giữ melody, thay ${stat.added} nốt đệm`, 5000);
+  }
+
+  /**
+   * Seed chia se: copy/paste/daily - cung seed ra cung bai
+   */
+  function copySeed() {
+    if (!state.currentSong) {
+      showToast('⚠️ Chưa có bài nhạc!');
+      return;
+    }
+    const md = state.currentSong.metadata;
+    const data = {
+      v: 1, genre: md.genre, key: md.key, scale: md.scale, bpm: md.bpm,
+      timeSignature: md.timeSignature, lengthBars: md.lengthBars, section: md.section,
+      motifStructure: md.motifStructure, articulation: md.articulation,
+      climaxCurve: md.climaxCurve, chaosLevel: md.chaosLevel, density: md.density,
+      fadeInBars: md.fadeInBars, fadeOutBars: md.fadeOutBars,
+      trackTarget: md.trackTarget, seed: md.seed
+    };
+    const s = JSON.stringify(data);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(s).then(
+          () => showToast('🔗 Đã copy seed — gửi cho ai nhập cũng ra đúng bài này!'),
+          () => showToast('⚠️ Không copy được clipboard')
+        );
+      } else {
+        showToast('Clipboard không khả dụng');
+      }
+    } catch (e) {
+      showToast('⚠️ ' + (e.message || e));
+    }
+  }
+
+  function applySeedOptions(o) {
+    pushUndo('nhập seed');
+    state.genre = o.genre; state.key = o.key; state.scale = o.scale;
+    state.bpm = o.bpm; state.timeSignature = o.timeSignature || '4/4';
+    state.lengthBars = o.lengthBars; state.section = o.section || 'none';
+    state.motifStructure = o.motifStructure || 'none';
+    state.articulation = o.articulation || 'auto';
+    state.climaxCurve = o.climaxCurve || 'none';
+    state.chaosLevel = o.chaosLevel; state.density = o.density;
+    state.fadeInBars = o.fadeInBars || 0; state.fadeOutBars = o.fadeOutBars || 0;
+    if (o.trackTarget) state.trackTarget = o.trackTarget;
+    syncControlsFromState();
+    const wasPlaying = Synth.isPlaying;
+    if (wasPlaying) Synth.stop();
+    const gen = new Generator.MusicGenerator({
+      genre: state.genre, key: state.key, scale: state.scale, bpm: state.bpm,
+      timeSignature: state.timeSignature, lengthBars: state.lengthBars,
+      section: state.section, motifStructure: state.motifStructure,
+      articulation: state.articulation, climaxCurve: state.climaxCurve,
+      useContour: false, contourPoints: null,
+      fadeInBars: state.fadeInBars, fadeOutBars: state.fadeOutBars,
+      trackTarget: state.trackTarget, chaosLevel: state.chaosLevel,
+      density: state.density, humanize: true,
+      loopMode: state.loopMode, finalHit: state.finalHit, seed: o.seed
+    });
+    state.currentSong = gen.generate();
+    stampBaseVel(state.currentSong);
+    Synth.loadSong(state.currentSong);
+    updateHeaderBadges();
+    updateProgressionUI(state.currentSong.progression);
+    renderPianoRoll(0);
+    renderHistory();
+    pushToHistory(state.currentSong);
+    if (wasPlaying) {
+      Synth.play();
+      updatePlayButtonUI(true);
+    }
+    showToast('🌱 Đã gieo từ seed — cùng seed ra cùng bài!');
+  }
+
+  function pasteSeed() {
+    const v = prompt('Dán seed JSON vào đây:', '');
+    if (v == null) return;
+    try {
+      const o = JSON.parse(v.trim());
+      if (!o || o.v !== 1 || !Theory.GENRES[o.genre]) throw new Error('Seed không hợp lệ');
+      applySeedOptions(o);
+    } catch (e) {
+      showToast('⚠️ Seed không hợp lệ');
+    }
+  }
+
+  function dailySeed() {
+    const d = new Date();
+    const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    applySeedOptions({
+      v: 1, genre: state.genre, key: state.key, scale: state.scale, bpm: state.bpm,
+      timeSignature: state.timeSignature, lengthBars: state.lengthBars, section: state.section,
+      motifStructure: state.motifStructure, articulation: state.articulation,
+      climaxCurve: state.climaxCurve, chaosLevel: state.chaosLevel, density: state.density,
+      fadeInBars: state.fadeInBars, fadeOutBars: state.fadeOutBars,
+      trackTarget: state.trackTarget, seed
+    });
+    showToast(`📅 Seed hôm nay: ${seed} — ai nhập seed này cũng ra cùng bài!`, 5000);
+  }
+
+  async function batchExportMidi() {    if (!songHistory.length) {
       showToast('⚠️ Lịch sử trống, không có gì để xuất');
       return;
     }
@@ -2597,6 +2815,22 @@
     }
     if (btnBatchMidi) btnBatchMidi.addEventListener('click', batchExportMidi);
 
+    // Finish 1-click + style transfer + seeds
+    if (btnFinish) btnFinish.addEventListener('click', finishSong);
+    if (btnTransferStyle) btnTransferStyle.addEventListener('click', transferStyle);
+    if (btnCopySeed) btnCopySeed.addEventListener('click', copySeed);
+    if (btnPasteSeed) btnPasteSeed.addEventListener('click', pasteSeed);
+    if (btnDailySeed) btnDailySeed.addEventListener('click', dailySeed);
+
+    // Help modal
+    if (btnHelp) btnHelp.addEventListener('click', () => { if (helpModal) helpModal.style.display = 'flex'; });
+    if (btnCloseHelp) btnCloseHelp.addEventListener('click', () => { if (helpModal) helpModal.style.display = 'none'; });
+    if (helpModal) {
+      helpModal.addEventListener('click', (e) => {
+        if (e.target === helpModal) helpModal.style.display = 'none';
+      });
+    }
+
     // Final hit toggle
     if (checkFinalHit) {
       checkFinalHit.addEventListener('change', (e) => {
@@ -2935,7 +3169,7 @@
       } else if (state.editingTrack === 'arp') {
         Synth._playArpSynth(midi, Synth.ctx.currentTime, duration, 0.9, bus);
       } else if (state.editingTrack === 'bass') {
-        Synth._playBassSynth(midi, Synth.ctx.currentTime, duration, 0.9, bus);
+        Synth._playBassSynth(midi, Synth.ctx.currentTime, duration, 0.9, bus, (inst || '').includes('piano'));
       } else {
         Synth._playDrumSynth(midi, Synth.ctx.currentTime, 0.9, bus);
       }

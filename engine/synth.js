@@ -308,7 +308,7 @@
               this._playArpSynth(note.midi, noteStartTime, noteDurationSec, velocityRatio, bus);
               break;
             case 'bass':
-              this._playBassSynth(note.midi, noteStartTime, noteDurationSec, velocityRatio, bus);
+              this._playBassSynth(note.midi, noteStartTime, noteDurationSec, velocityRatio, bus, (track.instrument || '').includes('piano'));
               break;
             case 'drums':
               this._playDrumSynth(note.midi, noteStartTime, velocityRatio, bus);
@@ -489,6 +489,42 @@
         osc2.detune.setValueAtTime(5, startTime);
         filterNode.type = 'lowpass';
         filterNode.frequency.setValueAtTime(8000, startTime);
+      } else if (instrumentType === 'mellow_epiano') {
+        // Mellow E-Piano: soft triangle + sine shimmer, dark filter
+        osc1.type = 'triangle';
+        osc2.type = 'sine';
+        osc1.detune.setValueAtTime(-4, startTime);
+        osc2.detune.setValueAtTime(4, startTime);
+        filterNode.type = 'lowpass';
+        filterNode.Q.setValueAtTime(1.2, startTime);
+        filterNode.frequency.setValueAtTime(Math.min(6000, freq * 2.2), startTime);
+      } else if (instrumentType === 'distorted_lead') {
+        // Aggressive dark lead: detuned saws + resonant bite
+        osc1.type = 'sawtooth';
+        osc2.type = 'sawtooth';
+        osc1.detune.setValueAtTime(-9, startTime);
+        osc2.detune.setValueAtTime(9, startTime);
+        filterNode.type = 'lowpass';
+        filterNode.Q.setValueAtTime(7.0, startTime);
+        filterNode.frequency.setValueAtTime(Math.min(14000, freq * 4.5), startTime);
+      } else if (instrumentType === 'orchestral_strings') {
+        // String section: slow attack stacked saws
+        osc1.type = 'sawtooth';
+        osc2.type = 'sawtooth';
+        osc1.detune.setValueAtTime(-6, startTime);
+        osc2.detune.setValueAtTime(6, startTime);
+        filterNode.type = 'lowpass';
+        filterNode.Q.setValueAtTime(1.0, startTime);
+        filterNode.frequency.setValueAtTime(Math.min(9000, freq * 3.0), startTime);
+      } else if (instrumentType === 'anime_bell_lead') {
+        // Bright bell lead: sine + triangle octave shimmer
+        osc1.type = 'sine';
+        osc2.type = 'triangle';
+        osc1.detune.setValueAtTime(0, startTime);
+        osc2.detune.setValueAtTime(1205, startTime); // Octave + shimmer
+        filterNode.type = 'lowpass';
+        filterNode.Q.setValueAtTime(3.0, startTime);
+        filterNode.frequency.setValueAtTime(Math.min(16000, freq * 5.0), startTime);
       } else {
         // Smooth saw lead
         osc1.type = 'sawtooth';
@@ -619,7 +655,7 @@
     /**
      * 4. Bass Synthesizer: Punchy Sub Sine + Overdriven Saw
      */
-    _playBassSynth(midi, startTime, duration, velocity, busNode) {
+    _playBassSynth(midi, startTime, duration, velocity, busNode, bright = false) {
       const freq = this._m2f(midi);
       const subOsc = this.ctx.createOscillator();
       const sawOsc = this.ctx.createOscillator();
@@ -629,15 +665,15 @@
       subOsc.type = 'sine';
       subOsc.frequency.setValueAtTime(freq, startTime);
 
-      sawOsc.type = 'sawtooth';
+      sawOsc.type = bright ? 'triangle' : 'sawtooth';
       sawOsc.frequency.setValueAtTime(freq, startTime);
 
       filter.type = 'lowpass';
-      filter.Q.setValueAtTime(3.0, startTime);
-      filter.frequency.setValueAtTime(freq * 3.5, startTime);
+      filter.Q.setValueAtTime(bright ? 1.5 : 3.0, startTime);
+      filter.frequency.setValueAtTime(freq * (bright ? 2.2 : 3.5), startTime);
       filter.frequency.exponentialRampToValueAtTime(freq * 1.2, startTime + 0.1);
 
-      const peakGain = 0.32 * velocity;
+      const peakGain = (bright ? 0.24 : 0.32) * velocity;
       gainNode.gain.setValueAtTime(0.0001, startTime);
       gainNode.gain.linearRampToValueAtTime(peakGain, startTime + 0.008);
       gainNode.gain.setValueAtTime(peakGain * 0.9, startTime + duration);

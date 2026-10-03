@@ -68,6 +68,10 @@ Copy ca thu muc `out\RMG` la chay duoc (portable, khong can cai dat).
 - Swing toan cuc (phat + xuat MIDI/MMP) + render WAV demo offline.
 - Tabs nhieu bai + A/B compare; lich su co favorite/doi ten/loc/batch MIDI/autosave dia/khoi phuc.
 - Export hub: thu muc mac dinh, xuat nhanh 1-click, danh sach file da xuat.
+- Preview theo instrument (lead du 12 tieng, bass piano/sub) + import giu program MIDI.
+- MCP 10 tools (regen vung, sua hop am, arrange) + seed deterministic.
+- Finish 1-click, ep style giu melody, seed chia se/daily, help tieng Viet.
+- Tabs nhieu bai + A/B compare; swing toan cuc + render WAV demo.
 - Bugfix round: Sasakure het am nhi 7/8 (khai 4/4 + reset + khoi phuc tu lich su);
   localStorage tran co trim-retry; merge/load chiu genre da xoa; MMP dung nhi;
   phim dan uu tien hon shortcut tool; import major dung degree; WAV chunk 512KB;

@@ -48,6 +48,73 @@ function getSong(songId) {
   return song;
 }
 
+function storeSong(song) {
+  const songId = 'rmg_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+  songs.set(songId, song);
+  if (songs.size > 20) { const first = songs.keys().next().value; songs.delete(first); }
+  return songId;
+}
+
+function generatorFromSong(song, seed) {
+  const md = song.metadata;
+  return new Gen.MusicGenerator({
+    genre: md.genre, key: md.key, scale: md.scale, bpm: md.bpm,
+    timeSignature: md.timeSignature || '4/4', lengthBars: md.lengthBars,
+    section: md.section || 'none', motifStructure: md.motifStructure || 'none',
+    articulation: md.articulation || 'auto', climaxCurve: md.climaxCurve || 'none',
+    fadeInBars: md.fadeInBars || 0, fadeOutBars: md.fadeOutBars || 0,
+    trackTarget: 'all',
+    chaosLevel: md.chaosLevel != null ? md.chaosLevel : 25,
+    density: md.density != null ? md.density : 75,
+    humanize: true,
+    seed: seed !== undefined ? seed : Math.random()
+  });
+}
+
+function spliceRegen(song, result) {
+  const spb = song.metadata.stepsPerBar || 16;
+  const fromStep = result.fromBar * spb;
+  const toStep = (result.toBar + 1) * spb;
+  let added = 0, removed = 0;
+  for (const [tKey, newNotes] of Object.entries(result.notes)) {
+    const track = song.tracks[tKey];
+    if (!track) continue;
+    if (!track.notes) track.notes = [];
+    const kept = [];
+    for (const n of track.notes) {
+      if (n.locked || n.step < fromStep || n.step >= toStep) kept.push(n);
+      else removed++;
+    }
+    track.notes = kept.concat(newNotes);
+    added += newNotes.length;
+  }
+  song.metadata.noteCount = Object.values(song.tracks).reduce((a, t) => a + (t.notes ? t.notes.length : 0), 0);
+  return { added, removed };
+}
+
+function stitchSongs(songs) {
+  let totalBars = 0, cumSteps = 0;
+  const progression = [];
+  const first = songs[0];
+  const tracks = {
+    lead: { name: 'Lead Melody', type: 'synth_lead', instrument: first.tracks.lead.instrument, color: '#00f2fe', notes: [] },
+    chords: { name: 'Harmony & Chords', type: 'poly_synth', instrument: first.tracks.chords.instrument, color: '#9b51e0', notes: [] },
+    arp: { name: 'Arpeggio Ostinato', type: 'pluck_synth', instrument: first.tracks.arp.instrument, color: '#4facfe', notes: [] },
+    bass: { name: 'Bassline', type: 'mono_bass', instrument: first.tracks.bass.instrument, color: '#f39c12', notes: [] },
+    drums: { name: 'Drums & Percussion', type: 'drum_kit', instrument: 'standard_kit', color: '#e74c3c', notes: [] }
+  };
+  for (const s of songs) {
+    const spb = s.metadata.stepsPerBar || 16;
+    for (const c of s.progression) progression.push(Object.assign({}, c, { bar: c.bar + totalBars }));
+    for (const k of Object.keys(tracks)) {
+      for (const n of s.tracks[k].notes) tracks[k].notes.push(Object.assign({}, n, { step: n.step + cumSteps }));
+    }
+    totalBars += s.metadata.lengthBars || 8;
+    cumSteps += (s.metadata.lengthBars || 8) * spb;
+  }
+  return { progression, tracks, totalBars };
+}
+
 function writeSongFile(song, kind) {
   const isMidi = kind === 'midi';
   const ext = isMidi ? '.mid' : '.mmp';
@@ -93,7 +160,7 @@ server.registerTool('generate_song', {
   title: 'Sinh bai nhac moi',
   description: 'Sinh mot bai nhac ngau nhien theo ly thuyet am nhac, tra ve songId de xuat file',
   inputSchema: {
-    genre: z.string().optional().describe('VD: fiery_piano, toureg, touhou, lofi, synthwave, chiptune, cyberpunk, epic, anime, dark_fantasy, sasakure_uk'),
+    genre: z.string().optional().describe('VD: fiery_piano, touhou, lofi, synthwave, chiptune, cyberpunk, epic, anime, dark_fantasy, sasakure_uk, cinematic'),
     key: z.string().optional().describe('Not chu: C, C#, D, ... B (mac dinh theo genre)'),
     scale: z.string().optional().describe('ID thang am (xem list_scales, mac dinh theo genre)'),
     bpm: z.number().int().min(30).max(350).optional().describe('Tempo (mac dinh theo genre)'),
@@ -129,9 +196,7 @@ server.registerTool('generate_song', {
   };
   const gen = new Gen.MusicGenerator(opts);
   const song = gen.generate();
-  const songId = 'rmg_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-  songs.set(songId, song);
-  if (songs.size > 20) { const first = songs.keys().next().value; songs.delete(first); }
+  const songId = storeSong(song);
   return { content: [{ type: 'text', text: JSON.stringify(summarize(songId, song), null, 2) }] };
 });
 
@@ -195,6 +260,101 @@ server.registerTool('export_clip', {
   const song = getSong(a.songId);
   const xml = Exp.Exporter.generateLmmsClipboardClip(song);
   return { content: [{ type: 'text', text: xml }] };
+});
+
+server.registerTool('regenerate_region', {
+  title: 'Gieo lai mot vung bars',
+  description: 'Gieo lai cac bars chi dinh (giu not locked), tra ve tom tat moi',
+  inputSchema: {
+    songId: z.string(),
+    fromBar: z.number().int().min(1).describe('Bar bat dau (1-based)'),
+    toBar: z.number().int().min(1).optional().describe('Bar ket thuc (mac dinh = fromBar)'),
+    tracks: z.array(z.enum(['lead', 'chords', 'arp', 'bass', 'drums'])).optional().describe('Be can gieo (mac dinh pitched)'),
+    seed: z.number().optional()
+  }
+}, async (a) => {
+  const song = getSong(a.songId);
+  const total = song.metadata.lengthBars;
+  const from = Math.max(0, Math.min(total - 1, (a.fromBar | 0) - 1));
+  const to = Math.max(from, Math.min(total - 1, a.toBar == null ? from : (a.toBar | 0) - 1));
+  const gen = generatorFromSong(song, a.seed);
+  const res = gen.regenerateRegion(song, { fromBar: from, toBar: to, tracks: a.tracks, seed: a.seed });
+  const stat = spliceRegen(song, res);
+  return { content: [{ type: 'text', text: JSON.stringify(Object.assign({ bars: [res.fromBar + 1, res.toBar + 1] }, stat, summarize(a.songId, song)), null, 2) }] };
+});
+
+server.registerTool('set_chord', {
+  title: 'Sua hop am 1 bar',
+  description: 'Doi hop am 1 bar roi gieo lai be hoa am bar do (giu not locked)',
+  inputSchema: {
+    songId: z.string(),
+    bar: z.number().int().min(1).describe('Bar can sua (1-based)'),
+    symbol: z.string().describe('VD: i, VI, VII, V, Imaj7, ii7'),
+    tracks: z.array(z.enum(['lead', 'chords', 'arp', 'bass', 'drums'])).optional().describe('Mac dinh chords/arp/bass'),
+    seed: z.number().optional()
+  }
+}, async (a) => {
+  const song = getSong(a.songId);
+  const bar = Math.max(0, Math.min(song.metadata.lengthBars - 1, (a.bar | 0) - 1));
+  const gen = generatorFromSong(song, a.seed);
+  song.progression[bar] = gen.resolveBarChord(a.symbol, bar);
+  song.progression = gen.retuneProgression(song.progression);
+  const res = gen.regenerateRegion(song, { fromBar: bar, toBar: bar, tracks: a.tracks || ['chords', 'arp', 'bass'], seed: a.seed });
+  const stat = spliceRegen(song, res);
+  return { content: [{ type: 'text', text: JSON.stringify(Object.assign({ bar: bar + 1, chord: song.progression[bar].symbol }, stat, summarize(a.songId, song)), null, 2) }] };
+});
+
+server.registerTool('arrange_song', {
+  title: 'Dung bai hoan chinh 1-click',
+  description: 'Sinh tung doan theo form (pop/compact/epic/concerto) roi noi thanh bai dai',
+  inputSchema: {
+    form: z.enum(['pop_standard', 'compact', 'epic_journey', 'concerto']).optional().describe('Mac dinh pop_standard'),
+    genre: z.string().optional(),
+    key: z.string().optional(),
+    scale: z.string().optional(),
+    bpm: z.number().int().min(30).max(350).optional(),
+    seed: z.number().optional()
+  }
+}, async (a) => {
+  const FORMS = {
+    pop_standard: [['intro', 4], ['verse', 8], ['chorus', 8], ['verse', 8], ['chorus', 8], ['outro', 4]],
+    compact: [['verse', 8], ['chorus', 8], ['verse', 8], ['chorus', 8]],
+    epic_journey: [['intro', 4], ['verse', 8], ['chorus', 8], ['bridge', 8], ['chorus', 8], ['outro', 4]],
+    concerto: [['intro', 8], ['verse', 16], ['chorus', 16], ['verse', 16], ['chorus', 16], ['outro', 8]]
+  };
+  const form = FORMS[a.form || 'pop_standard'];
+  const genre = a.genre || 'fiery_piano';
+  const gDef = Theory.GENRES[genre] || Theory.GENRES['fiery_piano'];
+  const segs = form.map(([section, bars], idx) => {
+    const gen = new Gen.MusicGenerator({
+      genre, key: a.key || gDef.defaultKey, scale: a.scale || gDef.defaultScale,
+      bpm: a.bpm || gDef.defaultBpm, timeSignature: gDef.defaultTimeSignature || '4/4',
+      lengthBars: bars, section, motifStructure: 'none', articulation: 'auto',
+      climaxCurve: 'none', fadeInBars: 0, fadeOutBars: 0, trackTarget: 'all',
+      chaosLevel: 25, density: 75, humanize: true, skipFinalHit: true,
+      seed: a.seed !== undefined ? a.seed + idx : Math.random()
+    });
+    return gen.generate();
+  });
+  const st = stitchSongs(segs);
+  const firstMd = segs[0].metadata;
+  const song = {
+    metadata: {
+      title: `RMG_Arranged_${a.form || 'pop_standard'}_${firstMd.key}_${st.totalBars}Bars`,
+      genre, genreName: gDef.name, key: firstMd.key, scale: firstMd.scale,
+      scaleName: firstMd.scaleName, bpm: firstMd.bpm, timeSignature: firstMd.timeSignature,
+      stepsPerBar: firstMd.stepsPerBar, lengthBars: st.totalBars, section: 'merged',
+      motifStructure: 'none', articulation: 'auto', climaxCurve: 'none',
+      chaosLevel: 25, density: 75, fadeInBars: 0, fadeOutBars: 0,
+      trackTarget: 'all', isPurePiano: false, useContour: false, contourPoints: null,
+      loopMode: false, noteCount: 0, seed: Math.random(), createdAt: new Date().toISOString()
+    },
+    progression: st.progression, tracks: st.tracks
+  };
+  Gen.MusicGenerator.prototype.arrangeFinal(song, { finalHit: true });
+  song.metadata.noteCount = Object.values(song.tracks).reduce((x, t) => x + t.notes.length, 0);
+  const songId = storeSong(song);
+  return { content: [{ type: 'text', text: JSON.stringify(summarize(songId, song), null, 2) }] };
 });
 
 async function main() {
