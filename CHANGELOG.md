@@ -1,5 +1,10 @@
 # RinTune Changelog
 
+## Unreleased - Phase 1: Arrangement sections that
+- Bai tu chia Intro/Verse/Break/Chorus/Outro theo do dai (break co drum
+  dropout that), be vao/ra + velocity theo tung doan, tu slice thanh clips
+  tren timeline (giua lai not tay 🔒)
+
 ## Unreleased - Linh vat Rin
 - Rin cui chao o 3 trang thai trong (lich su, so seed, file xuat)
 - Modal tam biet khi bam Thoat (O lai / Tam biet, du lieu giu nguyen)

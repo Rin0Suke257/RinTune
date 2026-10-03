@@ -654,7 +654,7 @@
 
   const TRACK_KEYS = ['lead', 'chords', 'arp', 'bass', 'drums'];
   const TRACK_COLORS = { lead: '#00f2fe', chords: '#9b51e0', arp: '#4facfe', bass: '#f39c12', drums: '#e74c3c' };
-  const SECTION_VN = { intro: 'Intro', verse: 'Verse', chorus: 'Chorus', bridge: 'Bridge', outro: 'Outro', merged: 'Đoạn', none: 'Đoạn' };
+  const SECTION_VN = { intro: 'Intro', verse: 'Verse', chorus: 'Chorus', bridge: 'Bridge', break: 'Break', outro: 'Outro', merged: 'Đoạn', none: 'Đoạn' };
   let selectedClipId = null;
 
   function clipId() {
@@ -677,6 +677,26 @@
     }
     if (song.metadata) song.metadata.lengthBars = bar;
     return bar;
+  }
+
+  function sectionsFromSong(song) {
+    const sm = song.metadata.sectionMap;
+    if (!sm || sm.length < 2) return null;
+    return sm.map(z => ({
+      name: (SECTION_VN[z.name] || z.name) + (z.name === 'verse' && z.energy >= 0.85 ? ' 2' : ''),
+      bars: z.bars,
+      tracks: z.tracks
+    }));
+  }
+
+  function autoSliceSections(song) {
+    const secs = sectionsFromSong(song);
+    if (!secs) {
+      ensureClips(song, 'Bài');
+      return;
+    }
+    sliceFlatToClips(song, secs);
+    flattenTimeline(song);
   }
 
   function ensureClips(song, fallbackName) {
@@ -839,6 +859,9 @@
     for (const s of sections) {
       const bars = Math.max(1, s.bars | 0 || 1);
       const c = { id: clipId(), name: s.name || 'Đoạn', lengthBars: bars, muted: false, rest: false, tracks: allOn(), notes: blankClipNotes() };
+      if (s.tracks) {
+        for (const k of TRACK_KEYS) c.tracks[k] = s.tracks[k] !== false;
+      }
       const s1 = s0 + bars * spb;
       for (const k of TRACK_KEYS) {
         const t = song.tracks[k];
@@ -2624,7 +2647,7 @@
     });
     state.currentSong = gen.generate();
     stampBaseVel(state.currentSong);
-    ensureClips(state.currentSong, 'Bài');
+    autoSliceSections(state.currentSong);
     selectedClipId = null;
     Synth.loadSong(state.currentSong);
     updateHeaderBadges();
@@ -3048,7 +3071,7 @@
 
     state.currentSong = gen.generate();
     stampBaseVel(state.currentSong);
-    ensureClips(state.currentSong, 'Bài');
+    autoSliceSections(state.currentSong);
     selectedClipId = null;
     Synth.loadSong(state.currentSong);
 

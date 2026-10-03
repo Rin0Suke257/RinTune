@@ -214,6 +214,156 @@
       return 16; // 4/4
     }
 
+    _zoneAt(bar, zoneMap) {
+      if (!zoneMap || !zoneMap.length) return { name: 'verse', from: 0, to: 1e9, energy: 0.8 };
+      for (const z of zoneMap) {
+        if (bar >= z.from && bar < z.from + z.bars) return z;
+      }
+      return zoneMap[zoneMap.length - 1];
+    }
+
+    _zoneMapFor(lengthBars, section, seed) {
+      const one = (name, from, bars, energy) => ({ name, from, bars, energy });
+      if (section && section !== 'none' && section !== 'merged') {
+        const e = { intro: 0.55, verse: 0.8, chorus: 1.0, bridge: 0.85, outro: 0.6 }[section] || 0.8;
+        return [one(section, 0, lengthBars, e)];
+      }
+      const N = Math.max(1, lengthBars | 0);
+      if (N <= 2) return [one('verse', 0, N, 0.8)];
+      if (N <= 4) return [one('intro', 0, 1, 0.55), one('verse', 1, N - 1, 0.8)];
+      const intro = 2, outro = Math.min(2, Math.max(1, Math.floor(N * 0.15)));
+      const mid = N - intro - outro;
+      const peakBars = Math.max(1, Math.round(mid * 0.45));
+      const wantBreak = mid >= 6 ? 2 : (mid >= 5 ? 1 : 0);
+      const verseBars = Math.max(1, mid - peakBars - wantBreak);
+      const breakBars = mid - verseBars - peakBars;
+      const zones = [one('intro', 0, intro, 0.55)];
+      let cur = intro;
+      const v1 = Math.ceil(verseBars / 2);
+      zones.push(one('verse', cur, v1, 0.8));
+      cur += v1;
+      if (breakBars > 0) {
+        zones.push(one('break', cur, breakBars, 0.45));
+        cur += breakBars;
+      }
+      if (verseBars - v1 > 0) {
+        zones.push(one('verse', cur, verseBars - v1, 0.85));
+        cur += verseBars - v1;
+      }
+      zones.push(one('chorus', cur, N - cur - outro, 1.0));
+      cur = N - outro;
+      zones.push(one('outro', cur, outro, 0.6));
+      return zones.filter(z => z.bars > 0);
+    }
+
+    _gateP(zoneName, trackKey) {
+      const G = {
+        intro: { lead: 0.5, chords: 0.6, arp: 0, bass: 1, drums: 1 },
+        verse: { lead: 1, chords: 1, arp: 0.7, bass: 1, drums: 1 },
+        chorus: { lead: 1, chords: 1, arp: 1, bass: 1, drums: 1 },
+        bridge: { lead: 1, chords: 0.8, arp: 0.5, bass: 1, drums: 1 },
+        break: { lead: 1, chords: 0.6, arp: 0, bass: 0.4, drums: 0 },
+        outro: { lead: 0.7, chords: 0.8, arp: 0, bass: 0.8, drums: 0.5 }
+      };
+      const z = G[zoneName] || G.verse;
+      return (z[trackKey] == null ? 1 : z[trackKey]);
+    }
+
+    _gateOpen(zoneName, trackKey, seed) {
+      const p = this._gateP(zoneName, trackKey);
+      if (p >= 1) return true;
+      if (p <= 0) return false;
+      return this._hash01(String(seed) + '|' + zoneName + '|' + trackKey) < p;
+    }
+
+    _hash01(str) {
+      let h = 2166136261;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return (h >>> 0) / 4294967296;
+    }
+
+    _resolveZoneGates(zoneMap, seed) {
+      for (const z of zoneMap) {
+        z.tracks = {};
+        for (const k of ['lead', 'chords', 'arp', 'bass', 'drums']) {
+          z.tracks[k] = this._gateOpen(z.name, k, seed);
+        }
+      }
+      return zoneMap;
+    }
+
+    _zoneVel(zoneName) {
+      return { intro: 0.88, verse: 1.0, chorus: 1.08, bridge: 1.02, break: 0.8, outro: 0.92 }[zoneName] || 1;
+    }
+
+    _applyZoneVelocity(tracks, zoneMap, stepsPerBar) {
+      if (!zoneMap || !zoneMap.length) return;
+      for (const t of tracks) {
+        if (!t || !t.notes) continue;
+        for (const n of t.notes) {
+          const bar = Math.floor(n.step / stepsPerBar);
+          const z = this._zoneAt(bar, zoneMap);
+          n.velocity = Math.max(30, Math.min(127, Math.round(n.velocity * this._zoneVel(z.name))));
+        }
+      }
+    }
+
+    _trackNotes(t) {
+      if (!t) return null;
+      return Array.isArray(t) ? t : t.notes;
+    }
+
+    _applyZoneArrangement(tracks, progression, zoneMap, stepsPerBar) {
+      if (!zoneMap || !zoneMap.length || !progression || !progression.length) return;
+      const spb = stepsPerBar || 16;
+      const barOf = s => Math.floor(s / spb);
+      const gated = (bar, k) => {
+        const z = this._zoneAt(bar, zoneMap);
+        return !!(z.tracks && z.tracks[k] === false);
+      };
+      for (const k of ['lead', 'arp', 'drums']) {
+        const arr = this._trackNotes(tracks[k]);
+        if (!arr) continue;
+        const kept = arr.filter(n => !gated(barOf(n.step), k));
+        if (Array.isArray(tracks[k])) tracks[k] = kept;
+        else tracks[k].notes = kept;
+      }
+      for (const k of ['bass', 'chords']) {
+        const t = tracks[k];
+        const arr = this._trackNotes(t);
+        if (!arr) continue;
+        const touched = new Set();
+        const kept = arr.filter(n => {
+          const b = barOf(n.step);
+          if (gated(b, k)) { touched.add(b); return false; }
+          return true;
+        });
+        for (const b of touched) {
+          const chord = progression[b] || progression[0];
+          if (!chord) continue;
+          const bs = b * spb;
+          if (k === 'bass') {
+            const root = (chord.rootMidi != null ? chord.rootMidi : 48) % 12;
+            kept.push({ step: bs, duration: spb, midi: 36 + root, velocity: 85, pan: 0 });
+          } else {
+            const tones = (chord.voicedNotes || chord.notes || []).map(m => {
+              let x = m;
+              while (x < 48) x += 12;
+              while (x > 72) x -= 12;
+              return x;
+            });
+            for (const m of tones) kept.push({ step: bs, duration: spb, midi: m, velocity: 78, pan: -15 });
+          }
+        }
+        kept.sort((a, b2) => a.step - b2.step);
+        if (Array.isArray(t)) tracks[k] = kept;
+        else t.notes = kept;
+      }
+    }
+
     generate() {
       const { genre, key, lengthBars, bpm, timeSignature, chaosLevel, density, section, motifStructure, articulation, climaxCurve, useContour, contourPoints, fadeInBars, fadeOutBars, trackTarget, humanize } = this.options;
       const genreDef = Theory.GENRES[genre] || Theory.GENRES['touhou'];
@@ -242,6 +392,7 @@
 
       const isPurePiano = (trackTarget === 'pure_piano');
       const VV = this._resolveVariation(this.options.variation);
+      const zoneMap = this._resolveZoneGates(this._zoneMapFor(lengthBars, section, this.options.seed), this.options.seed);
       const prof = genreDef.trackProfile || {};
       const profW = k => {
         if (isPurePiano) return 1;
@@ -273,7 +424,8 @@
         velocityBoost,
         humanize,
         grammar,
-        variation: VV
+        variation: VV,
+        zoneMap
       }) : { name: 'Lead Melody', type: 'synth_lead', instrument: genreDef.leadStyle, color: '#00f2fe', notes: [] };
 
       if (isPurePiano) {
@@ -293,7 +445,8 @@
         density: Math.max(0, Math.min(100, densityMod * profW('chords'))),
         velocityBoost,
         humanize,
-        variation: VV
+        variation: VV,
+        zoneMap
       }) : { name: 'Harmony & Chords', type: 'poly_synth', instrument: 'analog_pad', color: '#9b51e0', notes: [] };
 
       const arpTrack = (trackTarget === 'all' || trackTarget === 'arp' || isPurePiano) ? this._generateArpTrack({
@@ -308,7 +461,8 @@
         density: Math.max(0, Math.min(100, densityMod * profW('arp'))),
         velocityBoost,
         humanize,
-        variation: VV
+        variation: VV,
+        zoneMap
       }) : { name: 'Arpeggio Ostinato', type: 'pluck_synth', instrument: 'sparkle_arp', color: '#4facfe', notes: [] };
 
       if (isPurePiano) {
@@ -330,7 +484,8 @@
         chaosLevel,
         velocityBoost,
         humanize,
-        variation: VV
+        variation: VV,
+        zoneMap
       }) : { name: 'Bassline', type: 'mono_bass', instrument: 'sub_saw_bass', color: '#f39c12', notes: [] };
 
       if (isPurePiano) {
@@ -350,8 +505,15 @@
         chaosLevel,
         velocityBoost,
         humanize,
-        variation: VV
+        variation: VV,
+        zoneMap
       }) : { name: 'Drums & Percussion', type: 'drum_kit', instrument: 'standard_kit', color: '#e74c3c', notes: [] };
+
+      this._applyZoneArrangement(
+        { lead: leadTrack, chords: chordTrack, arp: arpTrack, bass: bassTrack, drums: drumTrack },
+        progression, zoneMap, stepsPerBar
+      );
+      this._applyZoneVelocity([leadTrack, chordTrack, arpTrack, bassTrack, drumTrack], zoneMap, stepsPerBar);
 
       const arrangedSong = {
         metadata: {
@@ -394,6 +556,7 @@
           fadeInBars,
           fadeOutBars,
           variation: VV,
+          sectionMap: zoneMap,
           useContour: !!useContour,
           contourPoints: contourPoints || null,
           loopMode: !!this.options.loopMode,
@@ -471,6 +634,8 @@
       else if (section === 'outro') { velocityBoost = -15; densityMod = Math.max(30, densityMod - 25); }
 
       const VV = this._resolveVariation(spec.variation != null ? spec.variation : (md.variation != null ? md.variation : this.options.variation));
+      const gateSeed = (md.seed != null ? md.seed : this.options.seed);
+      const zoneMap = this._resolveZoneGates(this._zoneMapFor(totalBars, section, gateSeed), gateSeed);
 
       const baseCtx = {
         progression: song.progression,
@@ -494,6 +659,7 @@
         humanize: true,
         grammar: Object.assign({ rest: 0, leapSemis: 9, chromatic: true }, genreDef.leadGrammar || {}),
         variation: VV,
+        zoneMap,
         barStart: fromBar,
         barEnd: toBar
       };
@@ -518,6 +684,9 @@
       } finally {
         this.rng = prevRng;
       }
+
+      this._applyZoneArrangement(out, song.progression, zoneMap, stepsPerBar);
+      this._applyZoneVelocity(Object.values(out).map(notes => ({ notes })), zoneMap, stepsPerBar);
 
       const fadeInBars = md.fadeInBars || 0;
       const fadeOutBars = md.fadeOutBars || 0;
