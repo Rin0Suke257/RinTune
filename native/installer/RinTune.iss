@@ -93,4 +93,4 @@ begin
 end;
 
 [Messages]
-ConfirmUninstall=Rin sẽ nhớ bạn!%n%NChỉ gỡ phần mềm + shortcut. Bài nhạc, SoundFont và lịch sử của bạn ĐƯỢC GIỮ NGUYÊN.%n%NHẹn gặp lại sớm nhé!%n%NTiếp tục gỡ RinTune Studio?
+ConfirmUninstall=Rin sẽ nhớ bạn! Chỉ gỡ phần mềm + shortcut — bài nhạc, SoundFont và lịch sử của bạn ĐƯỢC GIỮ NGUYÊN. Hẹn gặp lại sớm nhé! Tiếp tục gỡ RinTune Studio?
