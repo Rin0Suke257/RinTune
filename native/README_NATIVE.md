@@ -1,6 +1,6 @@
-# RMG Native - Phan mem that (C++ Win32 + WebView2)
+# RinTune Native - Phan mem that (C++ Win32 + WebView2)
 
-Khong con Electron/Node. `RMG.exe` la chuong trinh C++ chay truc tiep tren Windows,
+Khong con Electron/Node. `RinTune.exe` la chuong trinh C++ chay truc tiep tren Windows,
 giu nguyen 100% UI va thuat toan nhac (`index.html`, `index.css`, `engine/*.js`, `renderer.js`).
 
 ## Yeu cau
@@ -13,12 +13,12 @@ giu nguyen 100% UI va thuat toan nhac (`index.html`, `index.css`, `engine/*.js`,
 Cach 1 (don gian): double-click `native\build.bat`
 Cach 2 (Visual Studio): mo `native\RMG.sln` → chon Release/x64 → Build
 
-Ket qua: `native\out\RMG\` gom:
+Ket qua: `native\out\RinTune\` gom:
 
-- `RMG.exe` (~400-600KB)
+- `RinTune.exe` (~400-600KB)
 - `index.html`, `index.css`, `engine\`, `assets\`
 
-Copy ca thu muc `out\RMG` la chay duoc (portable, khong can cai dat).
+Copy ca thu muc `out\RinTune` la chay duoc (portable, khong can cai dat).
 
 ## Kien truc
 
@@ -110,17 +110,17 @@ Copy ca thu muc `out\RMG` la chay duoc (portable, khong can cai dat).
   `export_midi`, `export_mmp`, `export_clip`.
 - Build 1 file exe doc lap (may khac khong can Node): chay `native\build-mcp.bat`
   (npm install → test → esbuild bundle → Node SEA → postject)
-  → ra `native\out\MCP-RMG.exe` (~95MB, gom san Node runtime).
+  → ra `native\out\RinTune-MCP.exe` (~95MB, gom san Node runtime).
 - Test: `node native\mcp\test-mcp.js [duong-dan-exe]` (mac dinh test `server.js`).
 - Phat hanh: setup co component tuy chon "MCP Server cho AI",
-  cai vao `{app}\mcp\MCP-RMG.exe` + `mcp-config-example.json` (sua `<APPDATA>`
+  cai vao `{app}\mcp\RinTune-MCP.exe` + `mcp-config-example.json` (sua `<APPDATA>`
   thanh duong dan that roi gan vao config MCP cua Claude Desktop/opencode).
 
 ## Cai dat (Setup)
 
-- Chay `native\installer\RMG.iss` bang Inno Setup 6 (ISCC.exe)
-  → ra `native\out\Setup_RMG_2.0.0.exe` (~3MB).
-- Setup per-user, khong can quyen admin: cai vao `%LOCALAPPDATA%\RMG`,
+- Chay `native\installer\RinTune.iss` bang Inno Setup 6 (ISCC.exe)
+  → ra `native\out\Setup_RinTune_2.0.0.exe` (~3MB).
+- Setup per-user, khong can quyen admin: cai vao `%LOCALAPPDATA%\RinTune`,
   tao shortcut Desktop + Start Menu, co muc go cai dat trong Settings.
 - Tu kiem tra WebView2 Runtime, thieu thi hoi mo trang tai Microsoft.
 - Khi go cai dat: file app + shortcut bi xoa, lich su/cache giu lai
@@ -129,6 +129,6 @@ Copy ca thu muc `out\RMG` la chay duoc (portable, khong can cai dat).
 ## Luu y
 
 - File Electron cu (`main.js`, `preload.js`, `package.json`) van giu nguyen, khong anh huong ban native.
-- Khi phan phoi: chi can thu muc `out\RMG`, khong can `RMG.pdb` (file debug).
+- Khi phan phoi: chi can thu muc `out\RinTune`, khong can `RinTune.pdb` (file debug).
 - Du lieu WebView2 (cache) nam o `%LOCALAPPDATA%\RMG\webview2-data`, lich su gieo nhac
   luu trong localStorage cua app nhu cu.

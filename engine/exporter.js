@@ -1,14 +1,8 @@
-/**
- * RMG Export Engine
- * Generates LMMS Project XML (.mmp), LMMS Clipboard Track Clips,
- * Binary Standard MIDI Files (.mid with Lyric events), and UTAU Project Files (.ust).
- * Author: Rin0suke257
- */
+
 
 (function(exports) {
   'use strict';
 
-  // wave: 0 sine, 1 triangle, 2 saw, 3 square, 6 white noise
   const ROLE_DEFAULTS = {
     lead:   { osc: [{ wave: 2, vol: 100 }, { wave: 2, vol: 80, fine: 7, pan: -10 }, { wave: 0, vol: 60, coarse: -12, pan: 10 }] },
     pad:    { osc: [{ wave: 2, vol: 70 }, { wave: 2, vol: 70, fine: -6, pan: -12 }, { wave: 0, vol: 55, pan: 12 }] },
@@ -17,7 +11,6 @@
     drums:  { osc: [{ wave: 6, vol: 90 }, { wave: 0, vol: 80, coarse: -24 }, { wave: 3, vol: 30, coarse: -12 }] }
   };
 
-  // Ghi de tung role theo genre (thieu role nao thi dung default)
   const GENRE_INSTRUMENTS = {
     sasakure_uk: {
       lead:  { osc: [{ wave: 3, vol: 100 }, { wave: 3, vol: 75, fine: 6, pan: -10 }, { wave: 1, vol: 60, pan: 10 }] },
@@ -76,7 +69,6 @@
     }
   };
 
-  // RMG instrument -> GM program (cho Sf2 player): [bank, patch]
   const GM_PROGRAMS = {
     grand_piano_lead: [0, 0], mellow_epiano: [0, 4], fusion_bright_grand: [0, 1],
     chiptune_fm_epiano: [0, 5], sparkle_arp: [0, 46], anime_bell_lead: [0, 9],
@@ -96,7 +88,6 @@
   }
 
   function sf2InstrumentXml(src, bank, patch, isDrums, indent) {    const pad = indent || '          ';
-    // reverb nhe cho nhac cu (khong cho drums) de bot choi
     const verb = isDrums ? ' reverbOn="0"' : ' reverbOn="1"';
     return `${pad}<instrument name="sf2player">\n` +
       `${pad}  <sf2player src="${xmlEscape(src)}" bank="${bank}" patch="${patch}" gain="1"${verb}/>\n` +
@@ -136,11 +127,7 @@
   }
 
   class Exporter {
-    /**
-     * Generate complete LMMS Project (.mmp) XML String
-     * mix (optional): { trackKey: { volume 0..1, muted, solo, pan -100..100 } }
-     * swing: % tre offbeat. soundfont: duong dan .sf2 hoac null (tripleosc).
-     */
+
     static generateLmmsProject(songData, mix = null, swing = 0, soundfont = null) {
       const { metadata, tracks } = songData;
       const bpm = metadata.bpm || 140;
@@ -154,18 +141,17 @@
 
       let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
       xml += `<!DOCTYPE lmms-project>\n`;
-      xml += `<lmms-project version="1.0" creator="RMG by Rin0suke257" creatorversion="1.2.2" type="song">\n`;
+      xml += `<lmms-project version="1.0" creator="RinTune Studio by Rin0suke257" creatorversion="1.2.2" type="song">\n`;
       xml += `  <head timesig_numerator="${tsNum}" timesig_denominator="${tsDen}" bpm="${bpm}" mastervol="100" masterpitch="0"/>\n`;
       xml += `  <song>\n`;
       xml += `    <trackcontainer width="600" height="300" x="5" y="5" visible="1" minimized="0" type="song">\n`;
 
-      // Track Mapping (vol/pan/mute lay tu mixer, mac dinh giu nhu cu)
       const trackDefs = [
-        { key: 'lead', role: 'lead', name: 'RMG Lead', pan: 0, vol: 100, color: '#00f2fe' },
-        { key: 'chords', role: 'pad', name: 'RMG Chords', pan: -15, vol: 80, color: '#9b51e0' },
-        { key: 'arp', role: 'arp', name: 'RMG Arpeggio', pan: 15, vol: 85, color: '#4facfe' },
-        { key: 'bass', role: 'bass', name: 'RMG Bass', pan: 0, vol: 95, color: '#f39c12' },
-        { key: 'drums', role: 'drums', name: 'RMG Drums', pan: 0, vol: 100, color: '#e74c3c' }
+        { key: 'lead', role: 'lead', name: 'RinTune Lead', pan: 0, vol: 100, color: '#00f2fe' },
+        { key: 'chords', role: 'pad', name: 'RinTune Chords', pan: -15, vol: 80, color: '#9b51e0' },
+        { key: 'arp', role: 'arp', name: 'RinTune Arp', pan: 15, vol: 85, color: '#4facfe' },
+        { key: 'bass', role: 'bass', name: 'RinTune Bass', pan: 0, vol: 95, color: '#f39c12' },
+        { key: 'drums', role: 'drums', name: 'RinTune Drums', pan: 0, vol: 100, color: '#e74c3c' }
       ];
 
       for (const def of trackDefs) {
@@ -188,7 +174,6 @@
         }
         xml += `        </instrumenttrack>\n`;
 
-        // Pattern
         xml += `        <pattern pos="0" steps="16" name="${def.name} Clip" muted="0" type="1">\n`;
 
         for (const note of track.notes) {
@@ -212,9 +197,7 @@
       return xml;
     }
 
-    /**
-     * Generate LMMS Clip XML for Clipboard Injection (Ctrl+V into running LMMS)
-     */
+
     static generateLmmsClipboardClip(songData, mix = null) {
       const { tracks } = songData;
       const ticksPerStep = 12;
@@ -241,12 +224,7 @@
       return xml;
     }
 
-    /**
-     * Generate single-track LMMS MIDI clip XML for REAL piano-roll paste.
-     * Format khop LMMS (midiclip node): <midiclip type="1" name autoresize
-     * off muted steps len pos="-1"> + <note key vol pan len pos type="0"/>.
-     * Ghi qua native clipboard voi MIME application/x-lmms-clipboard.
-     */
+
     static generateLmmsMidiClip(songData, trackKey) {
       const ticksPerStep = 12;
       const track = songData.tracks ? songData.tracks[trackKey] : null;
@@ -255,7 +233,7 @@
       const bars = (songData.metadata && songData.metadata.lengthBars) || 8;
       const totalSteps = bars * spb;
       const safeName = String((track && track.name) || trackKey).replace(/[<>&"]/g, '');
-      let xml = `<midiclip type="1" name="RMG ${safeName}" autoresize="1" off="0" muted="0" steps="${totalSteps}" len="${totalSteps * ticksPerStep}" pos="-1">\n`;
+      let xml = `<midiclip type="1" name="RinTune ${safeName}" autoresize="1" off="0" muted="0" steps="${totalSteps}" len="${totalSteps * ticksPerStep}" pos="-1">\n`;
       for (const note of notes) {
         const posTicks = Math.round(note.step * ticksPerStep);
         const lenTicks = Math.max(ticksPerStep, Math.round(note.duration * ticksPerStep));
@@ -267,10 +245,7 @@
       return { xml, count: notes.length };
     }
 
-    /**
-     * Generate Binary Standard MIDI File (Type 1, Multi-Track, PPQ=480) with Lyric Meta Events
-     * Returns Uint8Array
-     */
+
     static generateMidiFile(songData, mix = null, swing = 0) {
       const { metadata, tracks } = songData;
       const bpm = metadata.bpm || 140;
@@ -297,7 +272,6 @@
         drums: 0
       };
 
-      // 1. Conductor Track (Tempo, Time Signature & Song Title)
       const tempoTrackEvents = [];
       const mpqn = Math.round(60000000 / bpm);
       tempoTrackEvents.push({
@@ -305,7 +279,6 @@
         data: [0xFF, 0x51, 0x03, (mpqn >> 16) & 0xFF, (mpqn >> 8) & 0xFF, mpqn & 0xFF]
       });
 
-      // Time Signature Meta Event
       const ts = metadata.timeSignature || '4/4';
       let tsNum = 4;
       let tsDenomExp = 2; // 2^2 = 4
@@ -318,7 +291,7 @@
         data: [0xFF, 0x58, 0x04, tsNum, tsDenomExp, 0x18, 0x08]
       });
 
-      const titleBytes = Exporter._strToBytes(metadata.title || 'RMG Music');
+      const titleBytes = Exporter._strToBytes(metadata.title || 'RinTune Music');
       tempoTrackEvents.push({
         time: 0,
         data: [0xFF, 0x03, titleBytes.length, ...titleBytes]
@@ -327,7 +300,6 @@
 
       trackChunks.push(Exporter._buildTrackChunk(tempoTrackEvents));
 
-      // 2. Note Tracks
       for (const trackKey of trackKeys) {
         const track = tracks[trackKey];
         if (!track || !track.notes) continue;
@@ -337,16 +309,13 @@
         const prog = programMap[trackKey];
         const rawEvents = [];
 
-        // Track Name
         const nameBytes = Exporter._strToBytes(track.name);
         rawEvents.push({ time: 0, priority: 0, data: [0xFF, 0x03, nameBytes.length, ...nameBytes] });
 
-        // Program Change (Instrument) except drum channel
         if (ch !== 9) {
           rawEvents.push({ time: 0, priority: 0, data: [0xC0 | ch, prog] });
         }
 
-        // Convert note steps to Note On & Off events
         for (const note of track.notes) {
           const sw = Exporter._swingTicks(note.step, swing, ticksPerStep);
           const startTick = Math.round(note.step * ticksPerStep) + sw;
@@ -354,7 +323,6 @@
           const key = Math.max(0, Math.min(127, note.midi));
           const vel = Math.max(1, Math.min(127, note.velocity || 90));
 
-          // Lyric Meta Event on Lead Track
           if (trackKey === 'lead' && note.lyric) {
             const lyricBytes = Exporter._strToBytes(note.lyric);
             rawEvents.push({
@@ -377,17 +345,14 @@
           });
         }
 
-        // Sort events by time ascending, then priority
         rawEvents.sort((a, b) => a.time !== b.time ? a.time - b.time : b.priority - a.priority);
 
-        // End of Track
         const lastTick = rawEvents.length > 0 ? rawEvents[rawEvents.length - 1].time : 0;
         rawEvents.push({ time: lastTick + 480, priority: 0, data: [0xFF, 0x2F, 0x00] });
 
         trackChunks.push(Exporter._buildTrackChunk(rawEvents));
       }
 
-      // Build Header Chunk: 'MThd', length=6, format=1 (multi-track), numTracks, ppq=480
       const numTracks = trackChunks.length;
       const headerChunk = [
         0x4D, 0x54, 0x68, 0x64, // 'MThd'
@@ -397,7 +362,6 @@
         (ppq >> 8) & 0xFF, ppq & 0xFF
       ];
 
-      // Assemble all chunks into single Uint8Array
       let totalLength = headerChunk.length;
       for (const chunk of trackChunks) {
         totalLength += chunk.length;
@@ -415,9 +379,7 @@
       return midiBytes;
     }
 
-    /**
-     * Build MTrk chunk with delta-time compression
-     */
+
     static _buildTrackChunk(events) {
       const trackData = [];
       let lastTime = 0;
@@ -443,9 +405,7 @@
       return new Uint8Array([...chunkHeader, ...trackData]);
     }
 
-    /**
-     * Encode variable-length quantity for MIDI delta times
-     */
+
     static _encodeVarLen(val) {
       let buffer = val & 0x7F;
       const bytes = [];
@@ -467,10 +427,7 @@
       return bytes;
     }
 
-    /**
-     * Encode AudioBuffer (Web Audio) thanh file WAV 16-bit PCM.
-     * audioBuffer: { sampleRate, numberOfChannels, length, getChannelData(i) }
-     */
+
     static encodeWavFile(audioBuffer) {
       const sr = audioBuffer.sampleRate || 44100;
       const nCh = Math.min(2, audioBuffer.numberOfChannels || 1);
@@ -479,7 +436,6 @@
       for (let c = 0; c < nCh; c++) {
         chans.push(audioBuffer.getChannelData(c));
       }
-      // Mono -> duplicate lenh trai/phai
       if (nCh === 1) chans.push(chans[0]);
 
       const dataBytes = len * 2 * 2;
@@ -510,9 +466,7 @@
       return new Uint8Array(buf);
     }
 
-    /**
-     * Swing offset (ticks) cho step: tre offbeat 8th (step%4==2).
-     */
+
     static _swingTicks(step, swingPct, ticksPerStep) {
       if (!swingPct || (step % 4) !== 2) return 0;
       return Math.round((swingPct / 100) * ticksPerStep * 2);

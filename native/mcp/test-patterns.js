@@ -8,7 +8,6 @@ for (const genre of genres) {
   console.log('  bass: ' + bar0('bass'));
   console.log('  arp:  ' + bar0('arp'));
 }
-// region regen van chay voi pattern moi
 const g2 = new G.MusicGenerator({ genre: 'synthwave', key: 'A', lengthBars: 8, seed: 5 });
 const s2 = g2.generate();
 const r = g2.regenerateRegion(s2, { fromBar: 2, toBar: 3, tracks: ['bass', 'arp'], seed: 9 });

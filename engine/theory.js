@@ -1,13 +1,8 @@
-/**
- * RMG Music Theory Engine
- * Scale mappings, chord definitions, genre progressions, and harmonic constraints.
- * Author: Rin0suke257
- */
+
 
 (function(exports) {
   'use strict';
 
-  // 12 Semitones note names
   const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   const ENHARMONIC = {
     'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#'
@@ -37,9 +32,7 @@
     return 440 * Math.pow(2, (midi - 69) / 12);
   }
 
-  // Scales & Modes (Intervals in semitones from root)
   const SCALES = {
-    // Touhou / ZUN & Japanese traditional scales
     'touhou_yonanuki': {
       name: 'Touhou Yonanuki Minor (ZUN Signature)',
       intervals: [0, 2, 3, 7, 8], // 1, 2, b3, 5, b6 (Dramatic melodic ZUN leaps)
@@ -59,7 +52,6 @@
       genreBias: ['touhou', 'lofi', 'dark_fantasy']
     },
 
-    // Dark Fantasy & Gothic Scales
     'phrygian_dominant': {
       name: 'Phrygian Dominant (Dark Fantasy / Souls / Castlevania)',
       intervals: [0, 1, 4, 5, 7, 8, 10], // 1, b2, 3, 4, 5, b6, b7
@@ -79,7 +71,6 @@
       genreBias: ['dark_fantasy']
     },
 
-    // Western Classical & Modern Modes
     'natural_minor': {
       name: 'Natural Minor (Aeolian)',
       intervals: [0, 2, 3, 5, 7, 8, 10],
@@ -160,7 +151,6 @@
     }
   };
 
-  // Chord Types (Intervals from chord root)
   const CHORD_TYPES = {
     'maj':      { name: 'Major', intervals: [0, 4, 7], quality: 'major' },
     'min':      { name: 'Minor', intervals: [0, 3, 7], quality: 'minor' },
@@ -185,7 +175,6 @@
     'power':    { name: 'Power 5th', intervals: [0, 7, 12], quality: 'power' }
   };
 
-  // Genre Definitions with Progression Matrices, BPM Ranges & Instrument Presets
   const GENRES = {
     'sasakure_uk': {
       id: 'sasakure_uk',
@@ -452,9 +441,7 @@
     }
   };
 
-  /**
-   * Get all scale notes (MIDI values) within a specific octave range
-   */
+
   function getScaleNotes(rootNote, scaleKey, minOctave = 3, maxOctave = 6) {
     const rootNorm = normalizeNote(rootNote);
     const rootIndex = NOTE_NAMES.indexOf(rootNorm);
@@ -474,10 +461,7 @@
     return Array.from(new Set(notes)).sort((a, b) => a - b);
   }
 
-  /**
-   * Resolve a Roman Numeral chord symbol to concrete root MIDI note and chord type
-   * in the context of a key and scale.
-   */
+
   function resolveChord(symbol, rootNote, scaleKey, baseOctave = 3) {
     const rootNorm = normalizeNote(rootNote);
     const rootMidi = noteToMidi(rootNorm, baseOctave);
@@ -550,9 +534,7 @@
     };
   }
 
-  /**
-   * Apply Smooth Voice Leading to chord sequence
-   */
+
   function optimizeVoiceLeading(chordList, targetOctave = 3) {
     if (!chordList || chordList.length === 0) return [];
     const result = [];
@@ -624,11 +606,7 @@
     return result;
   }
 
-  /**
-   * Liet ke symbols hop am dung duoc trong Progression Editor:
-   * hop nhat tu moi template cua moi genre + them cac bien the pho bien.
-   * Chi tra ve symbols resolve duoc (resolveChord khong bao gio nem loi).
-   */
+
   function listChordSymbols() {
     const seen = {};
     const out = [];

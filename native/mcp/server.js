@@ -1,8 +1,4 @@
-/**
- * RMG MCP Server (stdio)
- * Dung lai engine cua RMG: theory.js + generator.js + exporter.js
- * May khac khong can Node: bundle + Node SEA -> MCP-RMG.exe
- */
+
 
 const path = require('path');
 const fs = require('fs');
@@ -14,7 +10,6 @@ const { RMGTheory: Theory } = require('../../engine/theory.js');
 const { RMGGenerator: Gen } = require('../../engine/generator.js');
 const { RMGExporter: Exp } = require('../../engine/exporter.js');
 
-// Bai nhac da sinh trong session (songId -> songData)
 const songs = new Map();
 
 function summarize(songId, song) {
@@ -39,7 +34,7 @@ function summarize(songId, song) {
 }
 
 function sanitizeFileName(s) {
-  return String(s || 'RMG_Song').replace(/[^\w\-\u00C0-\u1EF9 ]+/g, '').trim().replace(/\s+/g, '_').slice(0, 80) || 'RMG_Song';
+  return String(s || 'RinTune_Song').replace(/[^\w\-\u00C0-\u1EF9 ]+/g, '').trim().replace(/\s+/g, '_').slice(0, 80) || 'RinTune_Song';
 }
 
 function getSong(songId) {
@@ -131,11 +126,11 @@ function writeSongFile(song, kind) {
   return outPath;
 }
 
-const server = new McpServer({ name: 'rmg', version: '2.0.0' });
+const server = new McpServer({ name: 'rintune', version: '2.0.0' });
 
 server.registerTool('list_genres', {
   title: 'Liet ke phong cach nhac',
-  description: 'Liet ke cac phong cach (genre) co the sinh trong RMG',
+  description: 'Liet ke cac phong cach (genre) co the sinh trong RinTune',
   inputSchema: {}
 }, async () => {
   const genres = Object.values(Theory.GENRES).map(g => ({
@@ -149,7 +144,7 @@ server.registerTool('list_genres', {
 
 server.registerTool('list_scales', {
   title: 'Liet ke thang am',
-  description: 'Liet ke cac thang am (scale/mode) dung duoc trong RMG',
+  description: 'Liet ke cac thang am (scale/mode) dung duoc trong RinTune',
   inputSchema: {}
 }, async () => {
   const scales = Object.entries(Theory.SCALES).map(([id, s]) => ({ id, name: s.name }));
@@ -340,7 +335,7 @@ server.registerTool('arrange_song', {
   const firstMd = segs[0].metadata;
   const song = {
     metadata: {
-      title: `RMG_Arranged_${a.form || 'pop_standard'}_${firstMd.key}_${st.totalBars}Bars`,
+      title: `RinTune_Arranged_${a.form || 'pop_standard'}_${firstMd.key}_${st.totalBars}Bars`,
       genre, genreName: gDef.name, key: firstMd.key, scale: firstMd.scale,
       scaleName: firstMd.scaleName, bpm: firstMd.bpm, timeSignature: firstMd.timeSignature,
       stepsPerBar: firstMd.stepsPerBar, lengthBars: st.totalBars, section: 'merged',
@@ -362,4 +357,4 @@ async function main() {
   await server.connect(transport);
 }
 
-main().catch(err => { console.error('[rmg-mcp] fatal:', err); process.exit(1); });
+main().catch(err => { console.error('[rintune-mcp] fatal:', err); process.exit(1); });

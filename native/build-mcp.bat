@@ -1,6 +1,4 @@
 @echo off
-REM Build MCP-RMG.exe - single file, may khac khong can Node
-REM Yeu cau: Node 20+ co san trong PATH, co mang de npx postject
 setlocal
 set ROOT=%~dp0
 if "%ROOT:~-1%"=="\" set ROOT=%ROOT:~0,-1%
@@ -23,16 +21,16 @@ echo [4/5] Node SEA blob...
 call node --experimental-sea-config sea-config.json
 if errorlevel 1 goto build_fail
 
-echo [5/5] inject vao MCP-RMG.exe...
-copy /y "%SystemDrive%\Program Files\nodejs\node.exe" dist\MCP-RMG.exe >nul
+echo [5/5] inject vao RinTune-MCP.exe...
+copy /y "%SystemDrive%\Program Files\nodejs\node.exe" dist\RinTune-MCP.exe >nul
 if errorlevel 1 goto no_node
-call npx -y postject dist/MCP-RMG.exe NODE_SEA_BLOB dist/sea-prep.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
+call npx -y postject dist/RinTune-MCP.exe NODE_SEA_BLOB dist/sea-prep.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2
 if errorlevel 1 goto build_fail
-copy /y dist\MCP-RMG.exe "%ROOT%\out\MCP-RMG.exe" >nul
+copy /y dist\RinTune-MCP.exe "%ROOT%\out\RinTune-MCP.exe" >nul
 
 echo.
-echo [OK] %ROOT%\out\MCP-RMG.exe
-dir "%ROOT%\out\MCP-RMG.exe"
+echo [OK] %ROOT%\out\RinTune-MCP.exe
+dir "%ROOT%\out\RinTune-MCP.exe"
 endlocal
 exit /b 0
 

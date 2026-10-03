@@ -1,15 +1,8 @@
-/**
- * RMG - LMMS Random Music Generator Standalone App
- * Tác giả (Author): Rin0suke257
- * License: MIT
- */
-
 const { app, BrowserWindow, ipcMain, dialog, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn, execSync } = require('child_process');
 
-// Fix Windows Chromium cache permission error
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
 app.commandLine.appendSwitch('disable-http-cache');
 app.setPath('userData', path.join(app.getPath('temp'), 'RMG-App-Cache'));
@@ -24,7 +17,7 @@ function createWindow() {
     height: 900,
     minWidth: 800,
     minHeight: 650,
-    title: 'RMG - LMMS Random Music Generator (by Rin0suke257)',
+    title: 'RinTune Studio (by Rin0suke257)',
     icon: iconPath,
     autoHideMenuBar: true,
     backgroundColor: '#090a10',
@@ -50,7 +43,6 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// Helper: Check if LMMS process is currently running
 function isLmmsRunning() {
   try {
     const stdout = execSync('tasklist.exe /FI "IMAGENAME eq lmms.exe" /NH', { encoding: 'utf8', windowsHide: true });
@@ -60,7 +52,6 @@ function isLmmsRunning() {
   }
 }
 
-// Helper: Focus LMMS window & send Ctrl+V paste keypress if open
 function focusLmmsAndPaste() {
   try {
     const psScript = `$wsh = New-Object -ComObject WScript.Shell; if ($wsh.AppActivate('LMMS')) { Start-Sleep -Milliseconds 250; $wsh.SendKeys('^v') }; exit`;
@@ -75,7 +66,6 @@ function focusLmmsAndPaste() {
   }
 }
 
-// Helper: Safe directory for saving generated project files (avoids Program Files permission errors)
 function getSafeProjectsDir() {
   const projDir = path.join(app.getPath('userData'), 'projects');
   try {
@@ -88,7 +78,6 @@ function getSafeProjectsDir() {
   }
 }
 
-// Helper: Query Windows Registry for a key value
 function queryRegistry(regPath, valueName = '') {
   try {
     const valParam = valueName ? `/v "${valueName}"` : '/ve';
@@ -107,9 +96,7 @@ function queryRegistry(regPath, valueName = '') {
   return null;
 }
 
-// Helper: Comprehensive dynamic LMMS search across Registry, PATH, and all drives
 function findLmmsExecutable(customPath = null) {
-  // 1. Check user custom path if valid
   if (customPath && typeof customPath === 'string' && customPath.trim().length > 0) {
     const trimmed = customPath.trim();
     if (fs.existsSync(trimmed)) {
@@ -117,7 +104,6 @@ function findLmmsExecutable(customPath = null) {
     }
   }
 
-  // 2. Check Windows Registry App Paths
   const regCandidates = [
     { key: 'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\lmms.exe' },
     { key: 'HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\lmms.exe' },
@@ -128,7 +114,6 @@ function findLmmsExecutable(customPath = null) {
     if (found) return { path: found, source: 'registry' };
   }
 
-  // 3. Check system PATH via where.exe
   try {
     const stdout = execSync('where.exe lmms.exe 2>nul', { encoding: 'utf8', windowsHide: true });
     const lines = stdout.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -139,7 +124,6 @@ function findLmmsExecutable(customPath = null) {
     }
   } catch (e) {}
 
-  // 4. Check Common Standard Installation Paths on all local drives
   const candidatePaths = [
     'C:\\Program Files\\LMMS\\lmms.exe',
     'D:\\LMMS\\lmms.exe',
@@ -163,12 +147,10 @@ function findLmmsExecutable(customPath = null) {
   return { path: null, source: 'none' };
 }
 
-// IPC Handler: Get detected LMMS executable path
 ipcMain.handle('get-lmms-path', async (event, customPath) => {
   return findLmmsExecutable(customPath);
 });
 
-// IPC Handler: Let user browse and select lmms.exe manually
 ipcMain.handle('select-lmms-path', async () => {
   try {
     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
@@ -192,7 +174,6 @@ ipcMain.handle('select-lmms-path', async () => {
   }
 });
 
-// IPC Handler: Launch LMMS directly or inject into running LMMS instance
 ipcMain.handle('launch-lmms', async (event, payload) => {
   try {
     let mmpContent = '';
@@ -212,16 +193,13 @@ ipcMain.handle('launch-lmms', async (event, payload) => {
     const saveDir = getSafeProjectsDir();
     const mmpFilePath = path.join(saveDir, 'Random_Song.mmp');
 
-    // 1. Write MMP content to safe user file
     if (mmpContent) {
       fs.writeFileSync(mmpFilePath, mmpContent, 'utf-8');
     }
 
-    // 2. Check if LMMS is already running
     const running = isLmmsRunning();
 
     if (running) {
-      // LMMS is open -> Put track clip XML on system clipboard and focus LMMS window!
       if (trackClipXml) {
         clipboard.writeText(trackClipXml);
       }
@@ -235,7 +213,6 @@ ipcMain.handle('launch-lmms', async (event, payload) => {
         message: 'Bản LMMS đã được bật! Đã tự động chèn Track & Giai điệu mới vào phiên LMMS đang chạy!'
       };
     } else {
-      // LMMS is NOT running -> Launch new LMMS instance with the generated file
       if (!lmmsExePath) {
         return {
           success: false,
@@ -266,7 +243,6 @@ ipcMain.handle('launch-lmms', async (event, payload) => {
   }
 });
 
-// IPC Handler: Save MMP/MIDI file with dialog
 ipcMain.handle('save-file', async (event, payload) => {
   try {
     let { data, defaultName, type } = payload || {};
@@ -277,7 +253,7 @@ ipcMain.handle('save-file', async (event, payload) => {
       : [{ name: 'LMMS Project Files (*.mmp)', extensions: ['mmp'] }];
 
     const { filePath, canceled } = await dialog.showSaveDialog(mainWindow, {
-      defaultPath: defaultName || (isMidi ? 'RMG_Melody.mid' : 'RMG_Song.mmp'),
+      defaultPath: defaultName || (isMidi ? 'RinTune_Melody.mid' : 'RinTune_Song.mmp'),
       filters: filters
     });
 

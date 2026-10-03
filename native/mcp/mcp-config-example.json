@@ -1,8 +1,8 @@
 {
-  "//": "Mau config gan MCP-RMG vao AI client. Thay <APPDATA> bang duong dan that, VD: C:\\Users\\TenBan\\AppData\\Local\\RMG\\mcp\\MCP-RMG.exe",
+  "//": "Mau config gan RinTune-MCP vao AI client. Thay <APPDATA> bang duong dan that, VD: C:\\Users\\TenBan\\AppData\\Local\\RinTune\\mcp\\RinTune-MCP.exe",
   "mcpServers": {
-    "rmg": {
-      "command": "<APPDATA>\\RMG\\mcp\\MCP-RMG.exe",
+    "rintune": {
+      "command": "<APPDATA>\\RinTune\\mcp\\RinTune-MCP.exe",
       "args": []
     }
   }

@@ -1,4 +1,4 @@
-/** Test MCP server qua SDK Client (stdio) */
+
 const path = require('path');
 const fs = require('fs');
 const { Client } = require('@modelcontextprotocol/sdk/client/index.js');

@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RMG - Random Music Generator v2.0 (by Rin0suke257)</title>
+  <title>RinTune Studio v2.0 (by Rin0suke257)</title>
   <link rel="stylesheet" href="index.css">
 </head>
 <body>
   <div id="bgLayer"></div>
   <div class="app-container">
-    <!-- Menu Bar (File/Edit/View/Tools/Help) -->
+    
     <nav class="menubar" id="menubar">
       <div class="menu-top" data-menu="file"><span>File</span>
         <div class="menu-drop">
@@ -93,14 +93,14 @@
           <button data-act="about">ℹ️ Giới thiệu</button>
         </div>
       </div>
-      <div class="menubar-title">RMG Studio</div>
+      <div class="menubar-title">RinTune Studio</div>
     </nav>
-    <!-- Header -->
+    
     <header class="app-header">
       <div class="brand-section">
-        <img src="assets/Icon/SmallLogo.png" alt="RMG Logo" class="app-logo" onerror="this.src='assets/Icon/rmg_icon.png'">
+        <img src="assets/Icon/SmallLogo.png" alt="RinTune Logo" class="app-logo" onerror="this.src='assets/Icon/rmg_icon.png'">
         <div class="brand-titles">
-          <h1>RMG - RANDOM MUSIC GENERATOR v2.0</h1>
+          <h1>RINTUNE STUDIO v2.0</h1>
           <p>Thuật toán sinh âm nhạc thông minh • Không lặp lại • Đúng chuẩn Lý thuyết Âm nhạc</p>
         </div>
       </div>
@@ -122,11 +122,11 @@
       </div>
     </header>
 
-    <!-- Main Content Grid -->
+    
     <main class="main-content-grid">
-      <!-- Left Sidebar: Style & Theory Controls -->
+      
       <aside class="left-controls-sidebar">
-        <!-- Genre Selection Grid -->
+        
         <div class="glass-panel sidebar-card">
           <div class="card-title">
             <span>Phong Cách Âm Nhạc</span>
@@ -181,13 +181,13 @@
           </div>
         </div>
 
-        <!-- Section & Motif Structure (Phân Đoạn & Cấu Trúc Lặp) -->
+        
         <div class="glass-panel sidebar-card">
           <div class="card-title">
             <span>Phân Đoạn, Cao Trào & Motif</span>
           </div>
 
-          <!-- Phân Đoạn Sinh Nhạc (SECTION) -->
+          
           <div class="control-row">
             <div class="control-label">
               <span>PHÂN ĐOẠN SINH NHẠC (SECTION)</span>
@@ -202,7 +202,7 @@
             </select>
           </div>
 
-          <!-- Đường Cong Cao Trào (Climax Curve) -->
+          
           <div class="control-row">
             <div class="control-label">
               <span>ĐƯỜNG CONG CAO TRÀO (CLIMAX & FIRE)</span>
@@ -216,7 +216,7 @@
             </select>
           </div>
 
-          <!-- Cấu Trúc Lặp Motif (MELODY) -->
+          
           <div class="control-row">
             <div class="control-label">
               <span>CẤU TRÚC LẶP MOTIF (MELODY)</span>
@@ -234,7 +234,7 @@
             </select>
           </div>
 
-          <!-- Kiểu Diễn Tấu Nốt (Legato / Staccato) -->
+          
           <div class="control-row">
             <div class="control-label">
               <span>KIỂU DIỄN TẤU NỐT (ARTICULATION)</span>
@@ -248,7 +248,7 @@
             </select>
           </div>
 
-          <!-- Chế Độ Sinh Bè Riêng Lẻ -->
+          
           <div class="control-row">
             <div class="control-label">
               <span>CHẾ ĐỘ SINH BÈ (TRACK TARGET)</span>
@@ -265,7 +265,7 @@
           </div>
         </div>
 
-        <!-- Dựng Bài 1-Click (Arranger) -->
+        
         <div class="glass-panel sidebar-card">
           <div class="card-title">
             <span>🎼 Dựng Bài 1-Click (Arranger)</span>
@@ -295,13 +295,13 @@
           </button>
         </div>
 
-        <!-- Musical Parameters -->
+        
         <div class="glass-panel sidebar-card">
           <div class="card-title">
             <span>Thiết Lập Lý Thuyết, Nhịp & Fade</span>
           </div>
 
-          <!-- Time Signature (Nhịp Điệu) -->
+          
           <div class="control-row">
             <div class="control-label">
               <span>NHỊP ĐIỆU (TIME SIGNATURE)</span>
@@ -315,7 +315,7 @@
             </select>
           </div>
 
-          <!-- Key / Root Note -->
+          
           <div class="control-row">
             <div class="control-label">
               <span>Nốt Chủ (Root Key)</span>
@@ -337,7 +337,7 @@
             </select>
           </div>
 
-          <!-- Scale / Mode -->
+          
           <div class="control-row">
             <div class="control-label">
               <span>Thang Âm (Scale / Mode)</span>
@@ -362,7 +362,7 @@
             </select>
           </div>
 
-          <!-- BPM: Numeric Input + Slider + Tap -->
+          
           <div class="control-row">
             <div class="control-label">
               <span>Tốc Độ (Tempo / BPM)</span>
@@ -375,7 +375,7 @@
             </div>
           </div>
 
-          <!-- Length Bars: Custom Number Input + Slider + Presets -->
+          
           <div class="control-row">
             <div class="control-label">
               <span>Độ Dài Tùy Chỉnh (Số Bars)</span>
@@ -396,7 +396,7 @@
             </div>
           </div>
 
-          <!-- Fade In & Fade Out Sliders -->
+          
           <div class="control-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
             <div>
               <div class="control-label">
@@ -414,7 +414,7 @@
             </div>
           </div>
 
-          <!-- Chaos / Mutation Slider -->
+          
           <div class="control-row">
             <div class="control-label">
               <span>Độ Đột Biến (Chaos %)</span>
@@ -423,7 +423,7 @@
             <input type="range" id="sliderChaos" min="0" max="100" value="25">
           </div>
 
-          <!-- Density Slider -->
+          
           <div class="control-row">
             <div class="control-label">
               <span>Mật Độ Nốt (Density %)</span>
@@ -432,7 +432,7 @@
             <input type="range" id="sliderDensity" min="20" max="100" value="75">
           </div>
 
-          <!-- Bien tau / Variation: ti le gieo lai khac nhau moi take -->
+          
           <div class="control-row">
             <div class="control-label">
               <span>🎲 Biến Tấu (Variation %)</span>
@@ -456,7 +456,7 @@
             </details>
           </div>
 
-          <!-- Swing Slider -->
+          
           <div class="control-row">
             <div class="control-label">
               <span>Swing / Shuffle (lơi nhịp)</span>
@@ -465,7 +465,7 @@
             <input type="range" id="sliderSwing" min="0" max="60" value="0" title="Trễ offbeat 8th - chỉ ảnh hưởng phát nhạc + xuất MIDI/MMP">
           </div>
 
-          <!-- Active Progression Display -->
+          
           <div class="control-row" style="margin-top: 10px;">
             <div class="control-label">
               <span>Vòng Hợp Âm Đang Áp Dụng:</span>
@@ -489,10 +489,10 @@
         </div>
       </aside>
 
-      <!-- Center & Right: Piano Roll Viewport + Mixer + History -->
+      
       <section class="center-viewport">
         <div class="tab-strip" id="tabStrip" title="Nhiều bài cùng lúc"></div>
-        <!-- Transport & Spectrum Top Bar -->
+        
         <div class="glass-panel transport-bar">
           <div class="transport-buttons">
             <button id="btnPlay" class="btn-primary">
@@ -515,13 +515,13 @@
             </button>
           </div>
 
-          <!-- Real-time Visualizer -->
+          
           <div class="visualizer-canvas-container">
             <canvas id="visualizerCanvas"></canvas>
           </div>
         </div>
 
-        <!-- Interactive Melody Contour Envelope Editor (Tùy Chọn Mở Rộng) -->
+        
         <div class="glass-panel contour-wrapper" id="contourPanel">
           <div class="contour-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
             <div style="display:flex; align-items:center; gap:8px;">
@@ -557,7 +557,7 @@
           </div>
         </div>
 
-        <!-- Interactive Piano Roll Canvas Display -->
+        
         <div class="glass-panel pianoroll-wrapper">
           <div class="pianoroll-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding-bottom: 6px;">
             <div class="studio-track-tabs" id="studioTrackTabs" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
@@ -659,7 +659,7 @@
           </div>
         </div>
 
-        <!-- 5-Track Mixer Rack -->
+        
         <div class="glass-panel mixer-rack">
           <div class="mixer-channel" data-track="lead">
             <div class="channel-header">
@@ -757,14 +757,14 @@
           </div>
         </div>
 
-        <!-- Lich Su / File / Seed (dock tabs) -->
+        
         <div class="dock-tabs" id="dockTabs">
           <button class="dock-tab active" data-dock="historyPanel">📜 Lịch sử</button>
           <button class="dock-tab" data-dock="recentPanel">📁 File xuất</button>
           <button class="dock-tab" data-dock="seedPanel">🌱 Sổ Seed</button>
         </div>
 
-        <!-- Lịch Sử Gieo Nhạc (Generation History) -->
+        
         <div class="glass-panel history-panel" id="historyPanel">
           <div class="history-header">
             <div class="history-title">
@@ -780,11 +780,11 @@
             </div>
           </div>
           <div class="history-list" id="historyList">
-            <!-- Dynamically populated history items -->
+            
           </div>
         </div>
 
-        <!-- File Da Xuat (Export Hub) -->
+        
         <div class="glass-panel history-panel" id="recentPanel" style="display:none;">
           <div class="history-header">
             <div class="history-title">
@@ -796,7 +796,7 @@
           </div>
         </div>
 
-        <!-- So Seed (chia se) -->
+        
         <div class="glass-panel history-panel" id="seedPanel" style="display:none;">
           <div class="history-header">
             <div class="history-title">
@@ -813,10 +813,10 @@
       </section>
     </main>
 
-    <!-- Bottom Action / Export Hub -->
+    
     <footer class="action-export-bar">
       <div style="font-size: 0.76rem; color: var(--text-muted);">
-        <span id="songInfoLabel">RMG v3.5 • Sẵn sàng xuất sang DAW</span>
+        <span id="songInfoLabel">RinTune v3.5 • Sẵn sàng xuất sang DAW</span>
         <div style="margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
           <span>📁 <span id="exportDirLabel">(chọn mỗi lần)</span></span>
           <button id="btnChangeExportDir" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Chọn thư mục xuất mặc định">Đổi</button>
@@ -852,7 +852,7 @@
         <button id="btnTransferStyle" class="btn-secondary" title="Ép style đang chọn vào bài đang mở (giữ melody, thay đệm)">
           🎭 Ép Style
         </button>
-        <button id="btnOpenMidi" class="btn-secondary" title="Mở file MIDI (.mid) có sẵn để sửa tiếp trong RMG">
+        <button id="btnOpenMidi" class="btn-secondary" title="Mở file MIDI (.mid) có sẵn để sửa tiếp trong RinTune">
           📂 Mở MIDI
         </button>
         <button id="btnSaveProject" class="btn-secondary" title="Lưu project (.rmg: nhạc + settings)">
@@ -878,7 +878,7 @@
     </footer>
   </div>
 
-  <!-- Custom Genre Modal -->
+  
   <div class="modal-overlay" id="genreModal" style="display:none;">
     <div class="modal-box">
       <h3 style="margin:0 0 10px; color:var(--accent-cyan);">🎨 Style nhạc riêng</h3>
@@ -942,10 +942,10 @@
     </div>
   </div>
 
-  <!-- Help Modal -->
+  
   <div class="modal-overlay" id="helpModal" style="display:none;">
     <div class="modal-box" style="width:560px;">
-      <h3 style="margin:0 0 10px; color:var(--accent-cyan);">📖 Hướng dẫn RMG (5 phút)</h3>
+      <h3 style="margin:0 0 10px; color:var(--accent-cyan);">📖 Hướng dẫn RinTune (5 phút)</h3>
       <div style="font-size:0.76rem; color:var(--text-main); line-height:1.65;">
         <b>1. Gieo nhạc:</b> chọn style → 🎲 Generate (G). Mỗi lần gieo là một bài mới không trùng.<br>
         <b>2. Nghe &amp; sửa:</b> ▶ Play (Space). Bấm chip hợp âm để đổi hòa âm từng bar. Toolbar 🔁 gieo lại vùng. Nốt viền vàng là nốt khóa (giữ khi gieo lại).<br>
@@ -964,7 +964,7 @@
     </div>
   </div>
 
-  <!-- Theme Editor Modal -->
+  
   <div class="modal-overlay" id="themeModal" style="display:none;">
     <div class="modal-box">
       <h3 style="margin:0 0 10px; color:var(--accent-cyan);">🎨 Theme tùy chỉnh</h3>
@@ -992,10 +992,10 @@
     </div>
   </div>
 
-  <!-- Toast Notification Container -->
+  
   <div class="toast-container" id="toastContainer"></div>
 
-  <!-- Scripts -->
+  
   <script src="engine/theory.js"></script>
   <script src="engine/generator.js"></script>
   <script src="engine/synth.js"></script>

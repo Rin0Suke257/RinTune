@@ -1,19 +1,13 @@
-/**
- * RMG Main Renderer Controller v2.0
- * Coordinates UI, Generator, WebAudio Synth, Piano Roll Canvas, History System & IPC API.
- * Author: Rin0suke257
- */
+
 
 (function() {
   'use strict';
 
-  // Core Module Instances
   const Theory = window.RMGTheory;
   const Generator = window.RMGGenerator;
   const Synth = new window.RMGSynth.SynthEngine();
   const Exporter = window.RMGExporter.Exporter;
 
-  // Current App State
   const state = {
     genre: 'fiery_piano',
     key: 'A',
@@ -54,15 +48,12 @@
     tool: 'draw'
   };
 
-  // Undo / Redo stacks (snapshot bai nhac + dieu khien)
   const undoStack = [];
   const redoStack = [];
   const UNDO_LIMIT = 30;
 
-  // Generation History Array
   let songHistory = [];
 
-  // Interactive Piano Roll Studio Drag State
   let draggedPianoNote = null;
   let resizingPianoNote = null;
   let dragStartMidi = null;
@@ -71,17 +62,14 @@
   let isDraggingRuler = false;
   let hoveredPianoNote = null;
 
-  // Studio Tools: selection + marquee + group drag + clipboard
   const selectedNotes = new Set();
   let marqueeStart = null; // {px, py}
   let marqueeEnd = null;   // {px, py}
   let groupDrag = null;    // { items: [{trackKey, track, note, origStep, origMidi}], startStep, startMidi }
   let copyBuffer = null;   // [{trackKey, dStep, duration, midi, velocity, pan}]
 
-  // Tap Tempo State
   let tapTimes = [];
 
-  // DOM Elements
   const genreGrid = document.getElementById('genreGrid');
   const selectSection = document.getElementById('selectSection');
   const selectClimaxCurve = document.getElementById('selectClimaxCurve');
@@ -220,15 +208,12 @@
   const btnSaveTheme = document.getElementById('btnSaveTheme');
   const btnCancelTheme = document.getElementById('btnCancelTheme');
 
-  // Song tabs (nhieu bai cung luc)
   let songTabs = [];
   let activeTabId = null;
   let tabSeq = 0;
 
-  // A/B compare (ghim ban A so voi ban dang sua)
   let abSlotA = null, abSlotB = null, abHearing = null;
 
-  // Canvases
   const pianoRollCanvas = document.getElementById('pianoRollCanvas');
   const canvasContainer = document.getElementById('canvasContainer');
   const prCtx = pianoRollCanvas.getContext('2d');
@@ -236,9 +221,7 @@
   const visualizerCanvas = document.getElementById('visualizerCanvas');
   const vizCtx = visualizerCanvas.getContext('2d');
 
-  /**
-   * Show Toast Notification
-   */
+
   function showToast(message, duration = 3500) {
     const toast = document.createElement('div');
     toast.className = 'toast';
@@ -251,9 +234,7 @@
     }, duration);
   }
 
-  /**
-   * Update Header Badges & Info Labels
-   */
+
   function updateHeaderBadges() {
     const scaleName = Theory.SCALES[state.scale] ? Theory.SCALES[state.scale].name : state.scale;
     const timeSigStr = (state.currentSong && state.currentSong.metadata.timeSignature) || state.timeSignature || '4/4';
@@ -276,9 +257,7 @@
     }
   }
 
-  /**
-   * Update Chord Progression Chips UI (click chip de sua tung bar)
-   */
+
   function updateProgressionUI(progression) {
     progressionDisplay.innerHTML = '';
     if (!progression) return;
@@ -295,9 +274,7 @@
     });
   }
 
-  /**
-   * Custom genres cua user (localStorage) - dang ky vao Theory.GENRES
-   */
+
   const CUSTOM_GENRE_KEY = 'rmg_custom_genres_v1';
 
   function getCustomGenres() {
@@ -414,9 +391,7 @@
     showToast(`🎨 Đã lưu style riêng: ${name}`);
   }
 
-  /**
-   * Chon genre (dung chung cho card mac dinh + custom)
-   */
+
   function selectGenre(genreKey) {
     const gDef = Theory.GENRES[genreKey];
     if (!gDef) return;
@@ -433,7 +408,6 @@
     state.scale = gDef.defaultScale;
     selectScale.value = state.scale;
 
-    // Luon reset nhip (tranh dinh 7/8 Sasakure keo sang style khac)
     state.timeSignature = gDef.defaultTimeSignature || '4/4';
     if (selectTimeSignature) selectTimeSignature.value = state.timeSignature;
     if (valTimeSig) valTimeSig.textContent = state.timeSignature;
@@ -441,9 +415,7 @@
     generateNewSong();
   }
 
-  /**
-   * Octave / velocity nhanh cho selection hoac ca be dang soan
-   */
+
   function editTargetNotes() {
     if (selectedNotes.size) return [...selectedNotes];
     if (!state.currentSong) return [];
@@ -486,9 +458,7 @@
     showToast(`🔊 Velocity ${d > 0 ? '+' : ''}${d}: ${list.length} nốt`);
   }
 
-  /**
-   * Dung generator voi context goc cua bai dang mo (de gieo lai/sua hoa am)
-   */
+
   function generatorFromSong(song) {
     const md = song.metadata;
     return new Generator.MusicGenerator({
@@ -513,10 +483,7 @@
     });
   }
 
-  /**
-   * Bien tau hieu dung moi be (0..1) = (tong% * ti le be%) / 10000.
-   * Mac dinh be = 100% nen keo slider tong la du.
-   */
+
   function effectiveVariation() {
     const g = Math.max(0, Math.min(100, state.variation != null ? state.variation : 70)) / 100;
     const t = state.variationTracks || {};
@@ -529,13 +496,8 @@
     return checked.length ? checked : ['lead', 'chords', 'arp', 'bass'];
   }
 
-  /**
-   * Gieo lai vung bars, giu nguyen notes locked (not tay) + ngoai vung
-   */
-  /**
-   * Tron ket qua gieo lai vao bai: xoa not cu (tru locked + ngoai vung), them not moi.
-   * Tra ve { removed, added }.
-   */
+
+
   function spliceRegenResult(song, result) {
     const spb = song.metadata.stepsPerBar || 16;
     const fromStep = result.fromBar * spb;
@@ -589,7 +551,6 @@
     showToast(`🎲 Đã gieo lại bars ${result.fromBar + 1}–${result.toBar + 1} (${trackKeys.join(', ').toUpperCase()}): +${added} nốt mới, thay ${removed} nốt cũ, nốt 🔒 giữ nguyên`);
   }
 
-  // Khay take (audition): gieo nhieu take, nghe tung take, giu ban ung
   let takeSession = null; // {from,to,tracks,takes:[{id,label,notes}],appliedId,preSong}
   let takeCounter = 0;
 
@@ -646,7 +607,6 @@
     }
     const scope = { from, to, tracks };
     if (!takeSession || !sameScope(takeSession, scope)) {
-      // Doi vung/be -> mo phien moi (giu undo 1 lan duy nhat)
       takeSession = { from, to, tracks, takes: [], appliedId: null, preSong: cloneSong(state.currentSong) };
       pushUndo('thử take');
       takeCounter = 0;
@@ -692,8 +652,6 @@
     showToast('↩ Đã trả về bản gốc trước khi thử take');
   }
 
-  // TIMELINE CLIPS: bai = chuoi clips noi tiep (ten + do dai + not cuc bo).
-  // tracks phẳng la cache flatten tu clips (phat nhac/xuat dung ban phang).
   const TRACK_KEYS = ['lead', 'chords', 'arp', 'bass', 'drums'];
   const TRACK_COLORS = { lead: '#00f2fe', chords: '#9b51e0', arp: '#4facfe', bass: '#f39c12', drums: '#e74c3c' };
   const SECTION_VN = { intro: 'Intro', verse: 'Verse', chorus: 'Chorus', bridge: 'Bridge', outro: 'Outro', merged: 'Đoạn', none: 'Đoạn' };
@@ -721,7 +679,6 @@
     return bar;
   }
 
-  // Bai cu / bai ngoai (flat) -> 1 clip duy nhat, giu nguyen not
   function ensureClips(song, fallbackName) {
     if (!song) return song;
     const allOn = () => ({ lead: true, chords: true, arp: true, bass: true, drums: true });
@@ -753,8 +710,6 @@
     return song;
   }
 
-  // Don clips -> tracks phang (bo qua clip muted/rest + be tat).
-  // Phat nhac + xuat dung ban nay. Sau do tu them fill/crash chuyen doan.
   function flattenTimeline(song) {
     ensureClips(song);
     layoutClips(song);
@@ -787,7 +742,6 @@
     return song;
   }
 
-  // PRNG deterministic cho transitions (seed bai + vi tri bien)
   function rng32(seed) {
     let s = seed | 0;
     return function () {
@@ -798,8 +752,6 @@
     };
   }
 
-  // Fill/crash chuyen doan (chi drums, an toan hoa am), manh theo Variation.
-  // Not danh dau trans:true de sync giu lai neu user sua (thanh not thuong).
   function addTransitions(song) {
     const md = song.metadata || {};
     const spb = md.stepsPerBar || 16;
@@ -833,12 +785,6 @@
     drums.sort((x, y) => x.step - y.step);
   }
 
-  // Day not phang ve clips (sau khi soan not / gieo vung / undo).
-  // - Clip muted: giu nguyen. Be tat: giu not da luu.
-  // - Not trans (chuyen doan tu dong): giu lai thanh not thuong (khong mat
-  //   cong sua cua user), lan flatten sau se them transitions moi.
-  // - Clip rest co not roi vao -> tu thanh clip thuong.
-  // - Not roi ra ngoai -> noi clip cuoi (khong mute/rest) dai ra.
   function syncClipsFromFlat(song) {
     ensureClips(song);
     layoutClips(song);
@@ -885,7 +831,6 @@
     return song;
   }
 
-  // Cat bai phang thanh clips theo tung doan (arranger / ghep lich su)
   function sliceFlatToClips(song, sections) {
     const spb = (song.metadata && song.metadata.stepsPerBar) || 16;
     const allOn = () => ({ lead: true, chords: true, arp: true, bass: true, drums: true });
@@ -922,7 +867,6 @@
     return song.clips.find(c => c.id === selectedClipId) || null;
   }
 
-  // Moi thao tac clips: dong bo not phang ve -> sua clips -> don phang lai
   function timelineOp(label, fn) {
     const song = state.currentSong;
     if (!song) {
@@ -960,7 +904,6 @@
       for (const k of TRACK_KEYS) {
         for (const n of (c.notes[k] || [])) {
           if (n.step < cutLocal) {
-            // Not lan qua bien -> cat cung duration (khong legato qua bien)
             const cp = Object.assign({}, n);
             if (cp.step + (cp.duration || 1) > cutLocal) cp.duration = Math.max(1, cutLocal - cp.step);
             left.notes[k].push(cp);
@@ -992,7 +935,6 @@
     });
   }
 
-  // Gop doan dang chon voi doan ke tiep (nguoc cua Tach)
   function mergeWithNextClip() {
     timelineOp('gộp đoạn', (song) => {
       const c = selectedClip();
@@ -1047,7 +989,6 @@
     });
   }
 
-  // Chen khoang lang (rest clip) sau clip dang chon (hoac cuoi bai)
   function insertRestClip() {
     const v = prompt('Khoảng lặng mấy bars?', '2');
     if (v == null) return;
@@ -1067,7 +1008,6 @@
     });
   }
 
-  // Bat/tat 1 be trong clip dang chon (build/drop nang luong theo doan)
   function setClipTrack(trackKey, on) {
     const c = selectedClip();
     if (!c) {
@@ -1101,7 +1041,6 @@
     showToast(`✏ Clip giờ tên "${clean}"`);
   }
 
-  // An/hien lane timeline (mac dinh an, nho lua chon)
   const TL_COLLAPSE_KEY = 'rmg_timeline_collapsed_v1';
   function setTimelineCollapsed(collapsed, save) {
     const body = document.getElementById('timelineBody');
@@ -1186,7 +1125,6 @@
     lanes.appendChild(row);
   }
 
-  // Dong bo 5 checkbox be-trong-doan theo clip dang chon
   function syncClipTrackToggles(sel) {
     for (const k of TRACK_KEYS) {
       const box = document.getElementById('clipTrack_' + k);
@@ -1225,7 +1163,6 @@
         let ti = sg.clips.findIndex(c => targetBar >= c.startBar && targetBar < c.startBar + c.lengthBars);
         if (ti < 0) sg.clips.push(mv);
         else {
-          // Tha vao nua sau clip dich -> chen sau no
           const cc = sg.clips[ti];
           if (targetBar >= cc.startBar + Math.ceil(cc.lengthBars / 2)) ti++;
           sg.clips.splice(ti, 0, mv);
@@ -1236,10 +1173,7 @@
     });
   }
 
-  /**
-   * Phat trien motif: lay not lead locked trong 2 bars dau lam giong,
-   * gieo lai toan bo lead theo contour cua motif do.
-   */
+
   function developMotif() {    const song = state.currentSong;
     if (!song) {
       showToast('⚠️ Chưa có bài nhạc nào! Hãy bấm Generate trước.');
@@ -1311,9 +1245,7 @@
     return map[semi] || 'i';
   }
 
-  /**
-   * Dung bai RMG tu du lieu MIDI da parse (key/scale theo thiet lap hien tai)
-   */
+
   function buildSongFromMidi(parsed, fileName) {
     const tpq = parsed.ticksPerQuarter || 480;
     const ts = parsed.timeSignature || '4/4';
@@ -1337,7 +1269,6 @@
     const chanMap = {};
     chanOrder.forEach((ch, i) => { chanMap[ch] = i < order.length ? order[i] : 'lead'; });
 
-    // Program change dau tien moi channel -> instrument tuong duong (giu tieng goc)
     const chanProg = {};
     for (const t of parsed.tracks) {
       for (const [ch, prog] of Object.entries(t.programs || {})) {
@@ -1350,7 +1281,6 @@
       if (c != null && chanProg[c] != null) return gmProgramToInstrument(chanProg[c]) || fallback;
       return fallback;
     };
-    // Ten track MIDI goc (neu co nghia)
     let midiTitle = '';
     for (const t of parsed.tracks) {
       if (t.name && t.name.length > 3 && !/^track\s*\d+$/i.test(t.name)) { midiTitle = t.name.slice(0, 40); break; }
@@ -1391,7 +1321,6 @@
     }
     for (const t of Object.values(tracks)) t.notes.sort((a, b) => a.step - b.step);
 
-    // Loi bai hat: gan lyric vao not lead cung step
     const allLyrics = [];
     for (const t of parsed.tracks) {
       for (const l of (t.lyrics || [])) allLyrics.push(l);
@@ -1409,7 +1338,6 @@
       }
     }
 
-    // Vong hop am: root bass dau moi bar -> degree theo key hien tai (major/minor rieng)
     const key = state.key, scale = state.scale;
     const isMajor = ['major', 'lydian', 'mixolydian', 'pentatonic_major'].includes(scale);
     const keyPc = Theory.noteToMidi(Theory.normalizeNote(key), 4) % 12;
@@ -1433,7 +1361,7 @@
     const noteCount = Object.values(tracks).reduce((a, t) => a + t.notes.length, 0);
     return {
       metadata: {
-        title: (`RMG_Imported_${base}`).replace(/[^\w\-]/g, '_').slice(0, 80),
+        title: (`RinTune_Imported_${base}`).replace(/[^\w\-]/g, '_').slice(0, 80),
         genre: state.genre, genreName: gDef.name,
         key, scale, scaleName: Theory.SCALES[scale]?.name || scale,
         bpm: parsed.bpm || state.bpm,
@@ -1507,7 +1435,6 @@
     }
   }
 
-  // Dan bang phim may tinh: hang duoi = quang N, hang tren = quang N+1 (G = tao bai nhanh)
   const PIANO_LOWER = { KeyZ: 0, KeyS: 1, KeyX: 2, KeyD: 3, KeyC: 4, KeyV: 5, KeyB: 7, KeyH: 8, KeyN: 9, KeyJ: 10, KeyM: 11 };
   const PIANO_UPPER = { KeyQ: 0, Digit2: 1, KeyW: 2, Digit3: 3, KeyE: 4, KeyR: 5, Digit5: 6, KeyT: 7, Digit6: 8, KeyY: 9, Digit7: 10, KeyU: 11 };
 
@@ -1601,9 +1528,7 @@
     showToast(n > 0 ? `🔓 Đã mở khóa ${n} nốt soạn tay` : 'Không có nốt nào đang bị khóa');
   }
 
-  /**
-   * Luu velocity goc de fade khong cong don khi keo slider nhieu lan
-   */
+
   function stampBaseVel(song) {
     if (!song || !song.tracks) return;
     for (const t of Object.values(song.tracks)) {
@@ -1613,9 +1538,7 @@
     }
   }
 
-  /**
-   * Ap fade in/out len bai HIEN TAI (khong gieo lai, giu nguyen not)
-   */
+
   function applyFadeToSong() {
     const song = state.currentSong;
     if (!song) return;
@@ -1644,9 +1567,7 @@
     scheduleAutosave();
   }
 
-  /**
-   * Undo / Redo bang snapshot (bai nhac + toan bo dieu khien)
-   */
+
   function cloneSong(song) {
     try {
       if (typeof structuredClone === 'function') return structuredClone(song);
@@ -1748,14 +1669,12 @@
     if (btnRedo) btnRedo.disabled = redoStack.length === 0;
   }
 
-  /**
-   * Song tabs: mo nhieu bai cung luc, chuyen qua lai khong mat.
-   */
+
   function tabLabelFor(t) {
     const song = (t.id === activeTabId && state.currentSong) ? state.currentSong
       : (t.snap && t.snap.song ? t.snap.song : null);
     const title = (song && song.metadata && song.metadata.title) || t.label || 'Tab';
-    return String(title).replace(/^RMG_/, '').slice(0, 22) || 'Tab';
+    return String(title).replace(/^(RinTune_|RMG_)/, '').slice(0, 22) || 'Tab';
   }
 
   function renderTabs() {
@@ -1855,9 +1774,7 @@
     renderTabs();
   }
 
-  /**
-   * A/B compare: ghim ban A, sua tiep, bam de nghe doi chieu.
-   */
+
   function toggleAB() {
     if (!state.currentSong) {
       showToast('⚠️ Chưa có bài nhạc!');
@@ -1945,9 +1862,7 @@
     syncPurePianoButton();
   }
 
-  /**
-   * Dong bo slider Bien tau tong + 5 slider tung be theo state
-   */
+
   function syncVariationControls() {
     if (sliderVariation) sliderVariation.value = state.variation;
     if (valVariation) valVariation.textContent = `${state.variation}%`;
@@ -1959,9 +1874,7 @@
     }
   }
 
-  /**
-   * Menu bar (File/Edit/View/Tools/Help) + theme + dock + collapsible
-   */
+
   function closeAllMenus() {
     document.querySelectorAll('.menu-top.open').forEach(m => m.classList.remove('open'));
   }
@@ -2022,7 +1935,6 @@
     window.close();
   }
 
-  // ---- Themes (built-in + custom accent + custom background) ----
   const THEME_KEY = 'rmg_theme_v1';
 
   function getThemeStore() {
@@ -2140,7 +2052,6 @@
     } else if (t && t.name === 'custom') {
       uiIsLight = false;
       if (t.accent) {
-        // Sinh full palette tu accent (do/vang/xanh la giu nguyen vi mang nghia)
         root.style.setProperty('--accent-cyan', t.accent);
         root.style.setProperty('--accent-blue', rotateHue(t.accent, 30) || '#4facfe');
         root.style.setProperty('--accent-purple', rotateHue(t.accent, 70) || '#9b51e0');
@@ -2150,7 +2061,6 @@
       const bgP = (t.bgPrimary && /^#[0-9a-fA-F]{6}$/.test(t.bgPrimary)) ? t.bgPrimary : null;
       if (bgP) {
         root.style.setProperty('--bg-primary', bgP);
-        // Sinh ca bo tu do sang nen: nen sang -> chu toi + panel sang
         if (luminance(bgP) > 0.45) {
           uiIsLight = true;
           root.style.setProperty('--bg-secondary', '#ffffff');
@@ -2338,7 +2248,7 @@
       case 'genre-extract': extractStyleFromSong(); break;
       case 'help-open': if (helpModal) helpModal.style.display = 'flex'; break;
       case 'check-update': checkUpdate(); break;
-      case 'about': showToast(`RMG v${APP_VERSION} by Rin0suke257 — Random Music Generator cho LMMS`, 5000); break;
+      case 'about': showToast(`RinTune Studio v${APP_VERSION} by Rin0suke257 — Sinh nhạc ngẫu nhiên cho LMMS`, 5000); break;
       default: break;
     }
   }
@@ -2391,9 +2301,7 @@
     });
   }
 
-  /**
-   * Mixer hien tai de export dung nhu dang nghe (vol/mute/solo/pan)
-   */
+
   function getMix() {
     try {
       return (Synth && Synth.getTrackMix) ? Synth.getTrackMix() : null;
@@ -2403,7 +2311,7 @@
   }
 
   function sanitizeFileName(s) {
-    return String(s || 'RMG_Song').replace(/[\\/:*?"<>|]/g, '').replace(/\.\.+/g, '').trim().replace(/\s+/g, '_').slice(0, 80) || 'RMG_Song';
+    return String(s || 'RinTune_Song').replace(/[\\/:*?"<>|]/g, '').replace(/\.\.+/g, '').trim().replace(/\s+/g, '_').slice(0, 80) || 'RinTune_Song';
   }
 
   let exportDirCache = null;
@@ -2425,7 +2333,7 @@
   async function changeExportDir() {
     try {
       if (!(window.rmgAPI && window.rmgAPI.setExportDir)) {
-        showToast('Chạy trong app RMG để đổi thư mục xuất');
+        showToast('Chạy trong app RinTune để đổi thư mục xuất');
         return;
       }
       const r = await window.rmgAPI.setExportDir();
@@ -2442,7 +2350,7 @@
   async function openExportDir() {
     try {
       if (!(window.rmgAPI && window.rmgAPI.openFolder)) {
-        showToast('Chạy trong app RMG để mở thư mục');
+        showToast('Chạy trong app RinTune để mở thư mục');
         return;
       }
       await window.rmgAPI.openFolder({ folder: 'export' });
@@ -2456,7 +2364,7 @@
     recentList.innerHTML = '';
     try {
       if (!(window.rmgAPI && window.rmgAPI.listFiles)) {
-        recentList.innerHTML = '<div style="font-size:0.72rem; color:var(--text-dim); text-align:center; padding:8px;">Chạy trong app RMG để xem file đã xuất.</div>';
+        recentList.innerHTML = '<div style="font-size:0.72rem; color:var(--text-dim); text-align:center; padding:8px;">Chạy trong app RinTune để xem file đã xuất.</div>';
         return;
       }
       const r = await window.rmgAPI.listFiles({ folder: 'export' });
@@ -2508,9 +2416,7 @@
     else handleSaveMmp();
   }
 
-  /**
-   * Luu mang bytes lon theo chunk (tranh JSON khong lo qua bridge) - dung cho WAV
-   */
+
   async function saveLargeArray(folder, fileName, u8) {
     const CHUNK = 512 * 1024;
     const total = Math.max(1, Math.ceil(u8.length / CHUNK));
@@ -2576,9 +2482,7 @@
     }
   }
 
-  /**
-   * Finish 1-click: validate + final hit + xuat MIDI & MMP vao thu muc xuat
-   */
+
   async function finishSong() {
     const song = state.currentSong;
     if (!song) {
@@ -2615,12 +2519,10 @@
         }
       }
     } catch (e) {}
-    showToast('⚠️ Finish cần chạy trong app RMG (dùng nút xuất thường)');
+    showToast('⚠️ Finish cần chạy trong app RinTune (dùng nút xuất thường)');
   }
 
-  /**
-   * Ep style hien tai vao bai dang mo: giu melody, thay arp/bass/drums/chords
-   */
+
   function transferStyle() {
     const song = state.currentSong;
     if (!song) {
@@ -2650,9 +2552,7 @@
     showToast(`🎭 Đã ép style ${gDef.name}: giữ melody, thay ${stat.added} nốt đệm`, 5000);
   }
 
-  /**
-   * Seed chia se: copy/paste/daily - cung seed ra cung bai
-   */
+
   function copySeed() {
     if (!state.currentSong) {
       showToast('⚠️ Chưa có bài nhạc!');
@@ -2755,7 +2655,7 @@
   }
 
   const APP_VERSION = '2.1.0';
-  const UPDATE_CHECK_URL = ''; // VD: 'https://api.github.com/OWNER/RMG/releases/latest' (tao repo roi dien vao)
+  const UPDATE_CHECK_URL = ''; // VD: 'https://api.github.com/OWNER/RinTune/releases/latest'
   const SF2_URL = 'https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/main/GeneralUser-GS.sf2';
   const SF2_NAME = 'GeneralUser-GS.sf2';
 
@@ -2765,7 +2665,7 @@
     if (!state.currentSong) return null;
     syncClipsFromFlat(state.currentSong); // luu clips dong bo voi not phang
     return {
-      app: 'RMG', v: 1, savedAt: Date.now(),
+      app: 'RinTune', v: 1, savedAt: Date.now(),
       ui: {
         genre: state.genre, key: state.key, scale: state.scale, bpm: state.bpm,
         timeSignature: state.timeSignature, lengthBars: state.lengthBars,
@@ -2797,7 +2697,6 @@
         }
       }
     } catch (e) {}
-    // Save As dialog
     try {
       if (window.rmgAPI && window.rmgAPI.saveFile) {
         const r = await window.rmgAPI.saveFile({ data, defaultName: fileName, type: 'rmg' });
@@ -2822,7 +2721,7 @@
   async function openProjectFile(name, bytes) {
     try {
       const obj = JSON.parse(new TextDecoder().decode(bytes));
-      if (!obj || obj.app !== 'RMG' || !obj.song || !obj.song.metadata || !obj.song.tracks) {
+      if (!obj || (obj.app !== 'RinTune' && obj.app !== 'RMG') || !obj.song || !obj.song.metadata || !obj.song.tracks) {
         throw new Error('File .rmg không hợp lệ');
       }
       const song = obj.song;
@@ -2880,9 +2779,7 @@
     }
   }
 
-  /**
-   * So seed: luu/nap seed co ten (localStorage)
-   */
+
   const SEED_GALLERY_KEY = 'rmg_seed_gallery_v1';
 
   function getSeedGallery() {
@@ -2979,16 +2876,14 @@
     }
   }
 
-  /**
-   * SoundFont tieng that (GeneralUser GS): tai 1 lan, export MMP dung Sf2 player
-   */
+
   let sf2LocalPath = null;
 
   async function ensureSoundFont() {
     if (sf2LocalPath) return sf2LocalPath;
     try {
       if (!(window.rmgAPI && window.rmgAPI.saveFileDirect && window.rmgAPI.listFiles)) {
-        showToast('Tải SoundFont cần chạy trong app RMG');
+        showToast('Tải SoundFont cần chạy trong app RinTune');
         return null;
       }
       const l = await window.rmgAPI.listFiles({ folder: 'soundfonts' });
@@ -2999,7 +2894,6 @@
         return sf2LocalPath;
       }
     } catch (e) {}
-    // Tai ve (~30MB, 1 lan duy nhat)
     try {
       showToast('⬇️ Đang tải SoundFont tiếng thật (~30MB, 1 lần duy nhất)...', 6000);
       const res = await fetch(SF2_URL);
@@ -3056,7 +2950,7 @@
       return;
     }
     if (!(window.rmgAPI && window.rmgAPI.saveFileDirect)) {
-      showToast('⚠️ Xuất hàng loạt cần chạy trong app RMG');
+      showToast('⚠️ Xuất hàng loạt cần chạy trong app RinTune');
       return;
     }
     showToast(`🎵 Đang xuất ${songHistory.length} file MIDI...`);
@@ -3074,9 +2968,7 @@
     showToast(`🎵 Xuất xong ${ok}/${songHistory.length} file MIDI vào thư mục xuất`, 5000);
   }
 
-  /**
-   * Khoi dong: autosave moi nhat -> lich su gan nhat -> bai moi
-   */
+
   async function restoreStartup() {
     try {
       if (window.rmgAPI && window.rmgAPI.listFiles && window.rmgAPI.readFileDirect) {
@@ -3106,9 +2998,7 @@
     generateNewSong(true);
   }
 
-  /**
-   * Generate a New Track
-   */
+
   function generateNewSong(addToHistory = true) {
     const wasPlaying = Synth.isPlaying;
     if (wasPlaying) Synth.stop();
@@ -3167,9 +3057,7 @@
     showToast(`🎲 Đã gieo nhạc mới (${state.section.toUpperCase()} • ${state.lengthBars} Bars [${state.timeSignature}] • ${Theory.GENRES[state.genre].name})`);
   }
 
-  /**
-   * Push Song to Generation History
-   */
+
   function pushToHistory(songData) {
     const now = new Date();
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -3197,9 +3085,7 @@
     autosaveSong(item);
   }
 
-  /**
-   * Autosave bai ra dia (chong mat khi crash) - im lang, toi da 20 file
-   */
+
   async function pruneAutosaves() {
     try {
       const l = await window.rmgAPI.listFiles({ folder: 'autosave' });
@@ -3229,9 +3115,7 @@
 
   let autosaveTimer = null;
 
-  /**
-   * Autosave sau khi sua not (debounce 3s) - crash khong mat doan dang soan
-   */
+
   function scheduleAutosave() {
     if (autosaveTimer) clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(() => {
@@ -3274,13 +3158,10 @@
     }
   }
 
-  /**
-   * Render History List UI
-   */
+
   function renderHistory() {
     historyList.innerHTML = '';
 
-    // Rebuild filter options (giu lua chon hien tai)
     if (historyFilter) {
       const cur = state.historyFilter || 'all';
       const genres = [...new Set(songHistory.map(i => i.genre).filter(Boolean))];
@@ -3305,7 +3186,6 @@
     visible.forEach((item, index) => {
       const el = document.createElement('div');
       el.className = 'history-item';
-      // Hien so not LIVE tu songData (bai co the da sua sau khi push)
       const liveCount = (item.songData && item.songData.tracks)
         ? Object.values(item.songData.tracks).reduce((acc, t) => acc + (t.notes ? t.notes.length : 0), 0)
         : (item.noteCount || 0);
@@ -3341,7 +3221,6 @@
         </div>
       `;
 
-      // Action Listeners
       el.querySelector('.btn-act-fav').addEventListener('click', (e) => {
         e.stopPropagation();
         item.fav = !item.fav;
@@ -3387,7 +3266,6 @@
   function loadHistoryItem(item, quiet = false) {
     if (!quiet) pushUndo('tải lại');
     endTakeSession(true); // doi bai -> bo khay take cu
-    // Genre custom co the da bi xoa -> fallback
     if (!Theory.GENRES[item.genre]) item.genre = 'touhou';
     state.currentSong = item.songData;
     stampBaseVel(state.currentSong);
@@ -3404,7 +3282,6 @@
     state.climaxCurve = item.songData.metadata.climaxCurve || 'none';
     state.chaosLevel = item.songData.metadata.chaosLevel !== undefined ? item.songData.metadata.chaosLevel : 25;
     state.density = item.songData.metadata.density !== undefined ? item.songData.metadata.density : 75;
-    // Khoi phuc variation tu metadata (effective 0..1 moi be -> global + ti le be)
     if (item.songData.metadata.variation && typeof item.songData.metadata.variation === 'object') {
       const ev = item.songData.metadata.variation;
       const mx = Math.max(ev.lead || 0, ev.chords || 0, ev.arp || 0, ev.bass || 0, ev.drums || 0, 0.01);
@@ -3415,7 +3292,6 @@
     }
     state.fadeInBars = item.songData.metadata.fadeInBars || 0;    state.fadeOutBars = item.songData.metadata.fadeOutBars || 0;
 
-    // Sync UI controls
     selectKey.value = state.key;
     selectScale.value = state.scale;
     selectSection.value = state.section;
@@ -3441,7 +3317,6 @@
     if (sliderBars) sliderBars.value = Math.min(64, state.lengthBars);
     valBars.textContent = `${state.lengthBars} Bars`;
 
-    // Update preset buttons
     document.querySelectorAll('.btn-preset-bar').forEach(btn => {
       btn.classList.toggle('active', parseInt(btn.dataset.bars, 10) === state.lengthBars);
     });
@@ -3495,10 +3370,7 @@
     showToast('🗑️ Đã xóa toàn bộ lịch sử gieo nhạc');
   }
 
-  /**
-   * Noi nhieu bai (segments) thanh 1 bai dai: dich step + danh lai bar.
-   * Tra ve { progression, tracks, totalBars, totalSteps }.
-   */
+
   function stitchSongDatas(songs) {
     let totalBars = 0;
     let cumulativeSteps = 0;
@@ -3538,7 +3410,6 @@
       cumulativeSteps += songBars * spb;
     }
 
-    // Luu velocity goc cho fade ve sau (khong cong don)
     for (const t of Object.values(mergedTracks)) {
       for (const n of t.notes) {
         if (n.baseVel == null) n.baseVel = n.velocity;
@@ -3548,13 +3419,9 @@
     return { progression: mergedProgression, tracks: mergedTracks, totalBars, totalSteps: cumulativeSteps };
   }
 
-  /**
-   * Merge Multiple History Items into One Full Song
-   */
 
-  /**
-   * Merge Multiple History Items into One Full Song
-   */
+
+
   function mergeAllHistoryItems() {
     if (songHistory.length < 2) {
       showToast('⚠️ Cần ít nhất 2 phân đoạn trong lịch sử để ghép nối thành bài hát hoàn chỉnh!');
@@ -3571,7 +3438,7 @@
 
     const mergedSong = {
       metadata: {
-        title: `RMG_Merged_Song_${itemsToMerge[0].key}_${totalBars}Bars_${Date.now() % 10000}`,
+        title: `RinTune_Merged_Song_${itemsToMerge[0].key}_${totalBars}Bars_${Date.now() % 10000}`,
         genre: Theory.GENRES[itemsToMerge[0].genre] ? itemsToMerge[0].genre : 'touhou',
         genreName: (Theory.GENRES[itemsToMerge[0].genre] || Theory.GENRES['touhou']).name,
         key: itemsToMerge[0].key,
@@ -3603,9 +3470,8 @@
     };
 
     Generator.MusicGenerator.prototype.arrangeFinal(mergedSong, { finalHit: state.finalHit });
-    // Moi phan doan lich su thanh 1 clip tren timeline
     sliceFlatToClips(mergedSong, itemsToMerge.map(it => ({
-      name: String((it.customTitle || it.title || it.section || 'Đoạn')).replace(/^RMG_/, '').slice(0, 24),
+      name: String((it.customTitle || it.title || it.section || 'Đoạn')).replace(/^(RinTune_|RMG_)/, '').slice(0, 24),
       bars: (it.songData.metadata && it.songData.metadata.lengthBars) || 8
     })));
     flattenTimeline(mergedSong); // ap fill/crash chuyen doan
@@ -3630,9 +3496,7 @@
     showToast(`🎴 Đã ghép nối thành công ${itemsToMerge.length} phân đoạn thành bài hát dài ${totalBars} Bars!`, 5000);
   }
 
-  /**
-   * Song Arranger 1-Click: sinh tung doan theo form roi noi thanh bai hoan chinh
-   */
+
   const ARRANGER_FORMS = {
     pop_standard: { name: 'Pop chuẩn (I – V – C – V – C – O)', parts: [['intro', 4], ['verse', 8], ['chorus', 8], ['verse', 8], ['chorus', 8], ['outro', 4]] },
     compact: { name: 'Gọn (V – C – V – C)', parts: [['verse', 8], ['chorus', 8], ['verse', 8], ['chorus', 8]] },
@@ -3662,10 +3526,7 @@
     return Theory.NOTE_NAMES[pc];
   }
 
-  /**
-   * Giai form thanh parts day du (key/scale/texture/density...), tuong thich
-   * ca form cu dang [section, bars] va form moi dang object.
-   */
+
   function resolveFormParts(formKey) {
     const form = ARRANGER_FORMS[formKey];
     if (!form) return [];
@@ -3713,9 +3574,7 @@
     arrangerInfo.textContent = `${seq} — Tổng ${total} bars`;
   }
 
-  /**
-   * Ap texture tung part len bai da noi (chi Concerto mode dung toi).
-   */
+
   function applyPartTextures(song, parts) {
     let cursor = 0;
     const ranges = [];
@@ -3730,10 +3589,7 @@
     }
   }
 
-  /**
-   * Workspace trong: bai khong not de tu soan / lam tham chieu style.
-   * Giu progression mac dinh toan 'i' de moi tool van chay.
-   */
+
   function newBlankSong() {
     const wasPlaying = Synth.isPlaying;
     if (wasPlaying) Synth.stop();
@@ -3757,7 +3613,7 @@
     const mkTrack = (name, type, instrument, color) => ({ name, type, instrument, color, notes: [] });
     const song = {
       metadata: {
-        title: `RMG_Blank_${state.key}_${bars}Bars`,
+        title: `RinTune_Blank_${state.key}_${bars}Bars`,
         genre: state.genre, genreName: gDef.name,
         key: state.key, scale: state.scale,
         scaleName: Theory.SCALES[state.scale]?.name || state.scale,
@@ -3801,9 +3657,7 @@
     showToast(`📄 Bài trống ${bars} bars — soạn tay/đàn phím/REC, rồi Trích Style khi ưng!`, 4500);
   }
 
-  /**
-   * Trich style tu bai dang mo: nap san modal style de xem truoc + luu.
-   */
+
   function analyzeSongStyle(song) {
     const md = song.metadata;
     const syms = (song.progression || []).map(c => c.symbol).filter(Boolean);
@@ -3835,7 +3689,7 @@
     }
     const a = analyzeSongStyle(song);
     openCustomGenreModal();
-    if (customName) customName.value = (`Style ${song.metadata.title || ''}`).replace(/^RMG_/, '').slice(0, 40);
+    if (customName) customName.value = (`Style ${song.metadata.title || ''}`).replace(/^(RinTune_|RMG_)/, '').slice(0, 40);
     if (customDesc) customDesc.value = `${a.bars} bars • ${a.noteCount} nốt • nên để density ~${a.density}`;
     if (customBpm) customBpm.value = a.bpm;
     if (customKey && [...customKey.options].some(o => o.value === a.key)) customKey.value = a.key;
@@ -3889,7 +3743,7 @@
 
     const song = {
       metadata: {
-        title: `RMG_Arranged_${selectArrangerForm.value}_${state.key}_${totalBars}Bars`,
+        title: `RinTune_Arranged_${selectArrangerForm.value}_${state.key}_${totalBars}Bars`,
         genre: state.genre,
         genreName: Theory.GENRES[state.genre].name,
         key: state.key,
@@ -3923,7 +3777,6 @@
     Generator.MusicGenerator.prototype.arrangeFinal(song, { finalHit: state.finalHit });
     applyPartTextures(song, parts);
     stampBaseVel(song);
-    // Giu cau truc doan duoi dang clips tren timeline
     sliceFlatToClips(song, parts.map(p => ({
       name: (SECTION_VN[p.section] || p.section || 'Đoạn') + (p.texture && p.texture !== 'tutti' ? ` [${p.texture}]` : ''),
       bars: p.bars
@@ -3987,14 +3840,12 @@
   }
 
   function setupEventListeners() {
-    // Genre Cards Selection
     genreGrid.querySelectorAll('.genre-card').forEach(card => {
       card.addEventListener('click', () => {
         selectGenre(card.dataset.genre);
       });
     });
 
-    // Time Signature Change
     if (selectTimeSignature) {
       selectTimeSignature.addEventListener('change', (e) => {
         state.timeSignature = e.target.value;
@@ -4003,20 +3854,17 @@
       });
     }
 
-    // Section Change
     selectSection.addEventListener('change', (e) => {
       state.section = e.target.value;
       updateHeaderBadges();
       generateNewSong();
     });
 
-    // Motif Structure Change
     selectMotifStructure.addEventListener('change', (e) => {
       state.motifStructure = e.target.value;
       generateNewSong();
     });
 
-    // Articulation Change
     if (selectArticulation) {
       selectArticulation.addEventListener('change', (e) => {
         state.articulation = e.target.value;
@@ -4039,7 +3887,6 @@
       });
     }
 
-    // Track Target Change
     selectTrackTarget.addEventListener('change', (e) => {
       state.trackTarget = e.target.value;
       updatePurePianoButtonUI();
@@ -4047,19 +3894,16 @@
       generateNewSong();
     });
 
-    // Key Change
     selectKey.addEventListener('change', (e) => {
       state.key = e.target.value;
       generateNewSong();
     });
 
-    // Scale Change
     selectScale.addEventListener('change', (e) => {
       state.scale = e.target.value;
       generateNewSong();
     });
 
-    // Climax Curve Change
     if (selectClimaxCurve) {
       selectClimaxCurve.addEventListener('change', (e) => {
         state.climaxCurve = e.target.value;
@@ -4067,7 +3911,6 @@
       });
     }
 
-    // BPM Slider
     sliderBpm.addEventListener('input', (e) => {
       const val = parseInt(e.target.value, 10);
       state.bpm = val;
@@ -4078,7 +3921,6 @@
       updateHeaderBadges();
     });
 
-    // Custom BPM Number Input
     if (inputCustomBpm) {
       inputCustomBpm.addEventListener('input', (e) => {
         const val = Math.max(30, Math.min(350, parseInt(e.target.value, 10) || 120));
@@ -4091,7 +3933,6 @@
       });
     }
 
-    // Tap Tempo Button
     if (btnTapTempo) {
       btnTapTempo.addEventListener('click', () => {
         const now = Date.now();
@@ -4118,7 +3959,6 @@
       });
     }
 
-    // Fade In Slider (ap truc tiep, khong gieo lai bai)
     if (sliderFadeIn) {
       sliderFadeIn.addEventListener('input', (e) => {
         const val = parseInt(e.target.value, 10);
@@ -4128,7 +3968,6 @@
       });
     }
 
-    // Fade Out Slider (ap truc tiep, khong gieo lai bai)
     if (sliderFadeOut) {
       sliderFadeOut.addEventListener('input', (e) => {
         const val = parseInt(e.target.value, 10);
@@ -4138,7 +3977,6 @@
       });
     }
 
-    // Custom Bars Number Input
     if (inputCustomBars) {
       inputCustomBars.addEventListener('input', (e) => {
         const val = Math.max(1, Math.min(256, parseInt(e.target.value, 10) || 8));
@@ -4154,7 +3992,6 @@
       });
     }
 
-    // Bars Slider
     if (sliderBars) {
       sliderBars.addEventListener('input', (e) => {
         const val = parseInt(e.target.value, 10);
@@ -4171,7 +4008,6 @@
       });
     }
 
-    // Quick Preset Bar Buttons (4, 8, 12, 16, 24, 32, 64)
     document.querySelectorAll('.btn-preset-bar[data-bars]').forEach(btn => {
       btn.addEventListener('click', () => {
         const val = parseInt(btn.dataset.bars, 10);
@@ -4189,21 +4025,18 @@
       });
     });
 
-    // Chaos Slider
     sliderChaos.addEventListener('input', (e) => {
       state.chaosLevel = parseInt(e.target.value, 10);
       valChaos.textContent = `${state.chaosLevel}%`;
       generateNewSong();
     });
 
-    // Density Slider
     sliderDensity.addEventListener('input', (e) => {
       state.density = parseInt(e.target.value, 10);
       valDensity.textContent = `${state.density}%`;
       generateNewSong();
     });
 
-    // Bien tau tong: doi nhan thi gieo bai moi, keo chi doi so
     if (sliderVariation) {
       sliderVariation.addEventListener('input', (e) => {
         state.variation = parseInt(e.target.value, 10);
@@ -4211,7 +4044,6 @@
       });
       sliderVariation.addEventListener('change', () => generateNewSong());
     }
-    // Bien tau tung be (ti le % so voi slider tong)
     for (const k of ['lead', 'chords', 'arp', 'bass', 'drums']) {
       const s = document.getElementById('sliderVar_' + k);
       if (!s) continue;
@@ -4222,7 +4054,6 @@
       });
       s.addEventListener('change', () => generateNewSong());
     }
-    // Preset variation 1 cham
     document.querySelectorAll('[data-varpreset]').forEach(btn => {
       btn.addEventListener('click', () => {
         state.variation = parseInt(btn.dataset.varpreset, 10);
@@ -4232,7 +4063,6 @@
       });
     });
 
-    // Swing Slider (khong gieo lai - chi groove phat + xuat)
     if (sliderSwing) {
       sliderSwing.addEventListener('input', (e) => {
         state.swing = Math.max(0, Math.min(60, parseInt(e.target.value, 10) || 0));
@@ -4241,7 +4071,6 @@
       });
     }
 
-    // Transport Controls
     btnPlay.addEventListener('click', togglePlay);
     btnStop.addEventListener('click', stopPlayback);
     if (btnUndo) btnUndo.addEventListener('click', doUndo);
@@ -4262,7 +4091,6 @@
     if (btnExtractStyle) btnExtractStyle.addEventListener('click', extractStyleFromSong);
     btnClearHistory.addEventListener('click', clearHistory);
 
-    // Progression Editor & Region Regenerate
     if (btnApplyProgChord) btnApplyProgChord.addEventListener('click', applyProgChord);
     if (btnCancelProgChord) btnCancelProgChord.addEventListener('click', closeProgEditor);
     if (btnUnlockAll) btnUnlockAll.addEventListener('click', unlockAllNotes);
@@ -4280,7 +4108,6 @@
       applyRegenToSong(from - 1, to - 1, getCheckedRegenTracks());
     });
 
-    // Khay take (audition)
     const btnNewTake = document.getElementById('btnNewTake');
     const btnKeepTake = document.getElementById('btnKeepTake');
     const btnRevertTake = document.getElementById('btnRevertTake');
@@ -4288,7 +4115,6 @@
     if (btnKeepTake) btnKeepTake.addEventListener('click', () => endTakeSession(false));
     if (btnRevertTake) btnRevertTake.addEventListener('click', revertTakeSession);
 
-    // Timeline clips
     const btnTimelineToggle = document.getElementById('btnTimelineToggle');
     if (btnTimelineToggle) btnTimelineToggle.addEventListener('click', toggleTimeline);
     try {
@@ -4319,7 +4145,6 @@
       if (box) box.addEventListener('change', (e) => setClipTrack(k, e.target.checked));
     }
 
-    // Arranger 1-click
     if (selectArrangerForm) {
       selectArrangerForm.addEventListener('change', updateArrangerInfo);
       updateArrangerInfo();
@@ -4332,7 +4157,6 @@
       });
     }
 
-    // MIDI import
     if (btnOpenMidi) btnOpenMidi.addEventListener('click', requestOpenMidi);
     if (fileOpenMidi) {
       fileOpenMidi.addEventListener('change', () => {
@@ -4348,26 +4172,21 @@
       });
     }
 
-    // Project save/open
     if (btnSaveProject) btnSaveProject.addEventListener('click', () => saveProject(false));
     if (btnQuickSaveProject) btnQuickSaveProject.addEventListener('click', () => saveProject(true));
     if (btnOpenProject) btnOpenProject.addEventListener('click', requestOpenProject);
 
-    // Seed gallery
     const btnSaveSeed = document.getElementById('btnSaveSeed');
     if (btnSaveSeed) btnSaveSeed.addEventListener('click', saveSeedToGallery);
 
-    // Update check
     const btnCheckUpdate = document.getElementById('btnCheckUpdate');
     if (btnCheckUpdate) btnCheckUpdate.addEventListener('click', checkUpdate);
     const appVersionLabel = document.getElementById('appVersionLabel');
     if (appVersionLabel) appVersionLabel.textContent = 'v' + APP_VERSION;
 
-    // REC dan phim + motif
     if (btnRec) btnRec.addEventListener('click', toggleRec);
     if (btnMotif) btnMotif.addEventListener('click', developMotif);
 
-    // Export hub: quick export + WAV + thu muc
     if (btnQuickMidi) btnQuickMidi.addEventListener('click', () => quickExport('midi'));
     if (btnQuickMmp) btnQuickMmp.addEventListener('click', () => quickExport('mmp'));
     if (btnExportWav) btnExportWav.addEventListener('click', () => quickExport('wav'));
@@ -4375,7 +4194,6 @@
     if (btnOpenExportDir) btnOpenExportDir.addEventListener('click', openExportDir);
     if (btnRefreshRecent) btnRefreshRecent.addEventListener('click', refreshRecent);
 
-    // History: filter + batch MIDI
     if (historyFilter) {
       historyFilter.addEventListener('change', (e) => {
         state.historyFilter = e.target.value;
@@ -4384,14 +4202,12 @@
     }
     if (btnBatchMidi) btnBatchMidi.addEventListener('click', batchExportMidi);
 
-    // Finish 1-click + style transfer + seeds
     if (btnFinish) btnFinish.addEventListener('click', finishSong);
     if (btnTransferStyle) btnTransferStyle.addEventListener('click', transferStyle);
     if (btnCopySeed) btnCopySeed.addEventListener('click', copySeed);
     if (btnPasteSeed) btnPasteSeed.addEventListener('click', pasteSeed);
     if (btnDailySeed) btnDailySeed.addEventListener('click', dailySeed);
 
-    // Help modal
     if (btnHelp) btnHelp.addEventListener('click', () => { if (helpModal) helpModal.style.display = 'flex'; });
     if (btnCloseHelp) btnCloseHelp.addEventListener('click', () => { if (helpModal) helpModal.style.display = 'none'; });
     if (helpModal) {
@@ -4400,7 +4216,6 @@
       });
     }
 
-    // Theme editor modal
     if (btnSaveTheme) btnSaveTheme.addEventListener('click', () => {
       saveTheme({
         name: 'custom',
@@ -4423,7 +4238,6 @@
       }
     }
 
-    // Final hit toggle
     if (checkFinalHit) {
       checkFinalHit.addEventListener('change', (e) => {
         state.finalHit = e.target.checked;
@@ -4431,7 +4245,6 @@
       });
     }
 
-    // Custom genre modal
     if (btnOpenCustomGenre) btnOpenCustomGenre.addEventListener('click', openCustomGenreModal);
     if (btnCancelCustomGenre) btnCancelCustomGenre.addEventListener('click', closeCustomGenreModal);
     if (btnSaveCustomGenre) btnSaveCustomGenre.addEventListener('click', saveCustomGenre);
@@ -4441,13 +4254,11 @@
       });
     }
 
-    // Octave / velocity nhanh
     if (btnOctDown) btnOctDown.addEventListener('click', () => shiftOctave(-1));
     if (btnOctUp) btnOctUp.addEventListener('click', () => shiftOctave(1));
     if (btnVelDown) btnVelDown.addEventListener('click', () => shiftVelocity(-10));
     if (btnVelUp) btnVelUp.addEventListener('click', () => shiftVelocity(10));
 
-    // Variation take tung be (xuc xac mixer)
     document.querySelectorAll('.mixer-channel').forEach(channelEl => {
       const btnDice = channelEl.querySelector('.btn-dice');
       if (!btnDice) return;
@@ -4460,7 +4271,6 @@
       });
     });
 
-    // Keyboard Shortcuts
     window.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
       if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ' && !e.shiftKey) {
@@ -4535,7 +4345,6 @@
       }
     });
 
-    // Mixer Controls
     document.querySelectorAll('.mixer-channel').forEach(channelEl => {
       const trackKey = channelEl.dataset.track;
       const volSlider = channelEl.querySelector('.vol-slider');
@@ -4564,7 +4373,6 @@
       });
     });
 
-    // Contour Toggle Checkbox
     if (checkEnableContour) {
       checkEnableContour.addEventListener('change', (e) => {
         state.contourEnabled = e.target.checked;
@@ -4582,7 +4390,6 @@
       });
     }
 
-    // Contour Preset Buttons
     document.querySelectorAll('.btn-contour-preset').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.btn-contour-preset').forEach(b => b.classList.remove('active'));
@@ -4614,7 +4421,6 @@
       });
     }
 
-    // Contour Canvas Mouse Interactivity
     if (contourCanvas) {
       function getContourMousePos(e) {
         const rect = contourCanvas.getBoundingClientRect();
@@ -4644,7 +4450,6 @@
         const nearIndex = findContourPointNear(pos.px, pos.py);
 
         if (e.button === 2) {
-          // Right click: delete node point if not endpoints
           if (nearIndex > 0 && nearIndex < state.contourPoints.length - 1) {
             state.contourPoints.splice(nearIndex, 1);
             renderContourCanvas();
@@ -4656,7 +4461,6 @@
         if (nearIndex >= 0) {
           draggedContourIndex = nearIndex;
         } else {
-          // Add new node point
           const newPt = { x: pos.x, y: pos.y };
           state.contourPoints.push(newPt);
           state.contourPoints.sort((a, b) => a.x - b.x);
@@ -4706,17 +4510,14 @@
       });
     }
 
-    // Studio Tool Tabs (Select / Draw / Knife / Erase)
     document.querySelectorAll('.tool-tab').forEach(tab => {
       tab.addEventListener('click', () => setTool(tab.dataset.tool));
     });
 
-    // Menu bar + dock tabs + collapsible sidebar
     wireMenus();
     wireDockTabs();
     wireCollapsibleCards();
 
-    // Hien shortcut trong menu
     const MENU_SHORTCUTS = {
       'new-blank': 'Ctrl+N', 'open-midi': 'Ctrl+O', 'save-project': 'Ctrl+S',
       'exp-midi': 'Ctrl+E', 'launch-lmms': 'Ctrl+L', 'arrange': 'Ctrl+B',
@@ -4733,7 +4534,6 @@
       }
     }
 
-    // Studio Track Tabs Selection
     if (studioTrackTabs) {
       studioTrackTabs.querySelectorAll('.btn-track-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -4761,7 +4561,6 @@
       });
     }
 
-    // Mixer Channel click selects editing track
     document.querySelectorAll('.mixer-channel').forEach(ch => {
       ch.addEventListener('click', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
@@ -4773,9 +4572,7 @@
       });
     });
 
-    /**
-     * Helper: Map Mouse Events to Piano Roll Grid Coordinates
-     */
+
     function getPianoRollCoords(e) {
       const rect = pianoRollCanvas.getBoundingClientRect();
       if (!rect.width || !rect.height || !pianoRollCanvas.width || !pianoRollCanvas.height) return null;
@@ -4800,9 +4597,7 @@
       return { px, py, isRuler, step, midi, stepWidth, noteHeight, rulerHeight, totalSteps, stepsPerBar, minMidi, maxMidi };
     }
 
-    /**
-     * Helper: Audition Note in Real-time
-     */
+
     function auditionNote(midi, duration = 0.25) {
       if (!Synth || !Synth.ctx) return;
       if (Synth.ctx.state === 'suspended') Synth.ctx.resume();
@@ -4825,9 +4620,7 @@
       }
     }
 
-    /**
-     * Helper: Find Note at Coordinates
-     */
+
     function findPianoNoteAt(coords) {
       if (!state.currentSong || !state.currentSong.tracks[state.editingTrack]) return null;
       const track = state.currentSong.tracks[state.editingTrack];
@@ -4844,9 +4637,7 @@
       return null;
     }
 
-  /**
-   * Studio Tools helpers (Select / Knife / Erase tren moi track)
-   */
+
   function findNoteAtAnyTrack(coords) {
     if (!state.currentSong) return null;
     for (const [tKey, track] of Object.entries(state.currentSong.tracks)) {
@@ -4970,7 +4761,6 @@
     for (const [tKey, track] of Object.entries(state.currentSong.tracks)) {
       if (!track.notes) continue;
       const clones = [];
-      // clone theo danh sach rieng de tranh lap vo han
       const src = track.notes.filter(n => n._dupMark);
       for (const n of src) {
         const ns = n.step + shift;
@@ -4982,7 +4772,6 @@
       }
       track.notes = track.notes.concat(clones);
     }
-    // xoa co tam
     for (const t of Object.values(state.currentSong.tracks)) {
       for (const n of (t.notes || [])) delete n._dupMark;
     }
@@ -5177,7 +4966,6 @@
     }
   }
 
-    // Interactive Piano Roll Canvas Events (Add, Drag, Move, Resize, Delete, Audition)
     pianoRollCanvas.addEventListener('mousedown', (e) => {
       if (!state.currentSong) return;
       if (e.button === 2) return; // Handled by contextmenu
@@ -5191,7 +4979,6 @@
         return;
       }
 
-      // Studio tools (Select / Knife / Erase) - Draw di tiep ben duoi
       if (state.tool === 'select') {
         handleSelectMouseDown(coords);
         return;
@@ -5223,7 +5010,6 @@
           auditionNote(hit.note.midi);
         }
       } else {
-        // Click on empty grid cell: Add new note!
         pushUndo('soạn nốt');
         const newNote = {
           step: coords.step,
@@ -5287,7 +5073,6 @@
         return;
       }
 
-      // Cursor hover feedback
       if (state.tool !== 'draw') {
         if (coords.isRuler) {
           pianoRollCanvas.style.cursor = 'pointer';
@@ -5313,12 +5098,9 @@
     });
 
     window.addEventListener('mouseup', () => {
-      // Ket thuc marquee / keo nhom (studio tools)
       if (finishMarqueeOrGroupDrag()) return;
       if (isDraggingRuler || draggedPianoNote || resizingPianoNote) {
-        // Chi reload synth khi that su co sua not (keo thuoc don thuan thi giu playhead)
         const edited = !!(draggedPianoNote || resizingPianoNote);
-        // Not vua keo/sua bang tay -> khoa lai de gieo lai vung khong xoa
         if (draggedPianoNote) draggedPianoNote.locked = true;
         if (resizingPianoNote) resizingPianoNote.locked = true;
         isDraggingRuler = false;
@@ -5356,13 +5138,11 @@
       }
     });
 
-    // Export Handlers
     btnCopyClip.addEventListener('click', handleCopyClip);
     btnSaveMidi.addEventListener('click', handleSaveMidi);
     btnSaveMmp.addEventListener('click', handleSaveMmp);
     btnLaunchLmms.addEventListener('click', handleLaunchLmms);
 
-    // Synth Step Sync
     Synth.onStepChange = (currentStep) => {
       renderPianoRoll(currentStep);
 
@@ -5384,7 +5164,6 @@
       return;
     }
 
-    // Duong native: ghi dung MIME application/x-lmms-clipboard de LMMS nhan
     try {
       if (window.rmgAPI && window.rmgAPI.copyLmmsClip) {
         const res = await window.rmgAPI.copyLmmsClip({ midiXml: clip.xml });
@@ -5398,7 +5177,6 @@
       showToast('⚠️ Lỗi chép clip: ' + (err.message || err));
       return;
     }
-    // Fallback trinh duyet (text tho - LMMS co the khong nhan)
     try {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(clip.xml);
@@ -5470,7 +5248,6 @@
     if (!state.currentSong) return;
     const sf2 = await resolveSf2();
     const mmpXml = Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2);
-    // Dan piano-roll LMMS chi nhan 1 clip -> dan be Lead (full bai nam trong file .mmp)
     const leadClip = Exporter.generateLmmsMidiClip(state.currentSong, 'lead');
 
     showToast('🚀 Đang chuẩn bị kết nối LMMS...');
@@ -5488,7 +5265,7 @@
         showToast('⚠️ ' + (res.error || 'Không thể mở LMMS tự động. Hãy dùng nút "Lưu File LMMS" và mở thủ công!'), 5000);
       }
     } else {
-      showToast('Tính năng tương tác trực tiếp LMMS cần chạy trong ứng dụng Desktop RMG.');
+      showToast('Tính năng tương tác trực tiếp LMMS cần chạy trong ứng dụng Desktop RinTune.');
     }
   }
 
@@ -5517,9 +5294,7 @@
     }
   }
 
-  /**
-   * Render Interactive Melody Contour Envelope Canvas
-   */
+
   function renderContourCanvas() {
     if (!contourCanvas || !contourCanvasContainer) return;
     if (!contourCtx) contourCtx = contourCanvas.getContext('2d');
@@ -5535,7 +5310,6 @@
 
     contourCtx.clearRect(0, 0, w, h);
 
-    // 1. Background Grid & Bar Dividers
     const totalBars = state.lengthBars;
     for (let b = 0; b <= totalBars; b++) {
       const bx = (b / totalBars) * w;
@@ -5553,7 +5327,6 @@
       }
     }
 
-    // Horizontal Pitch Guidelines (25%, 50%, 75%)
     for (let yPct of [0.25, 0.5, 0.75]) {
       const py = (1 - yPct) * h;
       contourCtx.strokeStyle = cpal.grid;
@@ -5568,7 +5341,6 @@
 
     if (!state.contourPoints || state.contourPoints.length === 0) return;
 
-    // 2. Draw Curve Area Gradient Fill
     const sorted = [...state.contourPoints].sort((a, b) => a.x - b.x);
     contourCtx.beginPath();
     contourCtx.moveTo(sorted[0].x * w, (1 - sorted[0].y) * h);
@@ -5586,7 +5358,6 @@
     contourCtx.fillStyle = fillGrad;
     contourCtx.fill();
 
-    // 3. Glowing Neon Stroke Line
     contourCtx.beginPath();
     contourCtx.moveTo(sorted[0].x * w, (1 - sorted[0].y) * h);
     for (let i = 1; i < sorted.length; i++) {
@@ -5599,7 +5370,6 @@
     contourCtx.stroke();
     contourCtx.shadowBlur = 0;
 
-    // 4. Red & Cyan Interactive Nodes
     sorted.forEach((pt, index) => {
       const px = pt.x * w;
       const py = (1 - pt.y) * h;
@@ -5643,7 +5413,6 @@
     prCtx.fillStyle = pal.bg;
     prCtx.fillRect(0, 0, width, height);
 
-    // 1. Grid Lines
     for (let s = 0; s <= totalSteps; s++) {
       const x = s * stepWidth;
       const isBar = (s % stepsPerBar === 0);
@@ -5666,7 +5435,6 @@
       prCtx.stroke();
     }
 
-    // 2. Pitch Lanes
     for (let m = minMidi; m <= maxMidi; m++) {
       const pc = m % 12;
       const isBlackKey = [1, 3, 6, 8, 10].includes(pc);
@@ -5686,7 +5454,6 @@
       }
     }
 
-    // 3. Track Notes (Ghost Notes vs Active Editing Track)
     const trackColors = {
       lead: '#00f2fe',
       chords: '#9b51e0',
@@ -5697,7 +5464,6 @@
 
     const trackKeys = ['drums', 'bass', 'chords', 'arp', 'lead'];
 
-    // 3A. Draw Ghost Notes first (non-editing tracks)
     if (state.showGhostNotes) {
       prCtx.globalAlpha = 0.32;
       for (const tKey of trackKeys) {
@@ -5729,7 +5495,6 @@
       prCtx.globalAlpha = 1.0;
     }
 
-    // 3B. Draw Active Editing Track Notes (Full vibrant brightness + stroke + note label)
     const activeTrack = state.currentSong.tracks[state.editingTrack];
     if (activeTrack && activeTrack.notes) {
       const baseColor = trackColors[state.editingTrack] || '#00f2fe';
@@ -5758,19 +5523,16 @@
         prCtx.fill();
         prCtx.shadowBlur = 0;
 
-        // White / Gold border for active track (Gold = not khoa tay)
         const isLocked = !!note.locked;
         prCtx.strokeStyle = (isDragged || isLocked) ? '#ffd700' : (isSelected ? '#00f2fe' : 'rgba(255, 255, 255, 0.45)');
         prCtx.lineWidth = (isDragged || isLocked || isSelected) ? 2 : 1;
         prCtx.stroke();
 
-        // Right-edge resize handle grip
         if (w >= 12) {
           prCtx.fillStyle = 'rgba(255, 255, 255, 0.8)';
           prCtx.fillRect(x + w - 3, y + 1, 2, h - 2);
         }
 
-        // Note pitch name text label
         if (w >= 18 && h >= 8) {
           prCtx.fillStyle = isNotePlaying ? '#000000' : '#ffffff';
           prCtx.font = 'bold 8px sans-serif';
@@ -5781,7 +5543,6 @@
       }
     }
 
-    // 4. Timeline Ruler Bar (Top 20px)
     prCtx.fillStyle = pal.ruler;
     prCtx.fillRect(0, 0, width, rulerHeight);
 
@@ -5806,7 +5567,6 @@
       prCtx.fillText(`B${b + 1}`, bx + 4, 4);
     }
 
-    // 5. Playhead Bar & Pointer
     const playheadX = currentStep * stepWidth;
     prCtx.strokeStyle = pal.playhead;
     prCtx.shadowColor = pal.labelBar;
@@ -5818,7 +5578,6 @@
     prCtx.stroke();
     prCtx.shadowBlur = 0;
 
-    // Playhead triangle in ruler
     prCtx.fillStyle = pal.labelBar;
     prCtx.beginPath();
     prCtx.moveTo(playheadX - 5, 0);
@@ -5827,7 +5586,6 @@
     prCtx.closePath();
     prCtx.fill();
 
-    // Marquee selection overlay
     if (marqueeStart && marqueeEnd) {
       const mx = Math.min(marqueeStart.px, marqueeEnd.px);
       const my = Math.min(marqueeStart.py, marqueeEnd.py);
@@ -5842,7 +5600,6 @@
       prCtx.setLineDash([]);
     }
 
-    // Selection count badge
     const selInfo = document.getElementById('selectionInfo');
     if (selInfo) {
       selInfo.textContent = selectedNotes.size > 0 ? `⬚ ${selectedNotes.size} nốt` : '';
@@ -5890,7 +5647,6 @@
     requestAnimationFrame(draw);
   }
 
-  // Hook kiem thu headless (app local, khong anh huong nguoi dung)
   window.RMGTest = {
     state,
     effectiveVariation, generateNewSong, arrangeSong,
@@ -5920,7 +5676,6 @@
       refreshRecent();
       refreshExportDirLabel();
       initSoundFontStatus();
-      // Tab dau tien tu bai hien tai
       tabSeq = 1;
       songTabs = [{ id: 'tab1', label: '', snap: snapshotState() }];
       activeTabId = 'tab1';

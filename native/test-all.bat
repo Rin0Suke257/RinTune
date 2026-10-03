@@ -1,5 +1,4 @@
 @echo off
-REM Chay toan bo test engine (Node) - khong can app chay
 setlocal
 cd /d "%~dp0mcp"
 if errorlevel 1 goto no_dir

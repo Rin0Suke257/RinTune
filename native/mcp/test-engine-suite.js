@@ -1,6 +1,5 @@
 const G = require('D:/RMG/engine/generator.js').RMGGenerator;
 const E = require('D:/RMG/engine/exporter.js').RMGExporter;
-// full generate + region + chord edit + export tren nhieu genre/time signature
 for (const [genre, ts] of [['synthwave', '4/4'], ['sasakure_uk', '7/8'], ['lofi', '6/8'], ['anime', '4/4']]) {
   const g = new G.MusicGenerator({ genre, key: 'G', lengthBars: 6, timeSignature: ts, seed: 11 });
   const s = g.generate();

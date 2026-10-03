@@ -1,16 +1,14 @@
 @echo off
-REM Build full: RMG.exe + Setup + (tuy chon) MCP exe
-REM Dung: build-all.bat [mcp]
 setlocal
 set ROOT=%~dp0
 if "%ROOT:~-1%"=="\" set ROOT=%ROOT:~0,-1%
 
-echo ===== [1/3] RMG.exe =====
+echo ===== [1/3] RinTune.exe =====
 call "%ROOT%\build.bat"
 if errorlevel 1 goto build_fail
 
 if /i "%1"=="mcp" (
-  echo ===== [2/3] MCP-RMG.exe =====
+  echo ===== [2/3] RinTune-MCP.exe =====
   call "%ROOT%\build-mcp.bat"
   if errorlevel 1 goto build_fail
 ) else (
@@ -18,7 +16,7 @@ if /i "%1"=="mcp" (
 )
 
 echo ===== [3/3] Setup =====
-"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "%ROOT%\installer\RMG.iss"
+"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "%ROOT%\installer\RinTune.iss"
 if errorlevel 1 goto build_fail
 
 echo.

@@ -1,7 +1,4 @@
-/**
- * RMG Cyber-Audiophile Design System
- * Deep Obsidian Dark Mode, Neon Glow Accents, Glassmorphism & Smooth Micro-Animations.
- */
+
 
 :root {
   --bg-primary: #08090e;
@@ -53,7 +50,7 @@ body {
   flex-direction: column;
 }
 
-/* App Container */
+
 .app-container {
   display: flex;
   flex-direction: column;
@@ -62,7 +59,7 @@ body {
   gap: 12px;
 }
 
-/* Glass Panel Utility */
+
 .glass-panel {
   background: var(--bg-card);
   backdrop-filter: blur(16px);
@@ -73,7 +70,7 @@ body {
   transition: all 0.25s ease;
 }
 
-/* Header */
+
 .app-header {
   display: flex;
   align-items: center;
@@ -145,7 +142,7 @@ body {
   box-shadow: 0 0 8px var(--accent-green);
 }
 
-/* Main Grid Layout */
+
 .main-content-grid {
   display: grid;
   grid-template-columns: 310px 1fr;
@@ -154,7 +151,7 @@ body {
   min-height: 0;
 }
 
-/* Left Sidebar Controls */
+
 .left-controls-sidebar {
   display: flex;
   flex-direction: column;
@@ -187,7 +184,7 @@ body {
   justify-content: space-between;
 }
 
-/* Genre Cards Grid */
+
 .genre-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -236,7 +233,7 @@ body {
   line-height: 1.2;
 }
 
-/* Parameters Form Controls */
+
 .control-row {
   margin-bottom: 10px;
 }
@@ -299,7 +296,7 @@ select:focus, input[type="text"]:focus {
   border-color: var(--accent-cyan);
 }
 
-/* Switch Toggle Component */
+
 .switch-toggle {
   position: relative;
   display: inline-block;
@@ -349,7 +346,7 @@ select:focus, input[type="text"]:focus {
   box-shadow: 0 0 8px var(--accent-cyan);
 }
 
-/* Contour Wrapper Panel */
+
 .contour-wrapper {
   padding: 10px 14px;
   margin-bottom: 12px;
@@ -380,7 +377,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.25);
 }
 
-/* Chord Progression Chips */
+
 .progression-display {
   display: flex;
   flex-wrap: wrap;
@@ -422,7 +419,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
 }
 
-/* Right Viewport: Piano Roll & Visualizer */
+
 .center-viewport {
   display: flex;
   flex-direction: column;
@@ -433,7 +430,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding-bottom: 4px;
 }
 
-/* Visualizer & Transport Top Bar */
+
 .transport-bar {
   display: flex;
   align-items: center;
@@ -495,7 +492,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   color: var(--accent-cyan);
 }
 
-/* Audio Visualizer Canvas */
+
 .visualizer-canvas-container {
   width: 220px;
   height: 36px;
@@ -510,7 +507,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   height: 100%;
 }
 
-/* Piano Roll Container */
+
 .pianoroll-wrapper {
   flex: 0 0 auto;
   display: flex;
@@ -593,7 +590,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   cursor: crosshair;
 }
 
-/* Timeline Clips Lane */
+
 .clip-ruler, .clip-row { display: flex; align-items: stretch; gap: 4px; margin-bottom: 3px; }
 .clip-row-label { flex: none; width: 52px; font-size: 0.65rem; color: var(--text-dim); font-weight: 700; display: flex; align-items: center; }
 .clip-row-body { flex: 1; display: flex; gap: 3px; min-width: 0; }
@@ -602,7 +599,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .clip-block:hover { filter: brightness(1.25); }
 .clip-selected { outline: 2px solid var(--accent-gold); }
 .clip-muted { opacity: 0.35; }
-/* Timeline 1 hang doan */
+
 .clip-section { display: flex; flex-direction: column; gap: 1px; padding: 5px 8px; min-height: 44px; justify-content: center; border-color: var(--border-color); }
 .clip-section .clip-name { font-size: 0.72rem; font-weight: 700; }
 .clip-section .clip-meta { font-size: 0.6rem; color: var(--text-dim); }
@@ -611,7 +608,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .clip-rest { border-style: dashed; background: transparent; }
 .clip-rest .clip-name { color: var(--text-dim); font-weight: 400; font-style: italic; }
 
-/* Mixer Rack */
+
 .mixer-rack {
   padding: 8px 12px;
   display: flex;
@@ -679,7 +676,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   gap: 6px;
 }
 
-/* Action / Export Hub Bottom Bar */
+
 .action-export-bar {
   display: flex;
   align-items: center;
@@ -695,7 +692,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   gap: 8px;
 }
 
-/* Generation History Section */
+
 .history-panel {
   padding: 12px 14px;
   display: flex;
@@ -896,7 +893,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   box-shadow: 0 0 16px rgba(46, 204, 113, 0.4);
 }
 
-/* Toast Notifications */
+
 .toast-container {
   position: fixed;
   bottom: 24px;
@@ -923,7 +920,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   to { opacity: 1; transform: translateX(0); }
 }
 
-/* Undo/Redo + Mixer Pan + Zoom */
+
 .btn-icon:disabled { opacity: 0.35; cursor: default; }
 .btn-icon:disabled:hover { background: var(--bg-input); border-color: var(--border-color); color: var(--text-main); }
 .channel-pan { display: flex; align-items: center; gap: 4px; }
@@ -932,7 +929,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .btn-mini.btn-dice { width: auto; padding: 0 3px; }
 .tool-tab.active { border-color: var(--accent-cyan); color: var(--accent-cyan); background: rgba(0, 242, 254, 0.12); }
 
-/* ===== Menu Bar (File/Edit/View/Tools/Help) ===== */
+
 .menubar { display: flex; align-items: stretch; gap: 2px; padding: 0 10px; height: 32px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: 8px; flex: 0 0 auto; }
 .menu-top { position: relative; display: flex; align-items: center; }
 .menu-top > span { font-size: 0.76rem; font-weight: 600; color: var(--text-muted); padding: 4px 12px; border-radius: 5px; cursor: pointer; user-select: none; }
@@ -945,25 +942,25 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .menu-sep { height: 1px; background: var(--border-color); margin: 4px 6px; }
 .menubar-title { margin-left: auto; align-self: center; font-size: 0.68rem; color: var(--text-dim); letter-spacing: 1px; }
 
-/* ===== Themes ===== */
+
 [data-theme="midnight"] { --bg-primary: #040814; --bg-secondary: #0a1230; --bg-card: rgba(16, 28, 64, 0.8); --bg-card-hover: rgba(24, 40, 88, 0.92); --bg-input: #0d1530; --accent-cyan: #4facfe; --border-glow: rgba(79, 172, 254, 0.3); }
 [data-theme="sakura"] { --bg-primary: #f6f1f7; --bg-secondary: #ffffff; --bg-card: rgba(255, 255, 255, 0.92); --bg-card-hover: rgba(255, 240, 246, 0.98); --bg-input: #f3ecf5; --bg-canvas: #efe9f5; --border-color: rgba(120, 40, 90, 0.16); --border-glow: rgba(255, 42, 109, 0.25); --accent-cyan: #c2145b; --accent-blue: #7b5cff; --accent-purple: #9b51e0; --text-main: #33222e; --text-muted: #7a5f74; --text-dim: #a98fa2; }
 #bgLayer { position: fixed; inset: 0; z-index: -1; background-size: cover; background-position: center; background-image: linear-gradient(rgba(5,6,10,var(--bg-scrim,0.62)), rgba(5,6,10,var(--bg-scrim,0.62))), var(--bg-img, none); filter: blur(18px) brightness(0.6) saturate(0.85); transform: scale(1.06); pointer-events: none; display: none; }
 body.has-bg #bgLayer { display: block; }
 body.has-bg { background-color: #05060a; }
 
-/* ===== Dock tabs (Lich su / File / Seed) ===== */
+
 .dock-tabs { display: flex; gap: 6px; padding: 8px 4px 0; }
 .dock-tab { background: var(--bg-input); border: 1px solid var(--border-color); border-bottom: none; color: var(--text-muted); font-size: 0.72rem; font-weight: 700; padding: 5px 14px; border-radius: 8px 8px 0 0; cursor: pointer; }
 .dock-tab.active { color: var(--accent-cyan); border-color: var(--accent-cyan); background: rgba(0, 242, 254, 0.07); }
 
-/* ===== Collapsible sidebar cards ===== */
+
 .sidebar-card.collapsible > .card-title { cursor: pointer; user-select: none; }
 .sidebar-card.collapsible > .card-title::after { content: '▾'; margin-left: auto; color: var(--text-dim); font-size: 0.7rem; }
 .sidebar-card.collapsible.collapsed > .card-title::after { content: '▸'; }
 .sidebar-card.collapsible.collapsed > *:not(.card-title) { display: none; }
 
-/* ===== Footer declutter: chi giu Finish + Mo LMMS ===== */
+
 #btnCopyClip, #btnSaveMidi, #btnSaveMmp, #btnOpenMidi, #btnSaveProject, #btnOpenProject,
 #btnQuickMidi, #btnQuickMmp, #btnExportWav, #btnTransferStyle { display: none; }
 .tab-strip { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 6px 4px 0; }

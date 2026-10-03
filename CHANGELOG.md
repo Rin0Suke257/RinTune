@@ -1,4 +1,9 @@
-# RMG Changelog
+# RinTune Changelog
+
+## Unreleased - Doi ten RinTune Studio + sach code
+- Doi ten san pham RMG -> RinTune Studio (title, exe, installer, xuat file);
+  giu tuong thich file `.rmg` cu + du lieu `%LOCALAPPDATA%\RMG`
+- Xoa ghi chu (comment) trong toan bo ma nguon, giu license ben thu ba
 
 ## Unreleased - Timeline Clips + Takes + Fill
 - Timeline 1 hàng đoạn (Intro/Verse/Chorus...): bấm chọn, kéo dời, tách/
@@ -35,8 +40,8 @@
 - Version 2.1.0 + nut kiem tra cap nhat (can GitHub repo)
 
 ## v2.0.0 (chua phat hanh) - Native + Studio
-- App C++ Win32 + WebView2 thay Electron (`RMG.exe` ~600KB)
-- Setup Inno per-user + component MCP (`MCP-RMG.exe`)
+- App C++ Win32 + WebView2 thay Electron (`RinTune.exe` ~600KB)
+- Setup Inno per-user + component MCP (`RinTune-MCP.exe`)
 - MCP server: 7 tools sinh/xuat nhac cho AI
 - Soan nhac: progression editor, gieo lai vung, khoa not, undo/redo 30 buoc,
   piano-roll zoom, mixer pan, studio tools (Select/Draw/Knife/Erase),

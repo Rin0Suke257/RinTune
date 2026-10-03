@@ -1,9 +1,4 @@
-/**
- * RMG Generative Music Engine v3.0
- * Deep Emotional Climaxes, Virtuoso Piano Engine, Dynamic Octaves, Fade In/Out,
- * and Musical Structural Phrasing.
- * Author: Rin0suke257
- */
+
 
 (function(exports) {
   'use strict';
@@ -46,7 +41,6 @@
     }
   }
 
-  // Rhythmic Phrase Archetypes
   const PHRASE_RHYTHMS = {
     '1bar': [
       [4, 4, 4, 4],
@@ -77,18 +71,13 @@
   };
 
   class MusicGenerator {
-    /**
-     * Xac suat co ti le bien tau V (0..1, mac dinh 0.7 = hanh vi cu).
-     * V=0 gan nhu giu nguyen, V=1 dao manh. Deterministic theo seed.
-     */
+
     _vChance(base, V) {
       const v = (V == null ? 0.7 : V);
       return this.rng.chance(Math.max(0, Math.min(0.95, base * (v / 0.7))));
     }
 
-    /**
-     * Chon bien the 0..n-1: V=0 luon 0 (goc), V cang cao cang nga nhien.
-     */
+
     _variant(n, V) {
       const v = (V == null ? 0.7 : V);
       if (n <= 1 || v <= 0) return 0;
@@ -96,10 +85,7 @@
       return this.rng.rangeInt(0, n - 1);
     }
 
-    /**
-     * Chuan hoa variation thanh {lead,chords,arp,bass,drums} moi kenh 0..1.
-     * Nhan: number -> ap dung tat ca; object thieu kenh -> 0.7; global nhan tracks.
-     */
+
     _resolveVariation(src) {
       const norm = (v) => {
         if (v == null || isNaN(v)) return 0.7;
@@ -118,10 +104,7 @@
       return { lead: ch('lead'), chords: ch('chords'), arp: ch('arp'), bass: ch('bass'), drums: ch('drums') };
     }
 
-    /**
-     * Bien tau arp sau sinh: dich octave giu pitch-class (an toan hoa am)
-     * + tia thua not yeu. Downbeat giu nguyen.
-     */
+
     _varyArp(track, spb, V) {
       if (!track || !track.notes) return track;
       for (const n of track.notes) {
@@ -145,17 +128,13 @@
       return track;
     }
 
-    /**
-     * Bien tau drums sau sinh: pickup kick + anticipation (giu groove goc).
-     * Them: rot 1 kick phu + them kick offbeat (thay doi step that su).
-     */
+
     _varyDrums(track, spb, V, startBar, endBar) {
       if (!track || !track.notes) return track;
       const at = (step, midi) => track.notes.some(n => n.step === step && n.midi === midi);
       const KICK = 36, SNARE = 38;
       for (let bar = startBar; bar <= endBar; bar++) {
         const bs = bar * spb;
-        // Rot 1 kick phu (tru downbeat) cho groove thoang hon
         if (this._vChance(0.5, V)) {
           const cands = track.notes.filter(n => n.midi === KICK && n.step >= bs && n.step < bs + spb && (n.step % spb) !== 0);
           if (cands.length) {
@@ -163,7 +142,6 @@
             track.notes.splice(track.notes.indexOf(victim), 1);
           }
         }
-        // Them kick offbeat vao o trong (syncopation moi)
         if (this._vChance(0.4, V)) {
           const slots = [2, 6, 7, 10, 11, 14].filter(s => s < spb);
           const free = slots.filter(s => !at(bs + s, KICK) && !at(bs + s, SNARE));
@@ -172,7 +150,6 @@
             track.notes.push({ step: bs + s, duration: 1, midi: KICK, velocity: 100, pan: 0 });
           }
         }
-        // Hat bien tau nhe: mo/ dong + rot 1 hat (giu skeleton groove)
         if (this._vChance(0.5, V)) {
           const hats = track.notes.filter(n => (n.midi === 42 || n.midi === 46) && n.step >= bs && n.step < bs + spb && (n.step % spb) !== 0);
           if (hats.length) {
@@ -182,7 +159,6 @@
             else track.notes.splice(track.notes.indexOf(h), 1); // rot 1 hat
           }
         }
-        // Pickup kick truoc downbeat bar sau
         if (this._vChance(0.45, V)) {
           const ps = bs + spb - 2;
           if (!at(ps, 36) && !at(ps, 38)) {
@@ -245,15 +221,12 @@
       const activeTimeSig = timeSignature || genreDef.defaultTimeSignature || '4/4';
       const stepsPerBar = this._getStepsPerBar(activeTimeSig);
 
-      // 1. Generate Harmonic Progression
       const progression = this._generateChordProgression(genreDef, key, scaleKey, lengthBars, section);
 
-      // 2. Note pools
       const leadScaleNotes = Theory.getScaleNotes(key, scaleKey, 4, 6);
       const bassScaleNotes = Theory.getScaleNotes(key, scaleKey, 2, 3);
       const arpScaleNotes  = Theory.getScaleNotes(key, scaleKey, 4, 6);
 
-      // Section energy modifier
       let velocityBoost = 0;
       let densityMod = density;
       if (section === 'chorus') {
@@ -267,7 +240,6 @@
         densityMod = Math.max(30, density - 25);
       }
 
-      // 3. Generate Individual Tracks (vai tro + mat do theo DNA tung genre)
       const isPurePiano = (trackTarget === 'pure_piano');
       const VV = this._resolveVariation(this.options.variation);
       const prof = genreDef.trackProfile || {};
@@ -381,8 +353,6 @@
         variation: VV
       }) : { name: 'Drums & Percussion', type: 'drum_kit', instrument: 'standard_kit', color: '#e74c3c', notes: [] };
 
-      // 4. Ensemble Arrangement Pass: crash/fill, kick-bass lock, lead nghi, final hit.
-      // Chay TRUOC fade de final hit cung duoc fade tu nhien.
       const arrangedSong = {
         metadata: {
           lengthBars, stepsPerBar, section, key, genre: genreDef.id, scale: scaleKey,
@@ -399,14 +369,13 @@
       };
       this._arrangeEnsemble(arrangedSong, { finalHit: !this.options.skipFinalHit && this.options.finalHit !== false });
 
-      // 5. Apply Fade In & Fade Out Velocity Curves
       this._applyFadeDynamics([leadTrack, chordTrack, arpTrack, bassTrack, drumTrack], lengthBars, fadeInBars, fadeOutBars, stepsPerBar);
 
       const totalNotesCount = leadTrack.notes.length + chordTrack.notes.length + arpTrack.notes.length + bassTrack.notes.length + drumTrack.notes.length;
 
       return {
         metadata: {
-          title: `RMG_${genreDef.name.replace(/[^a-zA-Z0-9]/g, '_')}_${key}_${Math.floor(this.options.seed * 10000)}`,
+          title: `RinTune_${genreDef.name.replace(/[^a-zA-Z0-9]/g, '_')}_${key}_${Math.floor(this.options.seed * 10000)}`,
           genre: genreDef.id,
           genreName: genreDef.name,
           key,
@@ -445,11 +414,7 @@
       };
     }
 
-    /**
-     * Giai ma 1 symbol hop am thanh progression entry cho bar cu the,
-     * dung key/scale hien tai cua generator. Voice-leading chay rieng
-     * bang retuneProgression() sau khi sua xong.
-     */
+
     resolveBarChord(symbol, bar) {
       const key = this.options.key || 'A';
       const genreDef = Theory.GENRES[this.options.genre] || Theory.GENRES['touhou'];
@@ -466,9 +431,7 @@
       };
     }
 
-    /**
-     * Chay lai voice-leading cho toan bo progression sau khi sua tay.
-     */
+
     retuneProgression(progression) {
       if (Theory.optimizeVoiceLeading) return Theory.optimizeVoiceLeading(progression, 3);
       return progression;
@@ -487,11 +450,7 @@
       return m;
     }
 
-    /**
-     * Gieo lai 1 vung bars cho cac track chi dinh.
-     * song: { metadata, progression, tracks }. Notes co locked=true duoc giu lai
-     * (viec giu lai do caller thuc hien khi splice). Tra ve { fromBar, toBar, notes }.
-     */
+
     regenerateRegion(song, spec = {}) {
       const md = song.metadata || {};
       const totalBars = md.lengthBars || 8;
@@ -573,14 +532,7 @@
       return { fromBar, toBar, notes: out };
     }
 
-    /**
-     * Ensemble Arrangement Pass: phoi hop cac be voi nhau (thay vi sinh rieng le).
-     * - Crash mo dau moi cum 8 bars (neu chua co)
-     * - Kick-bass lock: bass lech kick ±1 thi keo ve kick
-     * - Lead nghi 2 bars dau cho intro/full-song (tru piano + loop)
-     * - Final hit ket bai / loop mode (qua arrangeFinal)
-     * Notes arrangement them vao duoc danh dau locked de gieo vung giu lai.
-     */
+
     _arrangeEnsemble(song, opts = {}) {
       const md = song.metadata;
       const totalBars = md.lengthBars;
@@ -591,7 +543,6 @@
       const drums = song.tracks.drums.notes;
       const bass = song.tracks.bass.notes;
 
-      // 1. Crash mo dau moi cum 8 bars (neu chua co crash gan do)
       for (let bar = 8; bar < totalBars; bar += 8) {
         const s = bar * spb;
         if (!drums.some(n => n.midi === 49 && Math.abs(n.step - s) <= 2)) {
@@ -599,7 +550,6 @@
         }
       }
 
-      // 2. Kick-bass lock (tru piano: tay trai piano khong khoa theo kick)
       if (!isPiano && bass.length && drums.length) {
         const kickSteps = new Set();
         for (const n of drums) {
@@ -617,7 +567,6 @@
         }
       }
 
-      // 3. Lead nghi 2 bars dau (intro / full-song), tru piano + loop
       if ((section === 'intro' || section === 'none') && !isPiano && !loopMode) {
         const lead = song.tracks.lead.notes;
         for (let i = lead.length - 1; i >= 0; i--) {
@@ -627,14 +576,10 @@
         }
       }
 
-      // 4. Final hit ket bai / loop mode
       this.arrangeFinal(song, opts);
     }
 
-    /**
-     * Ket bai: final tutti hit (Picardy cho touhou) hoac loop mode
-     * (bar cuoi ha nhiet chi hats + khoa tonic on dinh de loop lien mach).
-     */
+
     arrangeFinal(song, opts = {}) {
       const md = song.metadata;
       const totalBars = md.lengthBars;
@@ -659,7 +604,6 @@
           return n.midi === 42 || n.midi === 46;
         });
       } else if (!opts.skipFinalHit && opts.finalHit !== false && totalBars >= 2) {
-        // Ep bar cuoi ve tonic de ket dung nghia (V-I feel) - luon lam
         const tonic = Theory.resolveChord('i', md.key || 'A', md.scale || 'natural_minor', 3);
         const lastEntry = song.progression[lastBar];
         if (lastEntry) {
@@ -695,11 +639,7 @@
       md.noteCount = Object.values(song.tracks).reduce((acc, t) => acc + (t.notes ? t.notes.length : 0), 0);
     }
 
-    /**
-     * Ap texture phoi khi (tutti / solo / dialogue / cadenza) theo vung bars.
-     * Dung cho Concerto mode: piano nghi khi tutti, doi dap, cadenza doc tau.
-     * Xoa ca notes locked (vua sinh, chua co tay user) - vung gieo sau van giu locked.
-     */
+
     applyTexture(song, ranges) {
       if (!song || !song.tracks) return song;
       if (song.metadata && song.metadata.isPurePiano) return song; // piano solo giu nguyen
@@ -713,12 +653,10 @@
         const keepDownbeat = arr => arr.filter(n => !inRange(n) || (n.step % spb) === 0);
 
         if (r.texture === 'solo') {
-          // Piano + dem nhe: bo drums, bass/arp chi giu downbeat
           if (T.drums && T.drums.notes) T.drums.notes = T.drums.notes.filter(n => !inRange(n));
           if (T.bass && T.bass.notes) T.bass.notes = keepDownbeat(T.bass.notes);
           if (T.arp && T.arp.notes) T.arp.notes = keepDownbeat(T.arp.notes);
         } else if (r.texture === 'dialogue') {
-          // Bar chan piano dan dau, bar le dan nhac dan dau
           for (let bar = r.fromBar; bar <= r.toBar; bar++) {
             const bs = bar * spb, be = bs + spb;
             const inBar = n => n.step >= bs && n.step < be;
@@ -734,7 +672,6 @@
             }
           }
         } else if (r.texture === 'cadenza') {
-          // Piano doc tau: chi giu lead
           for (const k of ['drums', 'bass', 'arp', 'chords']) {
             if (T[k] && T[k].notes) T[k].notes = T[k].notes.filter(n => !inRange(n));
           }
@@ -773,7 +710,6 @@
         templateIndex++;
       }
 
-      // Bar cuoi luon ve tonic de ket dung nghia (arp fit + final hit an khop)
       if (totalBars >= 2) {
         const tonic = Theory.resolveChord('i', key, scaleKey, 3);
         resolvedList[totalBars - 1] = {
@@ -790,9 +726,7 @@
       return Theory.optimizeVoiceLeading(resolvedList, 3);
     }
 
-    /**
-     * Compute Climax Intensity Factor (0.0 to 1.0) for any given bar
-     */
+
     _getClimaxFactor(bar, totalBars, climaxCurve) {
       if (!climaxCurve || climaxCurve === 'none' || climaxCurve === 'flat') {
         return 0.7; // Natural balanced flat dynamics across all bars
@@ -802,7 +736,6 @@
       if (climaxCurve === 'crescendo') {
         return Math.pow(progress, 1.4); // Smooth powerful exponential rise
       } else if (climaxCurve === 'climax_explosion') {
-        // Tension builds up, reaches 100% explosion around 65% - 85% of the song, then resolves
         if (progress < 0.6) {
           return 0.4 + (progress / 0.6) * 0.4; // 0.4 -> 0.8
         } else if (progress <= 0.85) {
@@ -811,7 +744,6 @@
           return 0.85 - ((progress - 0.85) / 0.15) * 0.25; // Release to 0.6
         }
       } else if (climaxCurve === 'emotional_wave') {
-        // Sine wave oscillations (Verse low -> Chorus high -> Bridge low -> Climax peak)
         return 0.5 + 0.5 * Math.sin(progress * Math.PI * 3.0);
       } else if (climaxCurve === 'full_fire') {
         return 1.0;
@@ -820,9 +752,7 @@
       }
     }
 
-    /**
-     * Sample Contour Envelope at globalStep (0..totalSteps) -> returns Y (0.0 to 1.0)
-     */
+
     _getContourValueAtStep(globalStep, totalSteps, points) {
       if (!points || points.length === 0) return 0.5;
       if (points.length === 1) return points[0].y;
@@ -844,10 +774,7 @@
       }
       return sorted[sorted.length - 1].y;
     }
-    /**
-     * Lap lai motif (dang blueprint tuong doi) cho kin phraseSteps.
-     * Giu contour nhip/isDownbeat theo vi tri moi.
-     */
+
     _tileBlueprint(src, phraseSteps, stepsPerBar = 16) {
       if (!src || src.length === 0) return [];
       const clean = src
@@ -873,9 +800,7 @@
       return out;
     }
 
-    /**
-     * PHRASE-BASED LEAD MELODY ENGINE WITH CHAOS, DENSITY & CONTOUR CONTROL
-     */
+
     _generatePhraseBasedLead(ctx) {
       const { progression, scaleNotes, key, scaleKey, genreDef, lengthBars, timeSignature = '4/4', stepsPerBar = 16, section, motifStructure, articulation, climaxCurve, useContour, contourPoints, chaosLevel, density, velocityBoost, humanize } = ctx;
       const grammar = Object.assign({ rest: 0, leapSemis: 9, chromatic: true }, ctx.grammar || genreDef.leadGrammar || {});
@@ -886,8 +811,6 @@
       const phraseSteps = phraseBarLen * stepsPerBar;
       const totalSteps = lengthBars * stepsPerBar;
 
-      // Compose blueprints with Density, Chaos Level and Time Signature
-      // (seedPhrase: motif user go/khoa -> tile lam phraseA de phat trien ca bai)
       const phraseA = ctx.seedPhrase
         ? this._tileBlueprint(ctx.seedPhrase, phraseSteps, stepsPerBar)
         : this._composeSeedPhrase(phraseSteps, scaleNotes, genreDef, density, chaosLevel, stepsPerBar, timeSignature);
@@ -958,7 +881,6 @@
           activeBlueprint = this._composeSeedPhrase(phraseSteps, scaleNotes, genreDef, density, chaosLevel, stepsPerBar, timeSignature);
         }
 
-        // sasakure.UK / Virtuoso Piano Cascading Arpeggio Sweep in Climax Bars
         if ((isFieryPiano || isSasakure) && isPeakClimax && (density > 50) && this._vChance(0.65, Vl)) {
           const sweepLength = density >= 80 ? Math.min(8, stepsPerBar / 2) : 4;
           for (let sw = 0; sw < sweepLength; sw++) {
@@ -974,8 +896,6 @@
           }
         }
 
-        // Touhou triplet burst vao climax (3 not chia deu tren 2 steps)
-        // Nguong 0.75 de phrase nao nong cung no (khong chi dinh 0.88)
         if ((genreDef.id === 'touhou' || isSasakure) && climaxFactor >= 0.75 && density >= 60 && this._vChance(0.5, Vl)) {
           const tBase = scaleNotes[Math.min(scaleNotes.length - 1, 6)];
           for (let t = 0; t < 3; t++) {
@@ -989,7 +909,6 @@
           }
         }
 
-        // Fiery piano trill truoc ket phrase (luyen ngon chromatic)
         if (genreDef.id === 'fiery_piano' && climaxFactor >= 0.75 && this._vChance(0.4, Vl)) {
           const trillEnd = phraseStartStep + currentPhraseBars * stepsPerBar;
           const trillBase = rootMidi + 12;
@@ -1014,13 +933,11 @@
 
           if (globalStep >= totalSteps) break;
 
-          // Nghi nhip theo DNA genre (lofi thua, fiery day) - tru motif user + downbeat
           if (!noteDef.isDownbeat && !ctx.seedPhrase && grammar.rest > 0 && this.rng.chance(grammar.rest)) {
             stepCursor += noteDef.durationSteps;
             continue;
           }
 
-          // Low Density Note Culling (Leave breathers & rests)
           if (!noteDef.isDownbeat && density < 60) {
             const skipChance = (60 - density) / 60;
             if (this.rng.chance(skipChance)) {
@@ -1037,13 +954,9 @@
           let baseDegreeIndex = Math.max(0, Math.min(scaleNotes.length - 1, noteDef.scaleIndex + transposeDegree));
 
           if (useContour && contourPoints && contourPoints.length >= 2) {
-            // ==========================================
-            // CONTOUR-DRIVEN PITCH RESOLVER
-            // ==========================================
             const contourY = this._getContourValueAtStep(globalStep, totalSteps, contourPoints); // 0.0 (bottom) to 1.0 (top)
             let contourDegree = Math.round(contourY * (scaleNotes.length - 1));
 
-            // Chaos perturbation around contour line
             if (chaosLevel > 0 && this.rng.chance(mutationChance * 0.7) && !noteDef.isDownbeat) {
               const maxChaosLeap = Math.round(1 + (chaosLevel / 100) * 3);
               contourDegree += this.rng.choice([-maxChaosLeap, maxChaosLeap, -1, 1]);
@@ -1052,21 +965,16 @@
             contourDegree = Math.max(0, Math.min(scaleNotes.length - 1, contourDegree));
             targetMidi = scaleNotes[contourDegree];
 
-            // Downbeat Chord Tone Snapping (Harmonic coherence)
             if (noteDef.isDownbeat && !chordPcs.includes(targetMidi % 12) && this.rng.chance(Math.max(0.4, 1.0 - mutationChance))) {
               const chordTonesInScale = scaleNotes.filter(m => chordPcs.includes(m % 12));
               targetMidi = this._findClosestNote(chordTonesInScale, targetMidi);
             }
           } else {
-            // ==========================================
-            // STANDARD PHRASE & MOTIF BLUEPRINT RESOLVER
-            // ==========================================
             if (forceCadenceResolve && isLastNoteInPhrase) {
               targetMidi = rootMidi + (isPeakClimax ? 24 : 12);
             } else {
               if (isPeakClimax) baseDegreeIndex += 3;
 
-              // Chaos Mutation: Pitch mutation & leaps scaled by Chaos Level
               if (this.rng.chance(mutationChance * 0.7) && !noteDef.isDownbeat) {
                 if (chaosLevel > 60 && this.rng.chance(0.4)) {
                   baseDegreeIndex += this.rng.choice([-4, -3, 3, 4, 5]);
@@ -1087,7 +995,6 @@
             }
           }
 
-          // Ambitus discipline: melody hat duoc trong ~2 quang 8 (tru climax)
           if (!isPeakClimax && !(forceCadenceResolve && isLastNoteInPhrase)) {
             const center = scaleNotes[Math.floor(scaleNotes.length * 0.45)];
             if (targetMidi > center + 12) {
@@ -1099,14 +1006,12 @@
             }
           }
 
-          // Leap smoothing theo DNA: keo buoc nhay lon ve gan not truoc (tru downbeat)
           const leapCap = grammar.leapSemis || 9;
           if (prevLeadMidi != null && !noteDef.isDownbeat && Math.abs(targetMidi - prevLeadMidi) > leapCap && this.rng.chance(0.7)) {
             const near = scaleNotes.filter(m => Math.abs(m - prevLeadMidi) <= Math.max(2, Math.round(leapCap / 2)));
             if (near.length) targetMidi = this._findClosestNote(near, targetMidi);
           }
 
-          // Leading tone truoc resolve cuoi (cadence manh ve tonic)
           if (forceCadenceResolve && !isLastNoteInPhrase && i === activeBlueprint.length - 2 && !useContour) {
             targetMidi = rootMidi + 11;
           }
@@ -1131,13 +1036,11 @@
             finalDuration = noteDef.durationSteps <= 2 ? (this.rng.chance(0.35) ? 1 : 2) : noteDef.durationSteps;
           }
 
-          // Dynamic Climax Velocity
           let vel = noteDef.isDownbeat ? 112 : 92;
           vel = Math.round(vel * (0.65 + 0.45 * climaxFactor)) + velocityBoost;
           if (humanize) vel += this.rng.rangeInt(-5, 5);
           vel = Math.max(40, Math.min(127, vel));
 
-          // 1. Primary Melody Note
           notes.push({
             step: globalStep,
             duration: Math.max(1, finalDuration),
@@ -1147,7 +1050,6 @@
           });
           prevLeadMidi = targetMidi;
 
-          // 2. sasakure.UK Chiptune Rapid 16th Grace Note & Passing Flurry
           if (isSasakure && density >= 70 && noteDef.durationSteps >= 3 && this._vChance(0.45, Vl)) {
             const flurryMidi = scaleNotes[Math.min(scaleNotes.length - 1, baseDegreeIndex + 2)] || (targetMidi + 4);
             notes.push({
@@ -1159,7 +1061,6 @@
             });
           }
 
-          // 3. High-Density Fast 16th/32nd Embellishment (When Density >= 80%)
           if (density >= 80 && noteDef.durationSteps >= 4 && this.rng.chance((density - 70) / 40)) {
             const embellishMidi = scaleNotes[Math.min(scaleNotes.length - 1, baseDegreeIndex + 1)] || (targetMidi + 2);
             notes.push({
@@ -1171,9 +1072,7 @@
             });
           }
 
-          // 4. ANTHEMIC HIGH-REGISTER BLOCK CHORDS (Spider Thread Climax Chorus)
           if (isSasakure && isPeakClimax && noteDef.isDownbeat) {
-            // Add 3rd and 5th chord tones in high register C5-C6
             const chordTone1 = chord.notes[1] ? chord.notes[1] + 24 : targetMidi + 4;
             const chordTone2 = chord.notes[2] ? chord.notes[2] + 24 : targetMidi + 7;
             if (chordTone1 <= 108) {
@@ -1183,7 +1082,6 @@
               notes.push({ step: globalStep, duration: Math.max(1, finalDuration), midi: chordTone2, velocity: vel - 8, pan: 10 });
             }
           } else if ((isPeakClimax || isFieryPiano) && noteDef.isDownbeat && targetMidi + 12 <= 108) {
-            // 3. FIERY OCTAVE DOUBLING
             notes.push({
               step: globalStep,
               duration: Math.max(1, finalDuration),
@@ -1213,7 +1111,6 @@
       let rhythmPool;
 
       if (timeSignature === '7/8' || stepsPerBar === 14) {
-        // sasakure.UK Math 7/8 Rhythms (14 steps per bar: 3+2+2 or 4+3 or 7x2)
         if (density < 45) {
           rhythmPool = [
             [7, 7],
@@ -1252,7 +1149,6 @@
           [2, 2, 2, 2, 2]
         ];
       } else {
-        // Standard 4/4 (16 steps per bar)
         if (density < 45) {
           rhythmPool = [
             [16],
@@ -1290,7 +1186,6 @@
           if (blueprint.length === 0) {
             currentScaleIndex = Math.floor(scaleNotes.length * 0.45);
           } else {
-            // Chaos controls leap probability
             const leapChance = Math.min(0.8, 0.1 + chaosFactor * 0.7);
             if (this.rng.chance(leapChance)) {
               const maxLeap = Math.round(2 + chaosFactor * 5);
@@ -1317,9 +1212,7 @@
       return blueprint;
     }
 
-    /**
-     * PROCEDURAL CHORD HARMONY ENGINE (DYNAMIC RHYTHMIC CHOP MUTATION & VOICE LEADING)
-     */
+
     _generateChordTrack(ctx) {
       const { progression, genreDef, lengthBars, timeSignature = '4/4', stepsPerBar = 16, section, climaxCurve, density = 100, velocityBoost, humanize } = ctx;
       const notes = [];
@@ -1331,7 +1224,6 @@
         const chord = voicedProgression[bar] || voicedProgression[0];
         const Vch = (ctx.variation && ctx.variation.chords != null) ? ctx.variation.chords : 0.7;
         let chordTones = (chord.voicedNotes || chord.notes).slice();
-        // Dao inversion moi take (0 goc, 1 dao 1, 2 bo five mo voicing)
         const inv = this._variant(3, Vch);
         if (inv === 1 && chordTones.length >= 2) {
           chordTones[0] += 12;
@@ -1339,7 +1231,6 @@
         } else if (inv === 2 && chordTones.length >= 3) {
           chordTones.splice(1, 1);
         }
-        // Tension 9th them mau
         if (this._vChance(0.3, Vch) && chord.notes.length >= 3) {
           const ninth = chord.rootMidi + 14;
           if (ninth <= 84) chordTones = chordTones.concat([ninth]);
@@ -1351,7 +1242,6 @@
         let chopSteps = [];
 
         if (genreDef.id === 'sasakure_uk' || timeSignature === '7/8' || stepsPerBar === 14) {
-          // sasakure.UK 7/8 Math-Rock Dynamic Phrase Mutation
           if (phrasePos === 0) {
             chopSteps = [0, 6, 10]; // Main Anchor Groove
           } else if (phrasePos === 1) {
@@ -1375,11 +1265,9 @@
           else if (phrasePos === 2) chopSteps = [0, 3, 6, 9, 12, 14];
           else chopSteps = [0, 4, 8];
         } else {
-          // Sustained Pads / Romantic Orchestra Strings
           chopSteps = [0];
         }
 
-        // Rhythm bien tau moi take (0 goc, 1 day tre, 2 half-time)
         let chops = chopSteps;
         const chPat = this._variant(3, Vch);
         if (chPat === 1) {
@@ -1389,13 +1277,11 @@
           chops = chopSteps.filter((_, i) => i % 2 === 0);
           if (!chops.length) chops = chopSteps;
         }
-        // Chieu strum dao
         const downStrum = !(chordTones.length > 2 && this._vChance(0.4, Vch));
         const ordered = downStrum ? chordTones : chordTones.slice().reverse();
 
         for (const stepOffset of chops) {
           if (stepOffset >= stepsPerBar) continue;
-          // Mat do theo DNA genre (chiptune thua, pad day du)
           if (stepOffset !== 0 && this.rng.range(0, 100) > density) continue;
           let strumOffset = 0;
 
@@ -1436,10 +1322,7 @@
       return { name: 'Arpeggio Ostinato', type: 'pluck_synth', instrument, color: '#4facfe' };
     }
 
-    /**
-     * Arp cohesion fit: nam duoi lead (cap 93), downbeat bat buoc chord-tone.
-     * Chay sau moi pattern arp de arp an nhap voi hoa am + lead.
-     */
+
     _fitArp(track, progression, stepsPerBar = 16) {
       if (!track || !track.notes) return track;
       for (const n of track.notes) {
@@ -1462,7 +1345,6 @@
       return track;
     }
 
-    // NES 1-3-5-8 chay nhanh + fill len cao bar 4 (chiptune / sasakure.UK)
     _generateArpChiptune(ctx, startBar, endBar, instrument) {
       const { progression, lengthBars, stepsPerBar = 16, climaxCurve, density = 75, velocityBoost, humanize } = ctx;
       const notes = [];
@@ -1485,7 +1367,6 @@
       return Object.assign(this._arpTrackMeta(instrument), { notes });
     }
 
-    // Lofi: thua, ngan dai, nhe (off-beat thoai mai)
     _generateArpLofi(ctx, startBar, endBar) {
       const { progression, lengthBars, stepsPerBar = 16, climaxCurve, velocityBoost, humanize } = ctx;
       const notes = [];
@@ -1511,7 +1392,6 @@
       return Object.assign(this._arpTrackMeta('sparkle_arp'), { notes });
     }
 
-    // Synthwave: 8th notes don dap root-octave
     _generateArpSynthwave(ctx, startBar, endBar) {
       const { progression, lengthBars, stepsPerBar = 16, climaxCurve, velocityBoost, humanize } = ctx;
       const notes = [];
@@ -1534,7 +1414,6 @@
       return Object.assign(this._arpTrackMeta('sparkle_arp'), { notes });
     }
 
-    // Epic: quarter-note low pulses, hung tráng
     _generateArpEpic(ctx, startBar, endBar) {
       const { progression, lengthBars, stepsPerBar = 16, climaxCurve, velocityBoost, humanize } = ctx;
       const notes = [];
@@ -1557,7 +1436,6 @@
       return Object.assign(this._arpTrackMeta('sparkle_arp'), { notes });
     }
 
-    // Dark/Epic: broken chord tram, cham, chuong ngan
     _generateArpDoom(ctx, startBar, endBar) {
       const { progression, lengthBars, stepsPerBar = 16, climaxCurve, velocityBoost, humanize } = ctx;
       const notes = [];
@@ -1582,7 +1460,6 @@
       return Object.assign(this._arpTrackMeta('sparkle_arp'), { notes });
     }
 
-    // Cyberpunk: 16th toi voi chromatic dan vao phach
     _generateArpCyber(ctx, startBar, endBar) {
       const { progression, lengthBars, stepsPerBar = 16, climaxCurve, density = 75, velocityBoost, humanize } = ctx;
       const notes = [];
@@ -1604,7 +1481,6 @@
       return Object.assign(this._arpTrackMeta('sparkle_arp'), { notes });
     }
 
-    // Anime Pop: 8th nay + fill 16th cuoi bar 4
     _generateArpAnime(ctx, startBar, endBar) {
       const { progression, lengthBars, stepsPerBar = 16, climaxCurve, velocityBoost, humanize } = ctx;
       const notes = [];
@@ -1637,16 +1513,13 @@
       return Object.assign(this._arpTrackMeta('sparkle_arp'), { notes });
     }
 
-    /**
-     * PROCEDURAL ARPEGGIO WAVE & OSTINATO ENGINE (DYNAMIC WAVE PHRASING & INNER VOICES)
-     */
+
     _generateArpTrack(ctx) {
       const { progression, scaleNotes, genreDef, lengthBars, timeSignature = '4/4', stepsPerBar = 16, section, climaxCurve, density = 75, chaosLevel = 25, velocityBoost, humanize } = ctx;
       const notes = [];
       const isSasakure = (genreDef.id === 'sasakure_uk');
       const chaosFactor = chaosLevel / 100;
 
-      // Pattern rieng theo genre (arp dac trung, khong dung chung 1 wave)
       const gid = genreDef.id;
       const arpStart = Math.max(0, ctx.barStart || 0);
       const arpEnd = (ctx.barEnd == null || ctx.barEnd < 0) ? (lengthBars - 1) : Math.min(lengthBars - 1, ctx.barEnd);
@@ -1673,7 +1546,6 @@
         const climaxFactor = this._getClimaxFactor(bar, lengthBars, climaxCurve);
         const phrasePos = bar % 4; // 4-bar phrase evolution
 
-        // Select Wave Shape Strategy for this bar
         let waveStrategy = 'single_peak_wave';
         if (isSasakure || genreDef.id === 'fiery_piano' || genreDef.id === 'touhou') {
           if (phrasePos === 0) waveStrategy = 'single_peak_wave';
@@ -1688,7 +1560,6 @@
         const poolLen = arpPool.length;
 
         for (let stepInBar = 0; stepInBar < stepsPerBar; stepInBar++) {
-          // Density gating with musical breathing (thua hon mac dinh de nhuong lead)
           const isKeyDownbeat = (stepInBar === 0);
           if (!isKeyDownbeat && this.rng.range(0, 100) > density) continue;
 
@@ -1696,14 +1567,12 @@
           let isAccent = (stepInBar === 0 || stepInBar === Math.floor(stepsPerBar / 2) || stepInBar === Math.floor(stepsPerBar * 0.75));
 
           if (waveStrategy === 'single_peak_wave') {
-            // Sweeps up smoothly to peak at middle of bar, then cascades down
             const halfBar = Math.floor(stepsPerBar / 2) || 1;
             const progress = stepInBar <= halfBar ? (stepInBar / halfBar) : ((stepsPerBar - stepInBar) / (stepsPerBar - halfBar));
             const poolIdx = Math.min(poolLen - 1, Math.floor(progress * poolLen));
             targetMidi = arpPool[poolIdx];
             if (progress > 0.7) targetMidi += 12; // Octave lift at peak!
           } else if (waveStrategy === 'double_ripple_wave') {
-            // Two oscillating wave ripples per bar
             const cycleSteps = Math.floor(stepsPerBar / 2) || 1;
             const posInCycle = stepInBar % cycleSteps;
             const progress = posInCycle < (cycleSteps / 2) ? (posInCycle / (cycleSteps / 2)) : ((cycleSteps - posInCycle) / (cycleSteps / 2));
@@ -1711,7 +1580,6 @@
             targetMidi = arpPool[poolIdx];
             if (stepInBar >= cycleSteps) targetMidi += 12;
           } else if (waveStrategy === 'ascending_cascade') {
-            // Surges upward across 2 octaves towards the lead melody
             const progress = stepInBar / stepsPerBar;
             const rawIdx = Math.floor(progress * poolLen * 2);
             const poolIdx = rawIdx % poolLen;
@@ -1719,20 +1587,17 @@
             targetMidi = Math.min(108, arpPool[poolIdx] + octaveShift);
             isAccent = (stepInBar % 3 === 0);
           } else if (waveStrategy === 'waterfall_fill') {
-            // Shimmering high peak tumbling down into the bass
             const progress = (stepsPerBar - 1 - stepInBar) / stepsPerBar;
             const rawIdx = Math.floor(progress * poolLen * 1.8);
             const poolIdx = rawIdx % poolLen;
             const octaveShift = Math.floor(rawIdx / poolLen) * 12;
             targetMidi = Math.min(108, arpPool[poolIdx] + octaveShift);
           } else {
-            // Alberti Syncopated Ostinato (1 - 5 - 3 - 5)
             const albertiOrder = [0, 2 % poolLen, 1 % poolLen, 2 % poolLen];
             const poolIdx = albertiOrder[stepInBar % 4];
             targetMidi = arpPool[poolIdx];
           }
 
-          // Chaos: chromatic neighbor nhe, chi khi density cao (tranh dam hop am)
           if (density >= 60 && this.rng.chance(chaosFactor * 0.25) && !isKeyDownbeat) {
             const chromaticShift = this.rng.choice([-1, 1]);
             targetMidi = Math.max(48, Math.min(93, targetMidi + chromaticShift));
@@ -1759,9 +1624,7 @@
       }, progression, stepsPerBar), stepsPerBar, VV);
     }
 
-    /**
-     * PROCEDURAL BASSLINE ENGINE (PHRASE-BASED MOTIF, WALKING CADENCE & DYNAMIC OCTAVES)
-     */
+
     _generateBassTrack(ctx) {
       const { progression, scaleNotes, genreDef, lengthBars, timeSignature = '4/4', stepsPerBar = 16, section, climaxCurve, density = 75, chaosLevel = 25, velocityBoost, humanize } = ctx;
       const Vb = (ctx.variation && ctx.variation.bass != null) ? ctx.variation.bass : 0.7;
@@ -1778,7 +1641,6 @@
 
         let rootMidi = 36 + rootPitchClass; // Sub-bass root (C2 range)
         
-        // Chaos: Inversion bass note selection (1st/2nd inversion)
         if (this._vChance(chaosFactor * 0.6, Vb) && chord.notes.length >= 3) {
           const invChoice = this.rng.choice([chord.notes[1], chord.notes[2]]);
           rootMidi = 36 + (invChoice % 12);
@@ -1796,9 +1658,7 @@
         let bassEvents = [];
 
         if (timeSignature === '7/8' || stepsPerBar === 14) {
-          // sasakure.UK 7/8 Math-Rock Dynamic Phrase Bass
           if (phrasePos === 0) {
-            // Bar 1: Deep Grounding Anchor with Octave Jump
             bassEvents = [
               { s: 0, dur: 3, m: subOctaveMidi },
               { s: 3, dur: 3, m: rootMidi },
@@ -1807,7 +1667,6 @@
               { s: 11, dur: 3, m: rootMidi }
             ];
           } else if (phrasePos === 1) {
-            // Bar 2: Syncopated Offbeat Bounce & Decima Leap
             bassEvents = [
               { s: 0, dur: 2, m: rootMidi },
               { s: 2, dur: 2, m: fifthMidi },
@@ -1817,7 +1676,6 @@
               { s: 12, dur: 2, m: rootMidi }
             ];
           } else if (phrasePos === 2) {
-            // Bar 3: Driving Energy & Rapid Pumping
             bassEvents = [
               { s: 0, dur: 2, m: subOctaveMidi },
               { s: 2, dur: 2, m: rootMidi },
@@ -1828,7 +1686,6 @@
               { s: 12, dur: 2, m: fifthMidi }
             ];
           } else {
-            // Bar 4: Walking Bass Turnaround Cadence into Next Chord!
             const nextRootMidi = 36 + nextRootPitchClass;
             const approachNote = (nextRootMidi > rootMidi) ? (nextRootMidi - 1) : (nextRootMidi + 1); // Chromatic leading tone
 
@@ -1842,18 +1699,14 @@
             ];
           }
         } else {
-          // 4/4 / 6/8 Standard Multi-Bar Phrase Engine
           if (density < 40) {
-            // Low Density: Sustained Resonant Pedal Points
             bassEvents = [
               { s: 0, dur: Math.floor(stepsPerBar * 0.5), m: subOctaveMidi },
               { s: Math.floor(stepsPerBar * 0.5), dur: Math.floor(stepsPerBar * 0.5), m: (phrasePos === 3 ? fifthMidi : rootMidi) }
             ];
           } else if (genreDef.id === 'touhou') {
-            // ZUN: driving 8ths + offbeat shots + ascending walk khi doi hop am
             const rising = nextRootPitchClass !== rootPitchClass;
             if (rising && phrasePos !== 3) {
-              // Walk len 4 quarters ve root bar sau (snap vao scale bass)
               const target = 36 + nextRootPitchClass + 12;
               for (let q = 0; q < 4; q++) {
                 const s = q * 4;
@@ -1867,7 +1720,6 @@
                 if (s >= stepsPerBar) break;
                 bassEvents.push({ s, dur: 1, m: rootMidi });
               }
-              // Offbeat octave shots nguoc melody
               if (density >= 50 && this.rng.chance(0.7)) {
                 for (const os of [2, 6, 10, 14]) {
                   if (os >= stepsPerBar) continue;
@@ -1876,16 +1728,13 @@
               }
             }
           } else if (genreDef.id === 'fiery_piano') {
-            // Liszt left hand: stride + broken 10ths + octave tremolo + chromatic run
             const minorish = /min/.test(chord.chordType || '') && !/maj/.test(chord.chordType || '');
             const thirdMidi = rootMidi + (minorish ? 3 : 4);
             if (climaxFactor >= 0.88 && density >= 60) {
-              // Octave tremolo 16th luc cao trao
               for (let s = 0; s < stepsPerBar; s++) {
                 bassEvents.push({ s, dur: 1, m: (s % 2 === 0) ? rootMidi : octaveMidi });
               }
             } else if (phrasePos % 2 === 0) {
-              // Stride: bass sau - chord - fifth - chord
               bassEvents.push({ s: 0, dur: 3, m: subOctaveMidi });
               for (const ss of [4, 8, 12]) {
                 if (ss >= stepsPerBar) continue;
@@ -1894,14 +1743,12 @@
                 }
               }
             } else {
-              // Broken 10ths chay 8th
               for (let i = 0; i < 8; i++) {
                 const s = i * 2;
                 if (s >= stepsPerBar) break;
                 bassEvents.push({ s, dur: 2, m: (i % 2 === 0) ? rootMidi : decimaMidi });
               }
             }
-            // Chromatic dan vao bar sau (bar 4 cua cum)
             if (phrasePos === 3) {
               const nextRootMidi = 36 + nextRootPitchClass;
               for (let k = 0; k < 4; k++) {
@@ -1911,20 +1758,17 @@
               }
             }
           } else if (genreDef.id === 'synthwave') {
-            // Synthwave: rolling 8th root-octave don dap
             for (let i = 0; i < 8; i++) {
               const s = i * 2;
               if (s >= stepsPerBar) break;
               bassEvents.push({ s, dur: 2, m: (i === 2 || i === 6) ? octaveMidi : rootMidi });
             }
           } else if (genreDef.id === 'lofi') {
-            // Lofi: thua, ngan dai, nhe
             bassEvents = [
               { s: 0, dur: 8, m: (phrasePos % 2 === 0 ? subOctaveMidi : rootMidi) },
               { s: 10, dur: 6, m: (phrasePos % 2 === 0 ? rootMidi : fifthMidi) }
             ];
           } else if (genreDef.id === 'chiptune') {
-            // Chiptune: chay 8th root-5th-octave
             const seq = [rootMidi, fifthMidi, octaveMidi, fifthMidi, rootMidi, fifthMidi, octaveMidi, fifthMidi];
             for (let i = 0; i < 8; i++) {
               const s = i * 2;
@@ -1932,13 +1776,11 @@
               bassEvents.push({ s, dur: 2, m: seq[i] });
             }
           } else if (genreDef.id === 'dark_fantasy') {
-            // Doom pedal tram + turnaround bar 4
             bassEvents = [{ s: 0, dur: 12, m: subOctaveMidi }];
             if (phrasePos === 3 && stepsPerBar > 12) {
               bassEvents.push({ s: stepsPerBar - 4, dur: 4, m: fifthMidi });
             }
           } else if (genreDef.id === 'epic' || genreDef.id === 'cinematic') {
-            // Epic: quarter pulses root-fifth-octave hung tráng
             const seq = [subOctaveMidi, rootMidi, octaveMidi, fifthMidi];
             for (let i = 0; i < 4; i++) {
               const s = i * 4;
@@ -1946,14 +1788,12 @@
               bassEvents.push({ s, dur: 4, m: seq[i] });
             }
           } else if (genreDef.id === 'cyberpunk') {
-            // Dark drive voi chromatic dan vao phach
             for (let i = 0; i < 8; i++) {
               const s = i * 2;
               if (s >= stepsPerBar) break;
               bassEvents.push({ s, dur: 2, m: (i % 4 === 3) ? rootMidi - 1 : rootMidi });
             }
           } else if (genreDef.id === 'anime') {
-            // Pop bass nay root-5th-oct-decima
             const seq = [rootMidi, fifthMidi, octaveMidi, fifthMidi, rootMidi, decimaMidi, octaveMidi, fifthMidi];
             for (let i = 0; i < 8; i++) {
               const s = i * 2;
@@ -1961,7 +1801,6 @@
               bassEvents.push({ s, dur: 2, m: seq[i] });
             }
           } else if (phrasePos === 0) {
-            // Bar 1: Deep Root Anchor
             bassEvents = [
               { s: 0, dur: 4, m: subOctaveMidi },
               { s: 4, dur: 4, m: fifthMidi },
@@ -1969,7 +1808,6 @@
               { s: 12, dur: 4, m: octaveMidi }
             ];
           } else if (phrasePos === 1) {
-            // Bar 2: Syncopated 16th Funk / Rock Stabs
             bassEvents = [
               { s: 0, dur: 3, m: rootMidi },
               { s: 3, dur: 3, m: octaveMidi },
@@ -1979,7 +1817,6 @@
               { s: 14, dur: 2, m: fifthMidi }
             ];
           } else if (phrasePos === 2) {
-            // Bar 3: Pumping Momentum
             bassEvents = [
               { s: 0, dur: 2, m: subOctaveMidi },
               { s: 2, dur: 2, m: rootMidi },
@@ -1991,7 +1828,6 @@
               { s: 14, dur: 2, m: rootMidi }
             ];
           } else {
-            // Bar 4: Walking Bass Turnaround Cadence
             const nextRootMidi = 36 + nextRootPitchClass;
             const approachNote = (nextRootMidi > rootMidi) ? (nextRootMidi - 1) : (nextRootMidi + 1);
 
@@ -2005,8 +1841,6 @@
           }
         }
 
-        // Bien tau moi take: octave pop + rut ngan + syncopation (tru downbeat)
-        // Khung pattern giu nguyen theo genre, chi ornament thay doi theo bien tau
         for (const ev of bassEvents) {
           if (ev.s !== 0 && this._vChance(chaosFactor * 0.5, Vb)) {
             const r = this.rng.range(0, 1);
@@ -2018,7 +1852,6 @@
           const cands = bassEvents.filter(e => e.s !== 0 && e.s + 1 < stepsPerBar);
           if (cands.length) cands[this.rng.rangeInt(0, cands.length - 1)].s += 1; // day tre 1 step
         }
-        // Dich octave ca bar (giu pitch-class = an toan hoa am)
         const barShift = this._variant(4, Vb);
         const octShift = barShift === 1 ? 12 : (barShift === 2 ? -12 : 0);
 
@@ -2086,7 +1919,6 @@
         }
 
         if (isSasakure || timeSignature === '7/8') {
-          // sasakure.UK Math Breakbeat in 7/8 or Complex Meter
           const kickHits = (stepsPerBar === 14) ? [0, 4, 8, 11] : [0, 3, 6, 10];
           const snareHits = (stepsPerBar === 14) ? [6, 12] : [4, 12];
 
@@ -2134,7 +1966,6 @@
           }
 
           if (isFillBar) {
-            // Fill 3 bien the moi take: snare chay / tom xuong / kick+snare doi dap
             const fillPat = this._variant(3, Vd);
             if (fillPat === 1) {
               const toms = [TOM_HI, TOM_MID, TOM_LOW, TOM_LOW];
@@ -2184,7 +2015,6 @@
           }
         }
 
-        // Ghost notes: snare nhe giua backbeat (funkier genres)
         if (density >= 50 && ['lofi', 'synthwave', 'anime', 'fiery_piano', 'touhou'].includes(genreDef.id) && this._vChance(0.6, Vd)) {
           const gs = this.rng.choice([2, 6, 10, 14].filter(s => s < stepsPerBar));
           if (gs != null) {
@@ -2192,13 +2022,11 @@
           }
         }
 
-        // Crash mo dau moi cum 8 bars + fill tom truoc cum (genres chua co fill rieng)
         const hasOwnFill = ['touhou', 'fiery_piano', 'dark_fantasy'].includes(genreDef.id);
         if (bar % 8 === 0 && !notes.some(n => n.midi === CRASH && Math.abs(n.step - barStartStep) <= 2)) {
           notes.push({ step: barStartStep, duration: 8, midi: CRASH, velocity: Math.min(127, Math.round(105 * climaxFactor) + velocityBoost), pan: 15 });
         }
         if (((bar + 1) % 8 === 0) && !hasOwnFill && stepsPerBar >= 8) {
-          // Fill tom 2 bien the: xuoi / nguoc + doi dap snare
           const tomPat = this._variant(2, Vd);
           const toms = [TOM_HI, TOM_MID, TOM_LOW, SNARE];
           for (let f = 0; f < 4; f++) {
@@ -2207,7 +2035,6 @@
             notes.push({ step: barStartStep + fs, duration: 1, midi: drum, velocity: Math.min(127, 95 + f * 8 + velocityBoost), pan: 0 });
           }
         }
-        // Crash doi khi tre 1 step (pickup crash, tru bar dau tien)
         if (bar % 8 === 0 && bar !== startBar && this._vChance(0.3, Vd)) {
           const ci = notes.findIndex(n => n.midi === CRASH && n.step === barStartStep);
           if (ci >= 0) notes[ci].step += 1;
@@ -2223,9 +2050,7 @@
       }, stepsPerBar, Vd, startBar, endBar, density || 75);
     }
 
-    /**
-     * Apply Fade In & Fade Out Velocity Curves
-     */
+
     _applyFadeDynamics(trackList, totalBars, fadeInBars, fadeOutBars, stepsPerBar = 16) {
       if (fadeInBars <= 0 && fadeOutBars <= 0) return;
 
@@ -2238,12 +2063,10 @@
         for (const note of track.notes) {
           let multiplier = 1.0;
 
-          // Fade In
           if (fadeInBars > 0 && note.step < fadeInSteps) {
             multiplier *= Math.max(0.1, note.step / fadeInSteps);
           }
 
-          // Fade Out
           if (fadeOutBars > 0 && note.step >= fadeOutStartStep) {
             const stepsIntoFadeOut = note.step - fadeOutStartStep;
             const remainingSteps = totalSteps - note.step;

@@ -1,9 +1,4 @@
-/**
- * RMG Native Host - Win32 + WebView2
- * Thay the bon nho (Electron main.js / preload.js) bang chuong trinh C++ thuc thu.
- * Giu nguyen 100% UI: index.html / index.css / engine/*.js / renderer.js
- * Author: Rin0suke257
- */
+
 
 #include <windows.h>
 #include <shlwapi.h>
@@ -34,7 +29,6 @@ using Microsoft::WRL::Callback;
 #pragma comment(lib, "comdlg32.lib")
 #pragma comment(lib, "advapi32.lib")
 
-// ---------------------------------------------------------------- Helpers
 
 static std::wstring Utf8ToWide(const std::string& s) {
   if (s.empty()) return L"";
@@ -97,7 +91,6 @@ static std::wstring FindIndexHtml() {
     if (p == std::wstring::npos || p < 3) break;
     dir = dir.substr(0, p);
   }
-  // Thu muc lam viec hien tai (khi chay tu Visual Studio)
   wchar_t cwd[MAX_PATH * 4] = {0};
   GetCurrentDirectoryW((DWORD)(sizeof(cwd) / sizeof(cwd[0])), cwd);
   dir = cwd;
@@ -167,7 +160,6 @@ static bool WriteFileBytesW(const std::wstring& path, const uint8_t* data, size_
   return true;
 }
 
-// ------------------------------------------------------- LMMS integration
 
 static bool IsLmmsRunning() {
   HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -202,7 +194,6 @@ static void FocusLmmsAndPaste() {
   FindCtx ctx;
   EnumWindows(EnumLmmsWnd, (LPARAM)&ctx);
   if (!ctx.hwnd) return;
-  // Chay rieng de Sleep(250ms) khong treo UI thread
   HWND target = ctx.hwnd;
   std::thread([target]() {
     SetForegroundWindow(target);
@@ -251,7 +242,6 @@ static std::wstring QueryRegDefault(HKEY hive, const std::wstring& subkey) {
   return v;
 }
 
-// Tra ve {path, source}; source: custom|registry|path|system|none
 static std::pair<std::wstring, std::string> FindLmmsExecutable(const std::wstring& custom) {
   if (!custom.empty() && FileExistsW(custom)) return {custom, "custom"};
 
@@ -285,13 +275,11 @@ static std::pair<std::wstring, std::string> FindLmmsExecutable(const std::wstrin
   return {L"", "none"};
 }
 
-// ------------------------------------------------------------- WebView2
 
 static HWND g_hwnd = nullptr;
 static ComPtr<ICoreWebView2Controller> g_controller;
 static ComPtr<ICoreWebView2> g_webview;
 
-// Shim JS: tao window.rmgAPI truoc khi renderer.js chay (thay preload.js)
 static const wchar_t* kBridgeShim = LR"SHIM(
 (function () {
   if (window.rmgAPI) return;
@@ -362,7 +350,7 @@ static std::vector<uint8_t> ExtractBytes(const json& data, bool& isText, std::st
 }
 
 static json HandleSaveFile(const json& payload) {
-  std::string defaultName = payload.value("defaultName", std::string("RMG_Song.mmp"));
+  std::string defaultName = payload.value("defaultName", std::string("RinTune_Song.mmp"));
   std::string type = payload.value("type", std::string("mmp"));
   auto lower = [](std::string s) {
     for (auto& c : s) c = (char)tolower((unsigned char)c);
@@ -376,7 +364,7 @@ static json HandleSaveFile(const json& payload) {
   const wchar_t* filter = isMidi
     ? L"MIDI Files (*.mid)\0*.mid\0All Files (*.*)\0*.*\0"
     : (isRmg
-      ? L"RMG Project Files (*.rmg)\0*.rmg\0All Files (*.*)\0*.*\0"
+      ? L"RinTune Project Files (*.rmg)\0*.rmg\0All Files (*.*)\0*.*\0"
       : (isWav
         ? L"WAV Audio (*.wav)\0*.wav\0All Files (*.*)\0*.*\0"
         : L"LMMS Project Files (*.mmp)\0*.mmp\0All Files (*.*)\0*.*\0"));
@@ -427,8 +415,6 @@ static UINT GetLmmsClipboardFormat() {
   return fmt;
 }
 
-// Ghi clip LMMS dung chuan: text thuong (de xem) + MIME application/x-lmms-clipboard
-// (de Ctrl+V trong piano-roll LMMS nhan). Tra ve verified khi doc lai khop.
 static bool CopyLmmsClipToSystem(const std::string& xmlUtf8, bool& verified) {
   verified = false;
   if (xmlUtf8.empty() || xmlUtf8.size() > 16 * 1024 * 1024) return false;
@@ -657,7 +643,6 @@ static json HandleSaveFileDirect(const json& payload) {
   if (!ExtractJsonBytes(payload["data"], text, bin, isText)) {
     return json{{"success", false}, {"error", "Du lieu khong hop le"}};
   }
-  // Chunked upload cho file lon (WAV): chunkIndex/totalChunks, noi dan native
   if (payload.contains("chunkIndex") && payload.contains("totalChunks")) {
     int idx = payload.value("chunkIndex", 0);
     int total = payload.value("totalChunks", 1);
@@ -708,7 +693,6 @@ static json HandleListFiles(const json& payload) {
       ULARGE_INTEGER ft{};
       ft.HighPart = fd.ftLastWriteTime.dwHighDateTime;
       ft.LowPart = fd.ftLastWriteTime.dwLowDateTime;
-      // FILETIME (100ns tu 1601) -> ms unix
       long long ms = 0;
       if (ft.QuadPart > 116444736000000000ULL) ms = (long long)((ft.QuadPart - 116444736000000000ULL) / 10000ULL);
       arr.push_back({ {"name", WideToUtf8(fd.cFileName)}, {"size", (long long)sz.QuadPart}, {"mtime", ms} });
@@ -780,7 +764,7 @@ static json HandleSetExportDir(const json& payload) {
   std::wstring cur = GetExportDirW();
   BROWSEINFOW bi{};
   bi.hwndOwner = g_hwnd;
-  bi.lpszTitle = L"Chon thu muc xuat file mac dinh cho RMG";
+  bi.lpszTitle = L"Chon thu muc xuat file mac dinh cho RinTune";
   bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
   bi.lpfn = BrowseCb;
   bi.lParam = (LPARAM)cur.c_str();
@@ -816,11 +800,11 @@ static json HandleOpenFile(const json& payload) {
   OPENFILENAMEW ofn{};
   ofn.lStructSize = sizeof(ofn);
   ofn.hwndOwner = g_hwnd;
-  ofn.lpstrFilter = L"RMG Project (*.rmg)\0*.rmg\0Standard MIDI Files (*.mid;*.midi)\0*.mid;*.midi\0All Files (*.*)\0*.*\0";
+  ofn.lpstrFilter = L"RinTune Project (*.rmg)\0*.rmg\0Standard MIDI Files (*.mid;*.midi)\0*.mid;*.midi\0All Files (*.*)\0*.*\0";
   ofn.nFilterIndex = 1;
   ofn.lpstrFile = fileBuf.data();
   ofn.nMaxFile = (DWORD)fileBuf.size();
-  ofn.lpstrTitle = L"Chon file MIDI de mo trong RMG";
+  ofn.lpstrTitle = L"Chon file MIDI de mo trong RinTune";
   ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
   if (!GetOpenFileNameW(&ofn)) {
     if (CommDlgExtendedError() == 0) return json{{"success", false}, {"cancelled", true}};
@@ -909,7 +893,6 @@ static void OnWebMessage(const std::wstring& msgJsonW) {
   } catch (...) {}
 }
 
-// ------------------------------------------------------------- Window
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
   switch (msg) {
@@ -947,14 +930,14 @@ static void InitWebView2(HWND hwnd) {
       [hwnd, url](HRESULT res, ICoreWebView2Environment* env) -> HRESULT {
         if (FAILED(res) || !env) {
           MessageBoxW(hwnd, L"Khong khoi tao duoc WebView2. Hay cai Microsoft Edge WebView2 Runtime.",
-                       L"RMG - Loi", MB_ICONERROR);
+                       L"RinTune - Loi", MB_ICONERROR);
           return res;
         }
         env->CreateCoreWebView2Controller(
           hwnd, Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
             [hwnd, url](HRESULT res2, ICoreWebView2Controller* ctrl) -> HRESULT {
               if (FAILED(res2) || !ctrl) {
-                MessageBoxW(hwnd, L"Khong tao duoc WebView2 Controller.", L"RMG - Loi", MB_ICONERROR);
+                MessageBoxW(hwnd, L"Khong tao duoc WebView2 Controller.", L"RinTune - Loi", MB_ICONERROR);
                 return res2;
               }
               g_controller = ctrl;
@@ -993,7 +976,7 @@ static void InitWebView2(HWND hwnd) {
       }).Get());
 
   if (FAILED(hr)) {
-    MessageBoxW(hwnd, L"Khong tim thay WebView2 Runtime.", L"RMG - Loi", MB_ICONERROR);
+    MessageBoxW(hwnd, L"Khong tim thay WebView2 Runtime.", L"RinTune - Loi", MB_ICONERROR);
   }
 }
 
@@ -1013,7 +996,7 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, PWSTR, int nCmd) {
   RegisterClassW(&wc);
 
   g_hwnd = CreateWindowExW(
-    0, kClass, L"RMG - LMMS Random Music Generator (by Rin0suke257)",
+    0, kClass, L"RinTune Studio (by Rin0suke257)",
     WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
     CW_USEDEFAULT, CW_USEDEFAULT, 1040, 900,
     nullptr, nullptr, hInst, nullptr);

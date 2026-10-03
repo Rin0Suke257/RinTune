@@ -1,10 +1,4 @@
-/**
- * RMG MIDI Import Engine - parse Standard MIDI File (.mid) thanh du lieu bai nhac.
- * Ho tro: Type 0/1, VLQ, running status, note on/off (vel 0 = off),
- * tempo (FF 51), time signature (FF 58), track name (FF 03), program change.
- * Khong ho tro: SMPTE division, sysex (bo qua an toan).
- * Author: Rin0suke257
- */
+
 
 (function(exports) {
   'use strict';
@@ -37,10 +31,7 @@
     return s;
   }
 
-  /**
-   * Parse 1 track chunk -> { name, events: [{tick, type, ...}] }
-   * type: 'note' {midi, vel, durTicks} | 'tempo' {mpqn} | 'timesig' {num, denom} | 'program' {channel, program}
-   */
+
   function parseTrack(bytes, start, len) {
     const end = start + len;
     let pos = start;
@@ -73,13 +64,11 @@
       const ch = status & 0x0F;
 
       if (status === 0xFF) {
-        // Meta event
         const mtype = bytes[pos++];
         const ll = readVLQ(bytes, pos);
         pos = ll.pos;
         if (mtype === 0x03 && !name) name = bytesToAscii(bytes, pos, ll.value);
         else if (mtype === 0x05 || mtype === 0x01) {
-          // Lyric / Text (karaoke): giu lai gan vao not lead
           const tx = bytesToAscii(bytes, pos, ll.value).trim();
           if (tx) lyrics.push({ tick, text: tx.slice(0, 64) });
         } else if (mtype === 0x51 && ll.value === 3 && !tempoMpqn) {
@@ -115,7 +104,6 @@
       }
     }
 
-    // Dong cac note chua off (file cat ngang)
     for (const id of Object.keys(open)) {
       const stack = open[id];
       const ch = Math.floor(id / 128);
@@ -130,9 +118,7 @@
     return { name, notes, lyrics, tempoMpqn, timeSig, programs };
   }
 
-  /**
-   * Parse toan bo file MIDI -> { ticksPerQuarter, bpm, timeSignature, tracks }
-   */
+
   function parseMidiFile(input) {
     const bytes = (input instanceof Uint8Array) ? input : new Uint8Array(input);
     if (bytes.length < 14) throw new Error('File qua nho, khong phai MIDI');
@@ -156,7 +142,6 @@
     }
     if (!tracks.length) throw new Error('Khong doc duoc track MIDI nao');
 
-    // Tempo + time signature: uu tien track dau co meta
     let mpqn = 0;
     let timeSig = null;
     for (const t of tracks) {

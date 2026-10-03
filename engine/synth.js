@@ -1,8 +1,4 @@
-/**
- * RMG Polyphonic Web Audio Synthesizer & Playback Engine
- * Real-time audio preview with multi-track synthesis, effects, and precision lookahead scheduling.
- * Author: Rin0suke257
- */
+
 
 (function(exports) {
   'use strict';
@@ -15,7 +11,6 @@
       this.reverbNode = null;
       this.analyser = null;
 
-      // Track Busses
       this.trackBusses = {};
       this.trackStates = {
         lead:   { volume: 0.85, muted: false, solo: false, pan: 0 },
@@ -26,7 +21,6 @@
       };
       this.trackPanners = {};
 
-      // Playback State
       this.songData = null;
       this.isPlaying = false;
       this.isPaused = false;
@@ -35,7 +29,6 @@
       this.bpm = 140;
       this.secondsPerStep = 0.1; // (60 / bpm) / 4
 
-      // Lookahead Scheduler
       this.lookaheadMs = 25.0; // How frequently to call scheduling function (in milliseconds)
       this.scheduleAheadTime = 0.1; // How far ahead to schedule audio (sec)
       this.nextStepTime = 0.0;
@@ -44,17 +37,13 @@
       this.swing = 0; // 0-60 (% tre offbeat 8th, 0 = thang)
       this._offlineRender = false;
 
-      // Callbacks for UI
       this.onStepChange = null;
       this.onPlaybackEnd = null;
 
-      // White Noise buffer for drums
       this.noiseBuffer = null;
     }
 
-    /**
-     * Initialize Audio Context & Master Chain on first user gesture
-     */
+
     initAudio(force = false) {
       if (!force && this.ctx && this.ctx.state !== 'closed') {
         if (this.ctx.state === 'suspended') {
@@ -66,7 +55,6 @@
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       this.ctx = new AudioContextClass();
 
-      // Master Chain
       this.analyser = this.ctx.createAnalyser();
       this.analyser.fftSize = 256;
       this.analyser.smoothingTimeConstant = 0.8;
@@ -81,14 +69,12 @@
       this.masterGain = this.ctx.createGain();
       this.masterGain.gain.setValueAtTime(0.85, this.ctx.currentTime);
 
-      // Algorithmic Reverb Impulse Response
       this.reverbNode = this.ctx.createConvolver();
       this._createReverbImpulse(1.8, 2.5);
 
       this.reverbGain = this.ctx.createGain();
       this.reverbGain.gain.setValueAtTime(0.22, this.ctx.currentTime);
 
-      // Connect Master
       this.limiter.connect(this.masterGain);
       this.masterGain.connect(this.analyser);
       this.analyser.connect(this.ctx.destination);
@@ -96,7 +82,6 @@
       this.reverbNode.connect(this.reverbGain);
       this.reverbGain.connect(this.limiter);
 
-      // Create Track Busses (gain -> stereo panner -> limiter)
       const trackKeys = ['lead', 'chords', 'arp', 'bass', 'drums'];
       for (const key of trackKeys) {
         const gainNode = this.ctx.createGain();
@@ -111,7 +96,6 @@
           gainNode.connect(this.limiter);
         }
 
-        // Send to reverb (except bass & kick drums)
         if (key === 'lead' || key === 'chords' || key === 'arp') {
           const sendGain = this.ctx.createGain();
           sendGain.gain.setValueAtTime(0.35, this.ctx.currentTime);
@@ -123,7 +107,6 @@
         this.trackPanners[key] = panner;
       }
 
-      // Generate Noise Buffer for percussion & sound design
       this._generateNoiseBuffer();
     }
 
@@ -152,9 +135,7 @@
       this.reverbNode.buffer = impulse;
     }
 
-    /**
-     * Load Song Data from RMGGenerator
-     */
+
     loadSong(songData) {
       this.stop();
       this.songData = songData;
@@ -166,9 +147,7 @@
       this.scheduledStep = 0;
     }
 
-    /**
-     * Play / Resume
-     */
+
     play() {
       this.initAudio();
       if (!this.songData) return;
@@ -183,9 +162,7 @@
       this.timerId = setInterval(() => this._schedulerLoop(), this.lookaheadMs);
     }
 
-    /**
-     * Pause
-     */
+
     pause() {
       if (!this.isPlaying) return;
       this.isPlaying = false;
@@ -194,9 +171,7 @@
       this.timerId = null;
     }
 
-    /**
-     * Stop and reset playhead
-     */
+
     stop() {
       this.isPlaying = false;
       this.isPaused = false;
@@ -210,9 +185,7 @@
       if (this.onStepChange) this.onStepChange(0);
     }
 
-    /**
-     * Seek to a specific step
-     */
+
     seek(step) {
       this.currentStep = Math.max(0, Math.min(this.totalSteps - 1, step));
       this.scheduledStep = this.currentStep;
@@ -223,14 +196,10 @@
       if (this.onStepChange) this.onStepChange(this.currentStep);
     }
 
-    /**
-     * Core Precision Lookahead Scheduler
-     */
+
     _schedulerLoop() {
       if (!this.isPlaying || !this.songData) return;
 
-      // While there are notes that will need to play before the next interval,
-      // schedule them and advance the pointer.
       while (this.nextStepTime < this.ctx.currentTime + this.scheduleAheadTime) {
         this._scheduleStep(this.scheduledStep, this.nextStepTime);
         this._advanceStep();
@@ -242,7 +211,6 @@
       this.scheduledStep++;
 
       if (this.scheduledStep >= this.totalSteps) {
-        // Loop by default
         this.scheduledStep = 0;
       }
     }
@@ -250,13 +218,11 @@
     _scheduleStep(stepIndex, time) {
       if (!this.songData || !this.songData.tracks) return;
 
-      // Swing: tre offbeat 8th (step%4==2) theo % cai dat (0 = thang)
       let playTime = time;
       if (this.swing > 0 && (stepIndex % 4) === 2) {
         playTime = time + (this.swing / 100) * this.secondsPerStep * 2;
       }
 
-      // Inform UI of playback step roughly in sync
       const delayMs = Math.max(0, (playTime - this.ctx.currentTime) * 1000);
       const gen = this._seekGen || 0;
       setTimeout(() => {
@@ -267,15 +233,12 @@
         }
       }, delayMs);
 
-      // Determine Solo condition
       const hasAnySolo = Object.values(this.trackStates).some(s => s.solo);
 
-      // Check notes in all tracks for this stepIndex
       for (const [trackKey, track] of Object.entries(this.songData.tracks)) {
         const state = this.trackStates[trackKey];
         if (!state) continue;
 
-        // Mute / Solo logic
         const isAudible = hasAnySolo ? state.solo : !state.muted;
         if (!isAudible) continue;
 
@@ -318,60 +281,43 @@
       }
     }
 
-    /**
-     * MIDI Pitch to Frequency Helper
-     */
+
     _m2f(midi) {
       return 440 * Math.pow(2, (midi - 69) / 12);
     }
 
-    /**
-     * Physical Modeling Concert Grand Piano Synthesizer
-     * Simulates Steinway D-274 / Yamaha CFX Concert Grand:
-     * - Multi-harmonic hammer felt strike attack
-     * - String inharmonicity & wood soundboard resonance
-     * - Damper sustain resonance & stereo piano key-bed panning
-     */
+
     _playAcousticPianoNote(midi, startTime, duration, velocity, busNode, isRightHand = true) {
       const freq = this._m2f(midi);
 
-      // Acoustic Panning: Bass on Left (-0.5 to -0.1), Treble on Right (+0.1 to +0.5)
       const panVal = Math.max(-0.6, Math.min(0.6, ((midi - 60) / 48)));
       const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
       if (panner) panner.pan.setValueAtTime(panVal, startTime);
 
-      // 1. Fundamental Harmonic Oscillator (Sine + Felt Warmth)
       const osc1 = this.ctx.createOscillator();
       osc1.type = 'sine';
       osc1.frequency.setValueAtTime(freq, startTime);
 
-      // 2. Second Harmonic / Octave String String Resonance
       const osc2 = this.ctx.createOscillator();
       osc2.type = 'triangle';
       osc2.frequency.setValueAtTime(freq * 2.001, startTime); // Subtle acoustic detuning
 
-      // 3. Third Harmonic (Fifth Chime for Acoustic Presence)
       const osc3 = this.ctx.createOscillator();
       osc3.type = 'sine';
       osc3.frequency.setValueAtTime(freq * 3.003, startTime);
 
-      // Hammer Strike Felt Noise / Transient
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'lowpass';
       filter.Q.setValueAtTime(1.8, startTime);
 
-      // Brightness scales exponentially with velocity
       const cutoffFreq = Math.min(18000, freq * (2.8 + Math.pow(velocity, 1.4) * 6.0));
       filter.frequency.setValueAtTime(cutoffFreq, startTime);
-      // Quick felt hammer strike attack, then mellow acoustic body
       filter.frequency.exponentialRampToValueAtTime(Math.min(12000, freq * 2.2), startTime + 0.08);
 
-      // Amp Envelope with Natural String Ring & Decay
       const gainNode = this.ctx.createGain();
       const peakGain = Math.min(0.85, 0.42 * Math.pow(velocity, 1.2));
       const attackTime = 0.003; // Fast mechanical hammer hit
       
-      // Decay time depends on pitch: low notes ring out longer
       const pitchFactor = Math.max(0.4, Math.min(1.8, (72 - midi) / 24 + 1.0));
       const decayTime = Math.max(0.3, Math.min(2.5, duration * 0.9 * pitchFactor));
       const releaseTime = Math.max(0.12, Math.min(0.35, 0.15 * pitchFactor));
@@ -382,7 +328,6 @@
       gainNode.gain.exponentialRampToValueAtTime(Math.max(0.0001, peakGain * 0.25), startTime + decayTime);
       gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration + releaseTime);
 
-      // Sub-harmonic mix gains
       const gainOsc1 = this.ctx.createGain();
       gainOsc1.gain.setValueAtTime(0.7, startTime);
       const gainOsc2 = this.ctx.createGain();
@@ -417,9 +362,7 @@
       osc3.stop(stopTime);
     }
 
-    /**
-     * 1. Lead Synthesizer: Dual Oscillator (Saw + Pulse) with Lowpass Filter Envelope & Vibrato
-     */
+
     _playLeadSynth(midi, startTime, duration, velocity, busNode, instrumentType) {
       const freq = this._m2f(midi);
       const osc1 = this.ctx.createOscillator();
@@ -427,9 +370,7 @@
       const gainNode = this.ctx.createGain();
       const filterNode = this.ctx.createBiquadFilter();
 
-      // Instrument Timbre Selection
       if (instrumentType === 'grand_piano_lead') {
-        // Acoustic Concert Grand Piano: Multi-harmonic string decay + hammer click + resonance
         osc1.type = 'triangle';
         osc2.type = 'sawtooth';
         osc1.detune.setValueAtTime(-3, startTime);
@@ -440,7 +381,6 @@
         filterNode.frequency.setValueAtTime(Math.min(16000, freq * (3.5 + 2.5 * velocity)), startTime);
         filterNode.frequency.exponentialRampToValueAtTime(Math.min(6000, freq * 1.5), startTime + 0.15);
       } else if (instrumentType === 'zun_trumpet') {
-        // Piercing bright brass-like saw + slight pulse detune
         osc1.type = 'sawtooth';
         osc2.type = 'square';
         osc1.detune.setValueAtTime(0, startTime);
@@ -452,7 +392,6 @@
         filterNode.frequency.exponentialRampToValueAtTime(Math.min(18000, freq * 5.5), startTime + 0.04);
         filterNode.frequency.exponentialRampToValueAtTime(Math.min(18000, freq * 2.2), startTime + duration);
       } else if (instrumentType === 'pipe_organ_lead') {
-        // Gothic Cathedral Pipe Organ: Rich harmonic mixture (Fundamental + Octave + Fifth)
         osc1.type = 'sawtooth';
         osc2.type = 'triangle';
         osc1.detune.setValueAtTime(-4, startTime);
@@ -462,7 +401,6 @@
         filterNode.Q.setValueAtTime(2.2, startTime);
         filterNode.frequency.setValueAtTime(Math.min(14000, freq * 4.0), startTime);
       } else if (instrumentType === 'chiptune_fm_epiano' || instrumentType === 'sparkle_arp') {
-        // sasakure.UK Signature FM Electric Piano & Crystalline Chiptune Bell
         osc1.type = 'triangle';
         osc2.type = 'square';
         osc1.detune.setValueAtTime(-2, startTime);
@@ -473,7 +411,6 @@
         filterNode.frequency.setValueAtTime(Math.min(18000, freq * (4.0 + 3.0 * velocity)), startTime);
         filterNode.frequency.exponentialRampToValueAtTime(Math.min(9000, freq * 1.8), startTime + 0.12);
       } else if (instrumentType === 'fusion_bright_grand') {
-        // Japanese Jazz-Fusion Bright Grand Piano
         osc1.type = 'triangle';
         osc2.type = 'sawtooth';
         osc1.detune.setValueAtTime(-4, startTime);
@@ -490,7 +427,6 @@
         filterNode.type = 'lowpass';
         filterNode.frequency.setValueAtTime(8000, startTime);
       } else if (instrumentType === 'mellow_epiano') {
-        // Mellow E-Piano: soft triangle + sine shimmer, dark filter
         osc1.type = 'triangle';
         osc2.type = 'sine';
         osc1.detune.setValueAtTime(-4, startTime);
@@ -499,7 +435,6 @@
         filterNode.Q.setValueAtTime(1.2, startTime);
         filterNode.frequency.setValueAtTime(Math.min(6000, freq * 2.2), startTime);
       } else if (instrumentType === 'distorted_lead') {
-        // Aggressive dark lead: detuned saws + resonant bite
         osc1.type = 'sawtooth';
         osc2.type = 'sawtooth';
         osc1.detune.setValueAtTime(-9, startTime);
@@ -508,7 +443,6 @@
         filterNode.Q.setValueAtTime(7.0, startTime);
         filterNode.frequency.setValueAtTime(Math.min(14000, freq * 4.5), startTime);
       } else if (instrumentType === 'orchestral_strings') {
-        // String section: slow attack stacked saws
         osc1.type = 'sawtooth';
         osc2.type = 'sawtooth';
         osc1.detune.setValueAtTime(-6, startTime);
@@ -517,7 +451,6 @@
         filterNode.Q.setValueAtTime(1.0, startTime);
         filterNode.frequency.setValueAtTime(Math.min(9000, freq * 3.0), startTime);
       } else if (instrumentType === 'anime_bell_lead') {
-        // Bright bell lead: sine + triangle octave shimmer
         osc1.type = 'sine';
         osc2.type = 'triangle';
         osc1.detune.setValueAtTime(0, startTime);
@@ -526,7 +459,6 @@
         filterNode.Q.setValueAtTime(3.0, startTime);
         filterNode.frequency.setValueAtTime(Math.min(16000, freq * 5.0), startTime);
       } else {
-        // Smooth saw lead
         osc1.type = 'sawtooth';
         osc2.type = 'sawtooth';
         osc1.detune.setValueAtTime(-5, startTime);
@@ -538,7 +470,6 @@
       osc1.frequency.setValueAtTime(freq, startTime);
       osc2.frequency.setValueAtTime(freq, startTime);
 
-      // Vibrato LFO
       const lfo = this.ctx.createOscillator();
       const lfoGain = this.ctx.createGain();
       lfo.frequency.setValueAtTime(5.8, startTime); // 5.8 Hz vibrato
@@ -549,7 +480,6 @@
       lfoGain.connect(osc1.detune);
       lfoGain.connect(osc2.detune);
 
-      // Amp Envelope (ADSR)
       const attack = 0.015;
       const decay = 0.08;
       const sustain = 0.75;
@@ -562,7 +492,6 @@
       gainNode.gain.setValueAtTime(peakGain * sustain, startTime + duration);
       gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration + release);
 
-      // Wire nodes
       osc1.connect(filterNode);
       osc2.connect(filterNode);
       filterNode.connect(gainNode);
@@ -578,9 +507,7 @@
       lfo.stop(stopTime);
     }
 
-    /**
-     * 2. Chords / Pad Synthesizer: Detuned Super-saw / Triangle with Warm Filter
-     */
+
     _playChordSynth(midi, startTime, duration, velocity, busNode) {
       const freq = this._m2f(midi);
       const osc1 = this.ctx.createOscillator();
@@ -599,7 +526,6 @@
       filterNode.Q.setValueAtTime(1.8, startTime);
       filterNode.frequency.setValueAtTime(Math.min(8000, freq * 3.0), startTime);
 
-      // Soft Pad ADSR
       const attack = 0.06;
       const release = 0.12;
       const peakGain = 0.13 * velocity;
@@ -622,9 +548,7 @@
       osc2.stop(stopTime);
     }
 
-    /**
-     * 3. Arpeggio / Pluck Synthesizer: Fast decaying square/triangle with ping-pong feedback
-     */
+
     _playArpSynth(midi, startTime, duration, velocity, busNode) {
       const freq = this._m2f(midi);
       const osc = this.ctx.createOscillator();
@@ -652,9 +576,7 @@
       osc.stop(startTime + 0.3);
     }
 
-    /**
-     * 4. Bass Synthesizer: Punchy Sub Sine + Overdriven Saw
-     */
+
     _playBassSynth(midi, startTime, duration, velocity, busNode, bright = false) {
       const freq = this._m2f(midi);
       const subOsc = this.ctx.createOscillator();
@@ -692,9 +614,7 @@
       sawOsc.stop(stopTime);
     }
 
-    /**
-     * 5. Drum Synthesizer: Modelled Kick, Snare, Hi-hats, Crash, Toms
-     */
+
     _playDrumSynth(midi, startTime, velocity, busNode) {
       switch (midi) {
         case 36: // KICK
@@ -729,7 +649,6 @@
       const gainNode = this.ctx.createGain();
 
       osc.type = 'sine';
-      // Pitch drop: 150Hz -> 45Hz
       osc.frequency.setValueAtTime(155, startTime);
       osc.frequency.exponentialRampToValueAtTime(45, startTime + 0.075);
 
@@ -745,7 +664,6 @@
     }
 
     _synthSnare(startTime, velocity, busNode, isClap) {
-      // 1. Tonal body
       const osc = this.ctx.createOscillator();
       const oscGain = this.ctx.createGain();
       osc.type = 'triangle';
@@ -760,7 +678,6 @@
       osc.start(startTime);
       osc.stop(startTime + 0.15);
 
-      // 2. White Noise snap
       if (this.noiseBuffer) {
         const noise = this.ctx.createBufferSource();
         noise.buffer = this.noiseBuffer;
@@ -847,9 +764,7 @@
       osc.stop(startTime + 0.25);
     }
 
-    /**
-     * Track Volume & Mute/Solo Controls
-     */
+
     setTrackVolume(trackKey, volume) {
       if (this.trackStates[trackKey]) {
         this.trackStates[trackKey].volume = volume;
@@ -903,10 +818,7 @@
       this.swing = Math.max(0, Math.min(60, pct | 0));
     }
 
-    /**
-     * Render bai thanh AudioBuffer offline (xuat WAV demo).
-     * Dung lai engine synth bang cach doi ctx tam thoi, khong anh huong phat realtime.
-     */
+
     async renderOffline(songData, tailSec = 2) {
       if (typeof OfflineAudioContext === 'undefined') {
         throw new Error('Trinh duyet khong ho tro OfflineAudioContext');
@@ -964,9 +876,7 @@
       }
     }
 
-    /**
-     * Real-time Frequency Spectrum Analyzer Data
-     */
+
     getSpectrumData() {
       if (!this.analyser) return new Uint8Array(0);
       const data = new Uint8Array(this.analyser.frequencyBinCount);

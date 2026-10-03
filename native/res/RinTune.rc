@@ -2,7 +2,7 @@
 #include <windows.h>
 
 IDI_ICON1 ICON "res\\rmg_icon.ico"
-1 RT_MANIFEST "res\\RMG.manifest"
+1 RT_MANIFEST "res\\RinTune.manifest"
 
 1 VERSIONINFO
 FILEVERSION     2,1,0,0
@@ -18,11 +18,11 @@ BEGIN
     BLOCK "041504b0"
     BEGIN
       VALUE "CompanyName",      "Rin0suke257"
-      VALUE "FileDescription",  "RMG - LMMS Random Music Generator"
+      VALUE "FileDescription",  "RinTune Studio"
       VALUE "FileVersion",      "2.1.0.0"
-      VALUE "InternalName",     "RMG"
-      VALUE "OriginalFilename", "RMG.exe"
-      VALUE "ProductName",      "RMG - Random Music Generator"
+      VALUE "InternalName",     "RinTune"
+      VALUE "OriginalFilename", "RinTune.exe"
+      VALUE "ProductName",      "RinTune Studio"
       VALUE "ProductVersion",   "2.1.0.0"
     END
   END

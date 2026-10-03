@@ -1,5 +1,4 @@
 const G = require('D:/RMG/engine/generator.js').RMGGenerator;
-// determinism: cung options + seed -> cung not (cho seed chia se)
 function sig(s) {
   const parts = [];
   for (const [k, t] of Object.entries(s.tracks)) {
@@ -11,6 +10,5 @@ const opts = { genre: 'anime', key: 'G', scale: 'major', bpm: 155, timeSignature
 const a = new G.MusicGenerator(Object.assign({}, opts)).generate();
 const b = new G.MusicGenerator(Object.assign({}, opts)).generate();
 console.log('SEED_DETERMINISTIC=' + (sig(a) === sig(b)) + ' notes=' + a.metadata.noteCount);
-// khac seed -> khac bai
 const c = new G.MusicGenerator(Object.assign({}, opts, { seed: 999 })).generate();
 console.log('SEED_DIFFERS=' + (sig(a) !== sig(c)));

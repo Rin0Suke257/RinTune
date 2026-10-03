@@ -6,7 +6,6 @@ const s = g.generate();
 const bytes = E.Exporter.generateMidiFile(s);
 const parsed = M.parseMidiFile(bytes);
 console.log('BPM=' + parsed.bpm + ' (expect ' + s.metadata.bpm + ') TS=' + parsed.timeSignature + ' TPQ=' + parsed.ticksPerQuarter);
-// gop notes goc: step*120
 const orig = [];
 for (const [k, t] of Object.entries(s.tracks)) {
   for (const n of t.notes) orig.push(k + '|' + n.midi + '|' + (n.step * 120) + '|' + (Math.max(1, n.duration) * 120));
@@ -17,15 +16,12 @@ const order = ['lead', 'chords', 'arp', 'bass'];
 let pi = 0;
 for (const t of parsed.tracks) {
   if (!t.notes.length || t.notes[0].startTick === undefined) continue;
-  // bo conductor (khong co notes hoac toan meta): track khong notes thi bo
   if (t.notes.length === 0) continue;
   const key = order[pi++] || 'lead';
   for (const n of t.notes) got.push(key + '|' + n.midi + '|' + n.startTick + '|' + n.durTicks);
 }
 got.sort();
-// drums ch9 tach rieng
 console.log('ORIG=' + orig.length + ' PARSED_PITCHED~=' + got.length);
-// so sanh tap notes (bo drums vi channel map khac)
 const origNoDrums = orig.filter(x => !x.startsWith('drums|'));
 const gotNoDrums = got.filter(x => !x.startsWith('drums|'));
 let match = 0;

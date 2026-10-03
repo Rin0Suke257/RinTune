@@ -1,5 +1,4 @@
 @echo off
-REM Build RMG.exe - Win32 + WebView2, khong can Electron/Node
 setlocal
 call "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat" >nul 2>&1
 if errorlevel 1 goto no_vs
@@ -7,7 +6,7 @@ if errorlevel 1 goto no_vs
 set ROOT=%~dp0
 if "%ROOT:~-1%"=="\" set ROOT=%ROOT:~0,-1%
 set OBJ=%ROOT%\obj
-set OUT=%ROOT%\out\RMG
+set OUT=%ROOT%\out\RinTune
 set WV=%ROOT%\packages\Microsoft.Web.WebView2
 if not exist "%WV%\build\native\include\WebView2.h" goto no_sdk
 mkdir "%OBJ%" 2>nul
@@ -15,7 +14,7 @@ mkdir "%OUT%" 2>nul
 
 echo [1/4] Resource...
 pushd "%ROOT%"
-rc /nologo /i res /fo "%OBJ%\RMG.res" res\RMG.rc
+rc /nologo /i res /fo "%OBJ%\RinTune.res" res\RinTune.rc
 if errorlevel 1 goto rc_fail
 popd
 
@@ -24,7 +23,7 @@ cl /nologo /std:c++17 /EHsc /O2 /W3 /DUNICODE /D_UNICODE /I "%WV%\build\native\i
 if errorlevel 1 goto build_fail
 
 echo [3/4] Link...
-link /nologo "%OBJ%\main.obj" "%OBJ%\RMG.res" "%WV%\build\native\x64\WebView2LoaderStatic.lib" shlwapi.lib ole32.lib shell32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib /OUT:"%OUT%\RMG.exe" /SUBSYSTEM:WINDOWS /MACHINE:X64
+link /nologo "%OBJ%\main.obj" "%OBJ%\RinTune.res" "%WV%\build\native\x64\WebView2LoaderStatic.lib" shlwapi.lib ole32.lib shell32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib /OUT:"%OUT%\RinTune.exe" /SUBSYSTEM:WINDOWS /MACHINE:X64
 if errorlevel 1 goto build_fail
 
 echo [4/4] Copy UI...
@@ -38,8 +37,8 @@ copy /y "%ROOT%\..\assets\Icon\*.png" "%OUT%\assets\Icon\" >nul
 copy /y "%ROOT%\..\assets\Icon\*.ico" "%OUT%\assets\Icon\" >nul
 
 echo.
-echo [OK] %OUT%\RMG.exe
-dir "%OUT%\RMG.exe"
+echo [OK] %OUT%\RinTune.exe
+dir "%OUT%\RinTune.exe"
 endlocal
 exit /b 0
 
