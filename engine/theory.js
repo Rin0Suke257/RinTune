@@ -186,6 +186,8 @@
       defaultScale: 'touhou_yonanuki',
       allowedScales: ['touhou_yonanuki', 'lydian', 'dorian', 'lydian_augmented', 'harmonic_minor', 'natural_minor', 'jazz_neosoul'],
       drumGroove: 'math_breakbeat',
+      minimalKit: true,
+      bassWalk: 0.6,
       dottedBounce: 0.4,
       leadStyle: 'chiptune_fm_epiano',
       defaultTimeSignature: '7/8',
@@ -214,6 +216,7 @@
       defaultScale: 'touhou_yonanuki',
       allowedScales: ['touhou_yonanuki', 'harmonic_minor', 'natural_minor', 'dorian', 'hirajoshi'],
       drumGroove: 'touhou_break',
+      bassWalk: 0.5,
       dottedBounce: 0.4,
       leadStyle: 'grand_piano_lead',
       progressions: [
@@ -239,6 +242,7 @@
       defaultScale: 'phrygian_dominant',
       allowedScales: ['phrygian_dominant', 'gothic_harmonic_minor', 'byzantine', 'phrygian', 'natural_minor'],
       drumGroove: 'gothic_war_drums',
+      bassWalk: 0.3,
       dottedBounce: 0.3,
       leadStyle: 'pipe_organ_lead',
       progressions: [
@@ -264,6 +268,8 @@
       defaultScale: 'touhou_yonanuki',
       allowedScales: ['touhou_yonanuki', 'natural_minor', 'harmonic_minor', 'touhou_insen', 'hirajoshi'],
       drumGroove: 'touhou_break',
+      minimalKit: true,
+      bassWalk: 0.85,
       dottedBounce: 0.45,
       leadStyle: 'zun_trumpet',
       progressions: [
@@ -291,6 +297,7 @@
       defaultScale: 'dorian',
       allowedScales: ['dorian', 'natural_minor', 'pentatonic_minor', 'lydian'],
       drumGroove: 'synthwave_four',
+      bassWalk: 0.4,
       dottedBounce: 0.2,
       leadStyle: 'synth_saw_lead',
       progressions: [
@@ -316,6 +323,7 @@
       defaultScale: 'jazz_neosoul',
       allowedScales: ['jazz_neosoul', 'dorian', 'natural_minor', 'pentatonic_major', 'hirajoshi'],
       drumGroove: 'lofi_swing',
+      bassWalk: 0.2,
       dottedBounce: 0.35,
       leadStyle: 'mellow_epiano',
       progressions: [
@@ -340,6 +348,7 @@
       defaultScale: 'major',
       allowedScales: ['major', 'natural_minor', 'harmonic_minor', 'pentatonic_minor'],
       drumGroove: 'chiptune_punch',
+      bassWalk: 0.3,
       dottedBounce: 0.3,
       leadStyle: 'square_8bit',
       progressions: [
@@ -365,6 +374,7 @@
       defaultScale: 'phrygian',
       allowedScales: ['phrygian', 'touhou_insen', 'natural_minor', 'harmonic_minor'],
       drumGroove: 'cyber_industrial',
+      bassWalk: 0.3,
       dottedBounce: 0.3,
       leadStyle: 'distorted_lead',
       progressions: [
@@ -389,6 +399,7 @@
       defaultScale: 'harmonic_minor',
       allowedScales: ['harmonic_minor', 'natural_minor', 'melodic_minor', 'dorian'],
       drumGroove: 'epic_taiko',
+      bassWalk: 0.2,
       dottedBounce: 0.25,
       leadStyle: 'orchestral_strings',
       progressions: [
@@ -413,6 +424,7 @@
       defaultScale: 'natural_minor',
       allowedScales: ['natural_minor', 'harmonic_minor', 'dorian'],
       drumGroove: 'epic_taiko',
+      bassWalk: 0.2,
       dottedBounce: 0.25,
       leadStyle: 'orchestral_strings',
       progressions: [
@@ -436,6 +448,7 @@
       defaultScale: 'major',
       allowedScales: ['major', 'pentatonic_major', 'touhou_yonanuki', 'lydian'],
       drumGroove: 'anime_pop_beat',
+      bassWalk: 0.4,
       dottedBounce: 0.35,
       leadStyle: 'anime_bell_lead',
       progressions: [

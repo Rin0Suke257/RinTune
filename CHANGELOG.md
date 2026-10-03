@@ -1,5 +1,10 @@
 # RinTune Changelog
 
+## Unreleased - P3: Bass walking + trong toi gian
+- Bass di bo (scalar walk xen pump root-fifth + approach chromatic) theo DNA
+  tung genre; giam octave-pop; trong minimal (touhou/sasakure): kick/snare/
+  open-hat, crash mo dau, fill snare-only
+
 ## Unreleased - P2: Micro-rhythm
 - Dotted-8th bounce theo DNA tung genre + ornament 32nd cho lead (grace,
   run vao downbeat, turn tren not dai), manh theo Variation

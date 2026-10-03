@@ -2180,6 +2180,31 @@
     }
 
 
+    _bassWalkEvents(rootMidi, fifthMidi, thirdMidi, nextRootMidi, stepsPerBar, Vb) {
+      const evs = [];
+      const walk = (m) => Math.max(24, Math.min(72, m));
+      if (this._vChance(0.6, Vb)) {
+        const third = thirdMidi;
+        const up = nextRootMidi >= rootMidi;
+        evs.push({ s: 0, dur: 4, m: walk(rootMidi) });
+        evs.push({ s: 4, dur: 2, m: walk(rootMidi + 2) });
+        evs.push({ s: 6, dur: 2, m: walk(third) });
+        evs.push({ s: 8, dur: 2, m: walk(fifthMidi) });
+        evs.push({ s: 10, dur: 2, m: walk(up ? third + 2 : third) });
+        evs.push({ s: 12, dur: 2, m: walk(up ? nextRootMidi - 2 : nextRootMidi + 2) });
+      } else {
+        evs.push({ s: 0, dur: 4, m: walk(rootMidi) });
+        evs.push({ s: 4, dur: 4, m: walk(fifthMidi) });
+        evs.push({ s: 8, dur: 3, m: walk(rootMidi) });
+        evs.push({ s: 11, dur: 3, m: walk(fifthMidi) });
+      }
+      if (stepsPerBar >= 4) {
+        const approach = (nextRootMidi > rootMidi) ? (nextRootMidi - 1) : (nextRootMidi + 1);
+        evs.push({ s: stepsPerBar - 2, dur: 2, m: walk(approach) });
+      }
+      return evs;
+    }
+
     _generateBassTrack(ctx) {
       const { progression, scaleNotes, genreDef, lengthBars, timeSignature = '4/4', stepsPerBar = 16, section, climaxCurve, density = 75, chaosLevel = 25, velocityBoost, humanize } = ctx;
       const Vb = (ctx.variation && ctx.variation.bass != null) ? ctx.variation.bass : 0.7;
@@ -2254,7 +2279,13 @@
             ];
           }
         } else {
-          if (density < 40) {
+          const walkDNA = (genreDef.bassWalk != null ? genreDef.bassWalk : 0.3);
+          const minorish = /min/.test(chord.chordType || '') && !/maj/.test(chord.chordType || '');
+          const thirdMidi = rootMidi + (minorish ? 3 : 4);
+          const nextRootMidi = 36 + nextRootPitchClass;
+          if (this._vChance(walkDNA, Vb) && stepsPerBar >= 8) {
+            bassEvents = this._bassWalkEvents(rootMidi, fifthMidi, thirdMidi, nextRootMidi, stepsPerBar, Vb);
+          } else if (density < 40) {
             bassEvents = [
               { s: 0, dur: Math.floor(stepsPerBar * 0.5), m: subOctaveMidi },
               { s: Math.floor(stepsPerBar * 0.5), dur: Math.floor(stepsPerBar * 0.5), m: (phrasePos === 3 ? fifthMidi : rootMidi) }
@@ -2399,7 +2430,7 @@
         for (const ev of bassEvents) {
           if (ev.s !== 0 && this._vChance(chaosFactor * 0.5, Vb)) {
             const r = this.rng.range(0, 1);
-            if (r < 0.4) ev.m = Math.min(72, ev.m + 12); // octave pop
+            if (r < 0.25) ev.m = Math.min(72, ev.m + 12); // octave pop
             else if (r < 0.6 && ev.dur >= 2) ev.dur = Math.max(1, ev.dur - 1); // staccato dot bien
           }
         }
@@ -2462,7 +2493,9 @@
         const isClimaxPeak = (climaxFactor >= 0.88);
 
         if (isFirstBar || isSectionTransition || isClimaxPeak) {
-          notes.push({ step: barStartStep, duration: 8, midi: CRASH, velocity: Math.min(127, Math.round(112 * climaxFactor) + velocityBoost), pan: 15 });
+          if (!genreDef.minimalKit || bar === startBar) {
+            notes.push({ step: barStartStep, duration: 8, midi: CRASH, velocity: Math.min(127, Math.round(112 * climaxFactor) + velocityBoost), pan: 15 });
+          }
         }
 
         if (section === 'intro' || density < 30) {
@@ -2497,6 +2530,7 @@
         } else if (genreDef.id === 'touhou' || genreDef.id === 'fiery_piano' || genreDef.id === 'dark_fantasy') {
           const kickHits = [0, 3, 6, 8, 10, 14];
           const snareHits = [4, 12];
+          const minimal = !!genreDef.minimalKit;
 
           for (const s of kickHits) {
             if (s >= stepsPerBar) continue;
@@ -2507,7 +2541,7 @@
             notes.push({ step: barStartStep + s, duration: 1, midi: SNARE, velocity: Math.min(127, Math.round(120 * climaxFactor) + velocityBoost), pan: 0 });
           }
 
-          const hatStep = density < 60 ? 2 : 1;
+          const hatStep = (density < 60 || minimal) ? 2 : 1;
           for (let s = 0; s < stepsPerBar; s += hatStep) {
             if (isFillBar && s >= stepsPerBar - 4) continue;
             const isOpen = (s % 4 === 2);
@@ -2521,7 +2555,7 @@
           }
 
           if (isFillBar) {
-            const fillPat = this._variant(3, Vd);
+            const fillPat = minimal ? 0 : this._variant(3, Vd);
             if (fillPat === 1) {
               const toms = [TOM_HI, TOM_MID, TOM_LOW, TOM_LOW];
               for (let fi = 0; fi < 4; fi++) {
@@ -2577,17 +2611,26 @@
           }
         }
 
-        const hasOwnFill = ['touhou', 'fiery_piano', 'dark_fantasy'].includes(genreDef.id);
+        const hasOwnFill = ['touhou', 'fiery_piano', 'dark_fantasy', 'sasakure_uk'].includes(genreDef.id);
         if (bar % 8 === 0 && !notes.some(n => n.midi === CRASH && Math.abs(n.step - barStartStep) <= 2)) {
-          notes.push({ step: barStartStep, duration: 8, midi: CRASH, velocity: Math.min(127, Math.round(105 * climaxFactor) + velocityBoost), pan: 15 });
+          if (!genreDef.minimalKit || bar === startBar) {
+            notes.push({ step: barStartStep, duration: 8, midi: CRASH, velocity: Math.min(127, Math.round(105 * climaxFactor) + velocityBoost), pan: 15 });
+          }
         }
         if (((bar + 1) % 8 === 0) && !hasOwnFill && stepsPerBar >= 8) {
-          const tomPat = this._variant(2, Vd);
-          const toms = [TOM_HI, TOM_MID, TOM_LOW, SNARE];
-          for (let f = 0; f < 4; f++) {
-            const fs = stepsPerBar - 4 + f;
-            const drum = tomPat === 1 ? toms[3 - (f % toms.length)] : toms[f % toms.length];
-            notes.push({ step: barStartStep + fs, duration: 1, midi: drum, velocity: Math.min(127, 95 + f * 8 + velocityBoost), pan: 0 });
+          if (genreDef.minimalKit) {
+            for (let f = 0; f < 4; f++) {
+              const fs = stepsPerBar - 4 + f;
+              notes.push({ step: barStartStep + fs, duration: 1, midi: SNARE, velocity: Math.min(127, 95 + f * 8 + velocityBoost), pan: 0 });
+            }
+          } else {
+            const tomPat = this._variant(2, Vd);
+            const toms = [TOM_HI, TOM_MID, TOM_LOW, SNARE];
+            for (let f = 0; f < 4; f++) {
+              const fs = stepsPerBar - 4 + f;
+              const drum = tomPat === 1 ? toms[3 - (f % toms.length)] : toms[f % toms.length];
+              notes.push({ step: barStartStep + fs, duration: 1, midi: drum, velocity: Math.min(127, 95 + f * 8 + velocityBoost), pan: 0 });
+            }
           }
         }
         if (bar % 8 === 0 && bar !== startBar && this._vChance(0.3, Vd)) {
