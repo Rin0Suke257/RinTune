@@ -602,6 +602,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .clip-block:hover { filter: brightness(1.25); }
 .clip-selected { outline: 2px solid var(--accent-gold); }
 .clip-muted { opacity: 0.35; }
+/* Timeline 1 hang doan */
+.clip-section { display: flex; flex-direction: column; gap: 1px; padding: 5px 8px; min-height: 44px; justify-content: center; border-color: var(--border-color); }
+.clip-section .clip-name { font-size: 0.72rem; font-weight: 700; }
+.clip-section .clip-meta { font-size: 0.6rem; color: var(--text-dim); }
+.clip-section .clip-dots { display: flex; gap: 3px; margin-top: 2px; }
+.clip-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.clip-rest { border-style: dashed; background: transparent; }
+.clip-rest .clip-name { color: var(--text-dim); font-weight: 400; font-style: italic; }
 
 /* Mixer Rack */
 .mixer-rack {

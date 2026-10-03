@@ -724,6 +724,7 @@
   // Bai cu / bai ngoai (flat) -> 1 clip duy nhat, giu nguyen not
   function ensureClips(song, fallbackName) {
     if (!song) return song;
+    const allOn = () => ({ lead: true, chords: true, arp: true, bass: true, drums: true });
     if (!Array.isArray(song.clips) || !song.clips.length) {
       const notes = blankClipNotes();
       for (const k of TRACK_KEYS) {
@@ -733,7 +734,7 @@
       song.clips = [{
         id: clipId(), name: fallbackName || 'Bài',
         lengthBars: (song.metadata && song.metadata.lengthBars) || 8,
-        muted: false, notes
+        muted: false, rest: false, tracks: allOn(), notes
       }];
     } else {
       for (const c of song.clips) {
@@ -741,6 +742,9 @@
         if (!c.name) c.name = 'Đoạn';
         c.lengthBars = Math.max(1, c.lengthBars | 0 || 1);
         c.muted = !!c.muted;
+        c.rest = !!c.rest;
+        if (!c.tracks) c.tracks = allOn();
+        else for (const k of TRACK_KEYS) if (c.tracks[k] == null) c.tracks[k] = true;
         if (!c.notes) c.notes = blankClipNotes();
         for (const k of TRACK_KEYS) if (!Array.isArray(c.notes[k])) c.notes[k] = [];
       }
@@ -749,7 +753,8 @@
     return song;
   }
 
-  // Don clips -> tracks phang (bo qua clip muted). Phat nhac + xuat dung ban nay.
+  // Don clips -> tracks phang (bo qua clip muted/rest + be tat).
+  // Phat nhac + xuat dung ban nay. Sau do tu them fill/crash chuyen doan.
   function flattenTimeline(song) {
     ensureClips(song);
     layoutClips(song);
@@ -759,8 +764,9 @@
     }
     let stepBase = 0;
     for (const c of song.clips) {
-      if (!c.muted) {
+      if (!c.muted && !c.rest) {
         for (const k of TRACK_KEYS) {
+          if (c.tracks && c.tracks[k] === false) continue;
           const t = song.tracks[k];
           if (!t) continue;
           for (const n of (c.notes[k] || [])) {
@@ -774,14 +780,65 @@
       const t = song.tracks[k];
       if (t && t.notes) t.notes.sort((a, b) => a.step - b.step);
     }
+    addTransitions(song);
     if (song.metadata) {
       song.metadata.noteCount = TRACK_KEYS.reduce((a, k) => a + ((song.tracks[k] && song.tracks[k].notes) ? song.tracks[k].notes.length : 0), 0);
     }
     return song;
   }
 
-  // Day not phang ve clips (sau khi soan not / gieo vung / undo). Clip muted giu nguyen.
-  // Not roi ra ngoai -> noi clip cuoi dai ra (khong mat not).
+  // PRNG deterministic cho transitions (seed bai + vi tri bien)
+  function rng32(seed) {
+    let s = seed | 0;
+    return function () {
+      s = s + 0x6D2B79F5 | 0;
+      let t = Math.imul(s ^ s >>> 15, 1 | s);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  // Fill/crash chuyen doan (chi drums, an toan hoa am), manh theo Variation.
+  // Not danh dau trans:true de sync giu lai neu user sua (thanh not thuong).
+  function addTransitions(song) {
+    const md = song.metadata || {};
+    const spb = md.stepsPerBar || 16;
+    let V = 0.7;
+    const ev = md.variation;
+    if (ev && typeof ev === 'object') {
+      V = ((ev.lead || 0) + (ev.chords || 0) + (ev.arp || 0) + (ev.bass || 0) + (ev.drums || 0)) / 5;
+    }
+    if (!(V >= 0.25) || !song.tracks.drums) return;
+    const rand = rng32(Math.floor((md.seed || 0) * 1000000) + 77);
+    const drums = song.tracks.drums.notes;
+    const has = (step, midi) => drums.some(n => n.step === step && n.midi === midi);
+    const hasCrashNear = (step) => drums.some(n => n.midi === 49 && Math.abs(n.step - step) <= 2);
+    for (let i = 0; i < song.clips.length - 1; i++) {
+      const a = song.clips[i], b = song.clips[i + 1];
+      if (a.muted || a.rest || b.muted || b.rest) continue;
+      if ((a.tracks && a.tracks.drums === false) || (b.tracks && b.tracks.drums === false)) continue;
+      const edge = (a.startBar + a.lengthBars) * spb;
+      if (rand() < 0.3 + 0.55 * V) {
+        const seq = [[edge - 2, 38], [edge - 1, 47]];
+        for (const [st, midi] of seq) {
+          if (st >= 0 && !has(st, midi)) {
+            drums.push({ step: st, duration: 1, midi, velocity: 100, pan: 0, trans: true });
+          }
+        }
+      }
+      if (rand() < 0.35 + 0.45 * V && !hasCrashNear(edge)) {
+        drums.push({ step: edge, duration: 8, midi: 49, velocity: 105, pan: 15, trans: true });
+      }
+    }
+    drums.sort((x, y) => x.step - y.step);
+  }
+
+  // Day not phang ve clips (sau khi soan not / gieo vung / undo).
+  // - Clip muted: giu nguyen. Be tat: giu not da luu.
+  // - Not trans (chuyen doan tu dong): giu lai thanh not thuong (khong mat
+  //   cong sua cua user), lan flatten sau se them transitions moi.
+  // - Clip rest co not roi vao -> tu thanh clip thuong.
+  // - Not roi ra ngoai -> noi clip cuoi (khong mute/rest) dai ra.
   function syncClipsFromFlat(song) {
     ensureClips(song);
     layoutClips(song);
@@ -790,17 +847,25 @@
       if (c.muted) continue;
       const s0 = c.startBar * spb;
       const s1 = s0 + c.lengthBars * spb;
+      let got = false;
       for (const k of TRACK_KEYS) {
+        if (c.tracks && c.tracks[k] === false) continue;
         const t = song.tracks[k];
         const arr = [];
         if (t && t.notes) {
           for (const n of t.notes) {
-            if (n.step >= s0 && n.step < s1) arr.push(Object.assign({}, n, { step: n.step - s0 }));
+            if (n.step >= s0 && n.step < s1) {
+              const cp = Object.assign({}, n, { step: n.step - s0 });
+              delete cp.trans;
+              arr.push(cp);
+              got = true;
+            }
           }
         }
         arr.sort((a, b) => a.step - b.step);
         c.notes[k] = arr;
       }
+      if (got) c.rest = false;
     }
     let maxStep = -1;
     for (const k of TRACK_KEYS) {
@@ -809,7 +874,8 @@
     }
     const total = song.clips.reduce((a, c) => a + c.lengthBars, 0) * spb;
     if (maxStep >= total) {
-      const last = [...song.clips].reverse().find(c => !c.muted);
+      const last = [...song.clips].reverse().find(c => !c.muted && !c.rest)
+        || [...song.clips].reverse().find(c => !c.muted);
       if (last) {
         last.lengthBars += Math.ceil((maxStep + 1 - total) / spb);
         layoutClips(song);
@@ -820,19 +886,25 @@
   }
 
   // Cat bai phang thanh clips theo tung doan (arranger / ghep lich su)
-  function sliceFlatToClips(song, sections) {    const spb = (song.metadata && song.metadata.stepsPerBar) || 16;
+  function sliceFlatToClips(song, sections) {
+    const spb = (song.metadata && song.metadata.stepsPerBar) || 16;
+    const allOn = () => ({ lead: true, chords: true, arp: true, bass: true, drums: true });
     song.clips = [];
     let s0 = 0;
     for (const s of sections) {
       const bars = Math.max(1, s.bars | 0 || 1);
-      const c = { id: clipId(), name: s.name || 'Đoạn', lengthBars: bars, muted: false, notes: blankClipNotes() };
+      const c = { id: clipId(), name: s.name || 'Đoạn', lengthBars: bars, muted: false, rest: false, tracks: allOn(), notes: blankClipNotes() };
       const s1 = s0 + bars * spb;
       for (const k of TRACK_KEYS) {
         const t = song.tracks[k];
         const arr = [];
         if (t && t.notes) {
           for (const n of t.notes) {
-            if (n.step >= s0 && n.step < s1) arr.push(Object.assign({}, n, { step: n.step - s0 }));
+            if (n.step >= s0 && n.step < s1) {
+              const cp = Object.assign({}, n, { step: n.step - s0 });
+              delete cp.trans;
+              arr.push(cp);
+            }
           }
         }
         c.notes[k] = arr;
@@ -879,8 +951,12 @@
       const c = song.clips[idx];
       if (b === c.startBar) return `⚠️ Bar ${bar1} đã là biên clip "${c.name}" rồi`;
       const cutLocal = (b - c.startBar) * spb;
-      const left = { id: clipId(), name: c.name, lengthBars: b - c.startBar, muted: c.muted, notes: blankClipNotes() };
-      const right = { id: clipId(), name: c.name + ' (2)', lengthBars: c.startBar + c.lengthBars - b, muted: c.muted, notes: blankClipNotes() };
+      const mkHalf = (name, len) => ({
+        id: clipId(), name, lengthBars: len, muted: c.muted, rest: c.rest,
+        tracks: Object.assign({}, c.tracks), notes: blankClipNotes()
+      });
+      const left = mkHalf(c.name, b - c.startBar);
+      const right = mkHalf(c.name + ' (2)', c.startBar + c.lengthBars - b);
       for (const k of TRACK_KEYS) {
         for (const n of (c.notes[k] || [])) {
           if (n.step < cutLocal) {
@@ -906,7 +982,8 @@
       const idx = song.clips.indexOf(c);
       const copy = {
         id: clipId(), name: c.name + ' (copy)', lengthBars: c.lengthBars,
-        muted: false, notes: blankClipNotes()
+        muted: false, rest: c.rest, tracks: Object.assign({}, c.tracks),
+        notes: blankClipNotes()
       };
       for (const k of TRACK_KEYS) copy.notes[k] = (c.notes[k] || []).map(n => Object.assign({}, n));
       song.clips.splice(idx + 1, 0, copy);
@@ -950,6 +1027,44 @@
     });
   }
 
+  // Chen khoang lang (rest clip) sau clip dang chon (hoac cuoi bai)
+  function insertRestClip() {
+    const v = prompt('Khoảng lặng mấy bars?', '2');
+    if (v == null) return;
+    const bars = Math.max(1, Math.min(32, parseInt(v, 10) || 2));
+    timelineOp('khoảng lặng', (song) => {
+      const c = selectedClip();
+      const idx = c ? song.clips.indexOf(c) + 1 : song.clips.length;
+      const rest = {
+        id: clipId(), name: 'Lặng ' + bars + 'b', lengthBars: bars,
+        muted: false, rest: true,
+        tracks: { lead: true, chords: true, arp: true, bass: true, drums: true },
+        notes: blankClipNotes()
+      };
+      song.clips.splice(idx, 0, rest);
+      selectedClipId = rest.id;
+      return `☕ Đã chèn khoảng lặng ${bars} bars — gieo/soạn nốt vào đó sẽ thành đoạn thường`;
+    });
+  }
+
+  // Bat/tat 1 be trong clip dang chon (build/drop nang luong theo doan)
+  function setClipTrack(trackKey, on) {
+    const c = selectedClip();
+    if (!c) {
+      showToast('⚠️ Hãy bấm chọn 1 clip trên lane trước');
+      renderTimelineLane();
+      return;
+    }
+    timelineOp('bè trong đoạn', (song) => {
+      const cc = song.clips.find(x => x.id === c.id);
+      if (!cc) return '⚠️ Clip không còn';
+      if (!cc.tracks) cc.tracks = { lead: true, chords: true, arp: true, bass: true, drums: true };
+      cc.tracks[trackKey] = !!on;
+      const names = { lead: 'Lead', chords: 'Chords', arp: 'Arp', bass: 'Bass', drums: 'Drums' };
+      return `${on ? '🔊' : '🔇'} Đoạn "${cc.name}": bè ${names[trackKey]} ${on ? 'chơi' : 'nghỉ'}`;
+    });
+  }
+
   function renameSelectedClip() {    const c = selectedClip();
     if (!c) {
       showToast('⚠️ Hãy bấm chọn 1 clip trên lane trước');
@@ -966,7 +1081,7 @@
     showToast(`✏ Clip giờ tên "${clean}"`);
   }
 
-  // Ve lane clips (DOM): 5 hang be x truc bars. Keo ngang = doi vi tri clip.
+  // Ve lane clips (DOM): 1 hang doan (sections) x truc bars. Keo ngang = doi vi tri.
   function renderTimelineLane() {
     const lanes = document.getElementById('clipLanes');
     const info = document.getElementById('clipInfo');
@@ -975,6 +1090,7 @@
     if (!song) {
       lanes.innerHTML = '';
       if (info) info.textContent = '';
+      syncClipTrackToggles(null);
       return;
     }
     syncClipsFromFlat(song);
@@ -982,17 +1098,15 @@
       selectedClipId = song.clips.length ? song.clips[0].id : null;
     }
     const total = song.clips.reduce((a, c) => a + c.lengthBars, 0) || 1;
+    const sel = selectedClip();
     if (info) {
-      const sel = selectedClip();
-      info.textContent = `${song.clips.length} clips • ${total} bars` +
-        (sel ? ` • chọn: "${sel.name}" (${sel.lengthBars} bars, ${clipNoteCount(sel)} nốt${sel.muted ? ', muted' : ''})` : '');
+      info.textContent = `${song.clips.length} đoạn • ${total} bars` +
+        (sel ? ` • chọn: "${sel.name}" (${sel.lengthBars} bars, ${clipNoteCount(sel)} nốt${sel.rest ? ', lặng' : ''}${sel.muted ? ', muted' : ''})` : '');
     }
+    syncClipTrackToggles(sel);
     lanes.innerHTML = '';
     const ruler = document.createElement('div');
     ruler.className = 'clip-ruler';
-    const spacer = document.createElement('div');
-    spacer.className = 'clip-row-label';
-    ruler.appendChild(spacer);
     const ticks = document.createElement('div');
     ticks.className = 'clip-row-body';
     for (let b = 0; b < total; b++) {
@@ -1004,40 +1118,47 @@
     }
     ruler.appendChild(ticks);
     lanes.appendChild(ruler);
-    const names = { lead: 'Lead', chords: 'Chords', arp: 'Arp', bass: 'Bass', drums: 'Drums' };
+    const row = document.createElement('div');
+    row.className = 'clip-row';
+    const body = document.createElement('div');
+    body.className = 'clip-row-body';
+    for (const c of song.clips) {
+      const d = document.createElement('div');
+      d.className = 'clip-block clip-section' + (c.id === selectedClipId ? ' clip-selected' : '') + (c.muted ? ' clip-muted' : '') + (c.rest ? ' clip-rest' : '');
+      d.style.width = (c.lengthBars / total * 100) + '%';
+      const dots = TRACK_KEYS.map(k => {
+        const on = !(c.tracks && c.tracks[k] === false);
+        return `<span class="clip-dot" style="background:${TRACK_COLORS[k]};opacity:${on ? 1 : 0.2};" title="${k}: ${on ? 'chơi' : 'nghỉ'}"></span>`;
+      }).join('');
+      d.innerHTML = `<span class="clip-name">${escapeHtml(c.name)}${c.rest ? ' ☕' : ''}${c.muted ? ' 🔇' : ''}</span>` +
+        `<span class="clip-meta">${c.lengthBars}b • ${clipNoteCount(c)}n</span>` +
+        `<span class="clip-dots">${dots}</span>`;
+      d.title = `"${c.name}" • bars ${c.startBar + 1}–${c.startBar + c.lengthBars} • ${clipNoteCount(c)} nốt • đúp: đặt vùng gieo lại`;
+      d.addEventListener('click', () => {
+        selectedClipId = c.id;
+        renderTimelineLane();
+      });
+      d.addEventListener('dblclick', () => {
+        selectedClipId = c.id;
+        if (inputRegenFrom) inputRegenFrom.value = c.startBar + 1;
+        if (inputRegenTo) inputRegenTo.value = c.startBar + c.lengthBars;
+        renderTimelineLane();
+        showToast(`🎯 Vùng gieo lại = đoạn "${c.name}" (bars ${c.startBar + 1}–${c.startBar + c.lengthBars})`);
+      });
+      enableClipDrag(d, c, body);
+      body.appendChild(d);
+    }
+    row.appendChild(body);
+    lanes.appendChild(row);
+  }
+
+  // Dong bo 5 checkbox be-trong-doan theo clip dang chon
+  function syncClipTrackToggles(sel) {
     for (const k of TRACK_KEYS) {
-      const row = document.createElement('div');
-      row.className = 'clip-row';
-      const lab = document.createElement('div');
-      lab.className = 'clip-row-label';
-      lab.textContent = names[k];
-      row.appendChild(lab);
-      const body = document.createElement('div');
-      body.className = 'clip-row-body';
-      for (const c of song.clips) {
-        const n = (c.notes[k] || []).length;
-        const d = document.createElement('div');
-        d.className = 'clip-block' + (c.id === selectedClipId ? ' clip-selected' : '') + (c.muted ? ' clip-muted' : '');
-        d.style.width = (c.lengthBars / total * 100) + '%';
-        d.style.borderColor = TRACK_COLORS[k];
-        d.textContent = c.name + (n ? ` (${n})` : '');
-        d.title = `"${c.name}" • bars ${c.startBar + 1}–${c.startBar + c.lengthBars} • ${clipNoteCount(c)} nốt • đúp: đặt vùng gieo lại`;
-        d.addEventListener('click', () => {
-          selectedClipId = c.id;
-          renderTimelineLane();
-        });
-        d.addEventListener('dblclick', () => {
-          selectedClipId = c.id;
-          if (inputRegenFrom) inputRegenFrom.value = c.startBar + 1;
-          if (inputRegenTo) inputRegenTo.value = c.startBar + c.lengthBars;
-          renderTimelineLane();
-          showToast(`🎯 Vùng gieo lại = clip "${c.name}" (bars ${c.startBar + 1}–${c.startBar + c.lengthBars})`);
-        });
-        enableClipDrag(d, c, body);
-        body.appendChild(d);
-      }
-      row.appendChild(body);
-      lanes.appendChild(row);
+      const box = document.getElementById('clipTrack_' + k);
+      if (!box) continue;
+      box.checked = !!(sel && sel.tracks && sel.tracks[k] !== false && !sel.rest);
+      box.disabled = !sel;
     }
   }
 
@@ -3453,6 +3574,7 @@
       name: String((it.customTitle || it.title || it.section || 'Đoạn')).replace(/^RMG_/, '').slice(0, 24),
       bars: (it.songData.metadata && it.songData.metadata.lengthBars) || 8
     })));
+    flattenTimeline(mergedSong); // ap fill/crash chuyen doan
     selectedClipId = null;
 
     state.currentSong = mergedSong;    state.lengthBars = totalBars;
@@ -3772,6 +3894,7 @@
       name: (SECTION_VN[p.section] || p.section || 'Đoạn') + (p.texture && p.texture !== 'tutti' ? ` [${p.texture}]` : ''),
       bars: p.bars
     })));
+    flattenTimeline(song); // ap be theo doan + fill/crash chuyen doan
     selectedClipId = null;
 
     state.currentSong = song;
@@ -4142,6 +4265,7 @@
     });
     const btnClipSplit = document.getElementById('btnClipSplit');
     const btnClipDup = document.getElementById('btnClipDup');
+    const btnClipRest = document.getElementById('btnClipRest');
     const btnClipDel = document.getElementById('btnClipDel');
     const btnClipLeft = document.getElementById('btnClipLeft');
     const btnClipRight = document.getElementById('btnClipRight');
@@ -4149,11 +4273,16 @@
     const btnClipRename = document.getElementById('btnClipRename');
     if (btnClipSplit) btnClipSplit.addEventListener('click', splitSelectedClip);
     if (btnClipDup) btnClipDup.addEventListener('click', duplicateSelectedClip);
+    if (btnClipRest) btnClipRest.addEventListener('click', insertRestClip);
     if (btnClipDel) btnClipDel.addEventListener('click', deleteSelectedClip);
     if (btnClipLeft) btnClipLeft.addEventListener('click', () => moveSelectedClip(-1));
     if (btnClipRight) btnClipRight.addEventListener('click', () => moveSelectedClip(1));
     if (btnClipMute) btnClipMute.addEventListener('click', toggleMuteSelectedClip);
     if (btnClipRename) btnClipRename.addEventListener('click', renameSelectedClip);
+    for (const k of ['lead', 'chords', 'arp', 'bass', 'drums']) {
+      const box = document.getElementById('clipTrack_' + k);
+      if (box) box.addEventListener('change', (e) => setClipTrack(k, e.target.checked));
+    }
 
     // Arranger 1-click
     if (selectArrangerForm) {
@@ -5731,7 +5860,7 @@
     getTakeSession: () => takeSession,
     ensureClips, flattenTimeline, syncClipsFromFlat, sliceFlatToClips,
     splitSelectedClip, duplicateSelectedClip, deleteSelectedClip,
-    moveSelectedClip, toggleMuteSelectedClip, timelineOp,
+    moveSelectedClip, toggleMuteSelectedClip, insertRestClip, setClipTrack, timelineOp,
     renderTimelineLane,
     getClips: () => (state.currentSong && state.currentSong.clips) || null,
     selectClip: (id) => { selectedClipId = id; },

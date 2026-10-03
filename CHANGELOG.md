@@ -1,10 +1,15 @@
 # RMG Changelog
 
 ## Unreleased - Timeline Clips + Takes + Fill
-- Timeline clips: bài là chuỗi clips nối tiếp (Intro/Verse/Chorus...),
-  lane 5 bè kéo-thả dời clip, tách/nhân đôi/xóa/mute/đổi tên, đúp clip =
-  đặt vùng gieo lại; soạn nốt vẫn ở piano roll (tracks phẳng flatten từ
-  clips, phát nhạc/xuất không đổi)
+- Timeline 1 hàng đoạn (Intro/Verse/Chorus...): bấm chọn, kéo dời, tách/
+  nhân đôi/xóa/mute/đổi tên, đúp = đặt vùng gieo lại; soạn nốt ở piano roll
+  (tracks phẳng flatten từ clips, phát nhạc/xuất không đổi)
+- Khoảng lặng ☕: chèn đoạn trống N bars (breakdown/breath); gieo/soạn nốt
+  vào đó tự thành đoạn thường
+- Bè trong đoạn: toggle Lead/Chords/Arp/Bass/Drums từng đoạn để build/drop
+  năng lượng (verse thưa, chorus bùng)
+- Chuyển đoạn tự động: fill + crash biên đoạn theo Variation, deterministic
+  theo seed (V<25% thì thôi)
 - Arranger 1-click và ghép lịch sử xuất ra clips giữ cấu trúc đoạn
 - Khay take (audition): gieo tới 4 takes, nghe từng take, giữ bản ưng
   hoặc trả về bản gốc (1 undo duy nhất cho cả phiên)

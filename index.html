@@ -630,16 +630,25 @@
                 <label style="display:flex; align-items:center; gap:4px;">Tách tại bar
                   <input type="number" id="inputClipSplit" min="1" value="5" style="width:52px; padding:4px 6px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--accent-cyan); font-weight:bold; border-radius:4px; text-align:center;">
                 </label>
-                <button id="btnClipSplit" class="btn-secondary" style="padding:4px 10px;" title="Tách clip đang chứa bar này thành 2 (cắt cứng)">✂ Tách</button>
-                <button id="btnClipDup" class="btn-secondary" style="padding:4px 10px;" title="Nhân đôi clip đang chọn ngay sau nó">⧉ Nhân đôi</button>
-                <button id="btnClipDel" class="btn-secondary" style="padding:4px 10px;" title="Xóa clip đang chọn, các clip sau dồn lên">🗑 Xóa</button>
-                <button id="btnClipLeft" class="btn-secondary" style="padding:4px 8px;" title="Dời clip lên trước">◀</button>
-                <button id="btnClipRight" class="btn-secondary" style="padding:4px 8px;" title="Dời clip xuống sau">▶</button>
-                <button id="btnClipMute" class="btn-secondary" style="padding:4px 10px;" title="Tắt/mở tiếng clip (nốt giữ lại)">🔇 Mute</button>
-                <button id="btnClipRename" class="btn-secondary" style="padding:4px 10px;" title="Đổi tên clip">✏ Tên</button>
+                <button id="btnClipSplit" class="btn-secondary" style="padding:4px 10px;" title="Tách đoạn đang chứa bar này thành 2 (cắt cứng)">✂ Tách</button>
+                <button id="btnClipDup" class="btn-secondary" style="padding:4px 10px;" title="Nhân đôi đoạn đang chọn ngay sau nó">⧉ Nhân đôi</button>
+                <button id="btnClipRest" class="btn-secondary" style="padding:4px 10px;" title="Chèn khoảng lặng (đoạn trống) sau đoạn đang chọn">☕ +Lặng</button>
+                <button id="btnClipDel" class="btn-secondary" style="padding:4px 10px;" title="Xóa đoạn đang chọn, các đoạn sau dồn lên">🗑 Xóa</button>
+                <button id="btnClipLeft" class="btn-secondary" style="padding:4px 8px;" title="Dời đoạn lên trước">◀</button>
+                <button id="btnClipRight" class="btn-secondary" style="padding:4px 8px;" title="Dời đoạn xuống sau">▶</button>
+                <button id="btnClipMute" class="btn-secondary" style="padding:4px 10px;" title="Tắt/mở tiếng đoạn (nốt giữ lại)">🔇 Mute</button>
+                <button id="btnClipRename" class="btn-secondary" style="padding:4px 10px;" title="Đổi tên đoạn">✏ Tên</button>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:4px;">
+                <span style="color:var(--text-dim);">Bè trong đoạn đang chọn:</span>
+                <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="clipTrack_lead" checked> Lead</label>
+                <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="clipTrack_chords" checked> Chords</label>
+                <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="clipTrack_arp" checked> Arp</label>
+                <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="clipTrack_bass" checked> Bass</label>
+                <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="clipTrack_drums" checked> Drums</label>
               </div>
               <div id="clipLanes" style="margin-top:4px;"></div>
-              <div style="font-size:0.65rem; color:var(--text-dim); margin-top:2px;">💡 Bấm chọn clip • kéo ngang để dời • đúp để đặt vùng gieo lại = clip đó • soạn nốt vẫn làm ở piano roll bên dưới</div>
+              <div style="font-size:0.65rem; color:var(--text-dim); margin-top:2px;">💡 Bấm chọn đoạn • kéo ngang để dời • đúp để đặt vùng gieo lại = đoạn đó • tắt bè để tạo build/drop • soạn nốt ở piano roll bên dưới</div>
             </div>
           </div>
           <div class="pianoroll-canvas-container" id="canvasContainer">
