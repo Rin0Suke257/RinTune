@@ -795,13 +795,14 @@ static json HandleOpenFolder(const json& payload) {  std::string folder = payloa
 }
 
 static json HandleOpenFile(const json& payload) {
-  (void)payload;
+  std::string reqType;
+  if (payload.contains("type") && payload["type"].is_string()) reqType = payload["type"].get<std::string>();
   std::vector<wchar_t> fileBuf(32768, 0);
   OPENFILENAMEW ofn{};
   ofn.lStructSize = sizeof(ofn);
   ofn.hwndOwner = g_hwnd;
-  ofn.lpstrFilter = L"RinTune Project (*.rmg)\0*.rmg\0Standard MIDI Files (*.mid;*.midi)\0*.mid;*.midi\0All Files (*.*)\0*.*\0";
-  ofn.nFilterIndex = 1;
+  ofn.lpstrFilter = L"Tat ca ho tro (*.rmg;*.mid;*.midi)\0*.rmg;*.mid;*.midi\0RinTune Project (*.rmg)\0*.rmg\0Standard MIDI Files (*.mid;*.midi)\0*.mid;*.midi\0All Files (*.*)\0*.*\0";
+  ofn.nFilterIndex = (reqType == "midi") ? 3 : 1;
   ofn.lpstrFile = fileBuf.data();
   ofn.nMaxFile = (DWORD)fileBuf.size();
   ofn.lpstrTitle = L"Chon file MIDI de mo trong RinTune";
