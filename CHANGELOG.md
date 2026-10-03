@@ -1,8 +1,10 @@
 # RinTune Changelog
 
-## Unreleased - Be dong (engine)
+## Unreleased - Be dong (engine + UI + xuat)
 - Sinh theo vai tro (lead/stab/chords/pad/arp/bass/drums/perc), toi da 12 be;
   layout 5 be mac dinh bit-identical; gates/variation/thinning theo vai tro
+- UI dong: mixer/tab/regen/variation/toggle clips render theo bai; them/xoa/
+  nhan be, vai tro tu chon; synth/export/MIDI/MMP/MCP theo dict
 
 ## Unreleased - Mo truc tiep LMMS du 2 file
 - Nut mo truc tiep ghi ca `.mmp` (sections) + `.mid` (CC automation) canh

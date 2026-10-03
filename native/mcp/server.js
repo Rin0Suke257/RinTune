@@ -90,19 +90,25 @@ function spliceRegen(song, result) {
 function stitchSongs(songs) {
   let totalBars = 0, cumSteps = 0;
   const progression = [];
-  const first = songs[0];
-  const tracks = {
-    lead: { name: 'Lead Melody', type: 'synth_lead', instrument: first.tracks.lead.instrument, color: '#00f2fe', notes: [] },
-    chords: { name: 'Harmony & Chords', type: 'poly_synth', instrument: first.tracks.chords.instrument, color: '#9b51e0', notes: [] },
-    arp: { name: 'Arpeggio Ostinato', type: 'pluck_synth', instrument: first.tracks.arp.instrument, color: '#4facfe', notes: [] },
-    bass: { name: 'Bassline', type: 'mono_bass', instrument: first.tracks.bass.instrument, color: '#f39c12', notes: [] },
-    drums: { name: 'Drums & Percussion', type: 'drum_kit', instrument: 'standard_kit', color: '#e74c3c', notes: [] }
-  };
+  const allKeys = [];
+  for (const s of songs) {
+    for (const k of Object.keys(s.tracks || {})) {
+      if (!allKeys.includes(k)) allKeys.push(k);
+    }
+  }
+  const tracks = {};
+  for (const k of allKeys) {
+    const src = songs[0].tracks[k] || {};
+    tracks[k] = {
+      name: src.name || k, type: src.type || k,
+      instrument: src.instrument || 'auto', color: src.color || '#00f2fe', notes: []
+    };
+  }
   for (const s of songs) {
     const spb = s.metadata.stepsPerBar || 16;
     for (const c of s.progression) progression.push(Object.assign({}, c, { bar: c.bar + totalBars }));
     for (const k of Object.keys(tracks)) {
-      for (const n of s.tracks[k].notes) tracks[k].notes.push(Object.assign({}, n, { step: n.step + cumSteps }));
+      for (const n of ((s.tracks[k] && s.tracks[k].notes) || [])) tracks[k].notes.push(Object.assign({}, n, { step: n.step + cumSteps }));
     }
     totalBars += s.metadata.lengthBars || 8;
     cumSteps += (s.metadata.lengthBars || 8) * spb;
@@ -264,7 +270,7 @@ server.registerTool('regenerate_region', {
     songId: z.string(),
     fromBar: z.number().int().min(1).describe('Bar bat dau (1-based)'),
     toBar: z.number().int().min(1).optional().describe('Bar ket thuc (mac dinh = fromBar)'),
-    tracks: z.array(z.enum(['lead', 'chords', 'arp', 'bass', 'drums'])).optional().describe('Be can gieo (mac dinh pitched)'),
+    tracks: z.array(z.enum(['lead', 'stab', 'chords', 'pad', 'arp', 'bass', 'drums', 'perc'])).optional().describe('Be can gieo (mac dinh pitched)'),
     seed: z.number().optional()
   }
 }, async (a) => {
@@ -273,7 +279,8 @@ server.registerTool('regenerate_region', {
   const from = Math.max(0, Math.min(total - 1, (a.fromBar | 0) - 1));
   const to = Math.max(from, Math.min(total - 1, a.toBar == null ? from : (a.toBar | 0) - 1));
   const gen = generatorFromSong(song, a.seed);
-  const res = gen.regenerateRegion(song, { fromBar: from, toBar: to, tracks: a.tracks, seed: a.seed });
+  const wanted = (a.tracks && a.tracks.length ? a.tracks : null) || null;
+  const res = gen.regenerateRegion(song, { fromBar: from, toBar: to, tracks: wanted ? wanted.filter(k => song.tracks[k]) : undefined, seed: a.seed });
   const stat = spliceRegen(song, res);
   return { content: [{ type: 'text', text: JSON.stringify(Object.assign({ bars: [res.fromBar + 1, res.toBar + 1] }, stat, summarize(a.songId, song)), null, 2) }] };
 });
@@ -285,7 +292,7 @@ server.registerTool('set_chord', {
     songId: z.string(),
     bar: z.number().int().min(1).describe('Bar can sua (1-based)'),
     symbol: z.string().describe('VD: i, VI, VII, V, Imaj7, ii7'),
-    tracks: z.array(z.enum(['lead', 'chords', 'arp', 'bass', 'drums'])).optional().describe('Mac dinh chords/arp/bass'),
+    tracks: z.array(z.enum(['lead', 'stab', 'chords', 'pad', 'arp', 'bass', 'drums', 'perc'])).optional().describe('Mac dinh chords/arp/bass'),
     seed: z.number().optional()
   }
 }, async (a) => {

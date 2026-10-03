@@ -32,6 +32,7 @@
     trackTarget: 'pure_piano',
     chaosLevel: 25,
     density: 75,
+    trackRoles: null,
     variation: 70, // Bien tau tong 0..100 (0 = giu khung, 100 = dao manh)
     variationTracks: { lead: 100, chords: 100, arp: 100, bass: 100, drums: 100 },
     currentSong: null,
@@ -484,16 +485,23 @@
   }
 
 
+  const VAR_ROLES = ['lead', 'stab', 'chords', 'pad', 'arp', 'bass', 'drums', 'perc'];
+
   function effectiveVariation() {
     const g = Math.max(0, Math.min(100, state.variation != null ? state.variation : 70)) / 100;
     const t = state.variationTracks || {};
-    const pk = (k) => Math.max(0, Math.min(1, g * (Math.max(0, Math.min(100, t[k] != null ? t[k] : 100)) / 100)));
-    return { lead: pk('lead'), chords: pk('chords'), arp: pk('arp'), bass: pk('bass'), drums: pk('drums') };
+    const o = {};
+    for (const r of VAR_ROLES) {
+      o[r] = Math.max(0, Math.min(1, g * (Math.max(0, Math.min(100, t[r] != null ? t[r] : 100)) / 100)));
+    }
+    return o;
   }
 
   function getCheckedRegenTracks() {
     const checked = [...document.querySelectorAll('.regen-track:checked')].map(c => c.value);
-    return checked.length ? checked : ['lead', 'chords', 'arp', 'bass'];
+    if (checked.length) return checked;
+    const keys = songTrackKeys();
+    return keys.length ? keys.filter(k => roleOfKey(k) !== 'drums') : ['lead'];
   }
 
 
@@ -588,6 +596,7 @@
     updateHeaderBadges();
     renderPianoRoll(Synth.currentStep || 0);
     renderTimelineLane();
+    renderTrackUI();
     renderHistory();
     scheduleAutosave();
   }
@@ -653,20 +662,47 @@
   }
 
   const TRACK_KEYS = ['lead', 'chords', 'arp', 'bass', 'drums'];
-  const TRACK_COLORS = { lead: '#00f2fe', chords: '#9b51e0', arp: '#4facfe', bass: '#f39c12', drums: '#e74c3c' };
+  const TRACK_COLORS = { lead: '#00f2fe', chords: '#9b51e0', arp: '#4facfe', bass: '#f39c12', drums: '#e74c3c', stab: '#ff6b81', pad: '#a29bfe', perc: '#fdcb6e' };
+  const TRACK_REGISTRY = {
+    lead: { label: 'Lead', icon: '🎵', color: '#00f2fe', vol: 0.85, pan: 0 },
+    stab: { label: 'Stab', icon: '🎺', color: '#ff6b81', vol: 0.8, pan: 10 },
+    chords: { label: 'Chords', icon: '🎹', color: '#9b51e0', vol: 0.7, pan: -15 },
+    pad: { label: 'Pad', icon: '🎧', color: '#a29bfe', vol: 0.6, pan: -10 },
+    arp: { label: 'Arp', icon: '✨', color: '#4facfe', vol: 0.75, pan: 15 },
+    bass: { label: 'Bass', icon: '🎸', color: '#f39c12', vol: 0.9, pan: 0 },
+    drums: { label: 'Drums', icon: '🥁', color: '#e74c3c', vol: 0.95, pan: 0 },
+    perc: { label: 'Perc', icon: '🪇', color: '#fdcb6e', vol: 0.7, pan: -12 }
+  };
   const SECTION_VN = { intro: 'Intro', verse: 'Verse', chorus: 'Chorus', bridge: 'Bridge', break: 'Break', outro: 'Outro', merged: 'Đoạn', none: 'Đoạn' };
   let selectedClipId = null;
+
+  function roleOfKey(k) {
+    return String(k || '').replace(/[0-9]+$/, '');
+  }
+
+  function regFor(key) {
+    const r = TRACK_REGISTRY[roleOfKey(key)] || TRACK_REGISTRY.lead;
+    return r;
+  }
+
+  function songTrackKeys(song) {
+    const s = song || state.currentSong;
+    if (s && s.tracks) return Object.keys(s.tracks);
+    return TRACK_KEYS.slice();
+  }
+
+  function blankClipNotes(keys) {
+    const o = {};
+    for (const k of (keys && keys.length ? keys : TRACK_KEYS)) o[k] = [];
+    return o;
+  }
 
   function clipId() {
     return 'clip_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 10000);
   }
 
-  function blankClipNotes() {
-    return { lead: [], chords: [], arp: [], bass: [], drums: [] };
-  }
-
   function clipNoteCount(c) {
-    return TRACK_KEYS.reduce((a, k) => a + ((c.notes && c.notes[k]) ? c.notes[k].length : 0), 0);
+    return Object.keys((c && c.notes) || {}).reduce((a, k) => a + (c.notes[k] ? c.notes[k].length : 0), 0);
   }
 
   function layoutClips(song) {
@@ -701,10 +737,15 @@
 
   function ensureClips(song, fallbackName) {
     if (!song) return song;
-    const allOn = () => ({ lead: true, chords: true, arp: true, bass: true, drums: true });
+    const keys = songTrackKeys(song);
+    const allOn = () => {
+      const o = {};
+      for (const k of keys) o[k] = true;
+      return o;
+    };
     if (!Array.isArray(song.clips) || !song.clips.length) {
-      const notes = blankClipNotes();
-      for (const k of TRACK_KEYS) {
+      const notes = blankClipNotes(keys);
+      for (const k of keys) {
         const t = song.tracks && song.tracks[k];
         notes[k] = (t && t.notes ? t.notes.map(n => Object.assign({}, n)) : []);
       }
@@ -721,9 +762,9 @@
         c.muted = !!c.muted;
         c.rest = !!c.rest;
         if (!c.tracks) c.tracks = allOn();
-        else for (const k of TRACK_KEYS) if (c.tracks[k] == null) c.tracks[k] = true;
-        if (!c.notes) c.notes = blankClipNotes();
-        for (const k of TRACK_KEYS) if (!Array.isArray(c.notes[k])) c.notes[k] = [];
+        else for (const k of keys) if (c.tracks[k] == null) c.tracks[k] = true;
+        if (!c.notes) c.notes = blankClipNotes(keys);
+        for (const k of keys) if (!Array.isArray(c.notes[k])) c.notes[k] = [];
       }
     }
     layoutClips(song);
@@ -734,13 +775,14 @@
     ensureClips(song);
     layoutClips(song);
     const spb = (song.metadata && song.metadata.stepsPerBar) || 16;
-    for (const k of TRACK_KEYS) {
+    const keys = songTrackKeys(song);
+    for (const k of keys) {
       if (song.tracks[k]) song.tracks[k].notes = [];
     }
     let stepBase = 0;
     for (const c of song.clips) {
       if (!c.muted && !c.rest) {
-        for (const k of TRACK_KEYS) {
+        for (const k of keys) {
           if (c.tracks && c.tracks[k] === false) continue;
           const t = song.tracks[k];
           if (!t) continue;
@@ -751,13 +793,13 @@
       }
       stepBase += c.lengthBars * spb;
     }
-    for (const k of TRACK_KEYS) {
+    for (const k of keys) {
       const t = song.tracks[k];
       if (t && t.notes) t.notes.sort((a, b) => a.step - b.step);
     }
     addTransitions(song);
     if (song.metadata) {
-      song.metadata.noteCount = TRACK_KEYS.reduce((a, k) => a + ((song.tracks[k] && song.tracks[k].notes) ? song.tracks[k].notes.length : 0), 0);
+      song.metadata.noteCount = keys.reduce((a, k) => a + ((song.tracks[k] && song.tracks[k].notes) ? song.tracks[k].notes.length : 0), 0);
     }
     return song;
   }
@@ -778,17 +820,20 @@
     let V = 0.7;
     const ev = md.variation;
     if (ev && typeof ev === 'object') {
-      V = ((ev.lead || 0) + (ev.chords || 0) + (ev.arp || 0) + (ev.bass || 0) + (ev.drums || 0)) / 5;
+      const vals = Object.values(ev).filter(v => typeof v === 'number');
+      if (vals.length) V = vals.reduce((a, b) => a + b, 0) / vals.length;
     }
-    if (!(V >= 0.25) || !song.tracks.drums) return;
+    const drumKey = songTrackKeys(song).find(k => roleOfKey(k) === 'drums');
+    const drumTrack = drumKey && song.tracks[drumKey];
+    if (!(V >= 0.25) || !drumTrack) return;
     const rand = rng32(Math.floor((md.seed || 0) * 1000000) + 77);
-    const drums = song.tracks.drums.notes;
+    const drums = drumTrack.notes;
     const has = (step, midi) => drums.some(n => n.step === step && n.midi === midi);
     const hasCrashNear = (step) => drums.some(n => n.midi === 49 && Math.abs(n.step - step) <= 2);
     for (let i = 0; i < song.clips.length - 1; i++) {
       const a = song.clips[i], b = song.clips[i + 1];
       if (a.muted || a.rest || b.muted || b.rest) continue;
-      if ((a.tracks && a.tracks.drums === false) || (b.tracks && b.tracks.drums === false)) continue;
+      if ((a.tracks && a.tracks[drumKey] === false) || (b.tracks && b.tracks[drumKey] === false)) continue;
       const edge = (a.startBar + a.lengthBars) * spb;
       if (rand() < 0.3 + 0.55 * V) {
         const seq = [[edge - 2, 38], [edge - 1, 47]];
@@ -809,12 +854,13 @@
     ensureClips(song);
     layoutClips(song);
     const spb = (song.metadata && song.metadata.stepsPerBar) || 16;
+    const keys = songTrackKeys(song);
     for (const c of song.clips) {
       if (c.muted) continue;
       const s0 = c.startBar * spb;
       const s1 = s0 + c.lengthBars * spb;
       let got = false;
-      for (const k of TRACK_KEYS) {
+      for (const k of keys) {
         if (c.tracks && c.tracks[k] === false) continue;
         const t = song.tracks[k];
         const arr = [];
@@ -834,7 +880,7 @@
       if (got) c.rest = false;
     }
     let maxStep = -1;
-    for (const k of TRACK_KEYS) {
+    for (const k of songTrackKeys(song)) {
       const t = song.tracks[k];
       if (t && t.notes) for (const n of t.notes) if (n.step > maxStep) maxStep = n.step;
     }
@@ -853,17 +899,22 @@
 
   function sliceFlatToClips(song, sections) {
     const spb = (song.metadata && song.metadata.stepsPerBar) || 16;
-    const allOn = () => ({ lead: true, chords: true, arp: true, bass: true, drums: true });
+    const keys = songTrackKeys(song);
+    const allOn = () => {
+      const o = {};
+      for (const k of keys) o[k] = true;
+      return o;
+    };
     song.clips = [];
     let s0 = 0;
     for (const s of sections) {
       const bars = Math.max(1, s.bars | 0 || 1);
-      const c = { id: clipId(), name: s.name || 'Đoạn', lengthBars: bars, muted: false, rest: false, tracks: allOn(), notes: blankClipNotes() };
+      const c = { id: clipId(), name: s.name || 'Đoạn', lengthBars: bars, muted: false, rest: false, tracks: allOn(), notes: blankClipNotes(keys) };
       if (s.tracks) {
-        for (const k of TRACK_KEYS) c.tracks[k] = s.tracks[k] !== false;
+        for (const k of keys) c.tracks[k] = s.tracks[k] !== false;
       }
       const s1 = s0 + bars * spb;
-      for (const k of TRACK_KEYS) {
+      for (const k of keys) {
         const t = song.tracks[k];
         const arr = [];
         if (t && t.notes) {
@@ -920,11 +971,11 @@
       const cutLocal = (b - c.startBar) * spb;
       const mkHalf = (name, len) => ({
         id: clipId(), name, lengthBars: len, muted: c.muted, rest: c.rest,
-        tracks: Object.assign({}, c.tracks), notes: blankClipNotes()
+        tracks: Object.assign({}, c.tracks), notes: blankClipNotes(Object.keys(c.notes || {}))
       });
       const left = mkHalf(c.name, b - c.startBar);
       const right = mkHalf(c.name + ' (2)', c.startBar + c.lengthBars - b);
-      for (const k of TRACK_KEYS) {
+      for (const k of Object.keys(c.notes || {})) {
         for (const n of (c.notes[k] || [])) {
           if (n.step < cutLocal) {
             const cp = Object.assign({}, n);
@@ -949,9 +1000,9 @@
       const copy = {
         id: clipId(), name: c.name + ' (copy)', lengthBars: c.lengthBars,
         muted: false, rest: c.rest, tracks: Object.assign({}, c.tracks),
-        notes: blankClipNotes()
+        notes: blankClipNotes(Object.keys(c.notes || {}))
       };
-      for (const k of TRACK_KEYS) copy.notes[k] = (c.notes[k] || []).map(n => Object.assign({}, n));
+      for (const k of Object.keys(c.notes || {})) copy.notes[k] = (c.notes[k] || []).map(n => Object.assign({}, n));
       song.clips.splice(idx + 1, 0, copy);
       selectedClipId = copy.id;
       return `⧉ Đã nhân đôi "${c.name}" (${copy.lengthBars} bars) ngay sau nó`;
@@ -967,7 +1018,7 @@
       const nx = song.clips[idx + 1];
       const spb = song.metadata.stepsPerBar || 16;
       const off = c.lengthBars * spb;
-      for (const k of TRACK_KEYS) {
+      for (const k of Object.keys(nx.notes || {})) {
         const moved = (nx.notes[k] || []).map(n => Object.assign({}, n, { step: n.step + off }));
         c.notes[k] = (c.notes[k] || []).concat(moved);
       }
@@ -1019,11 +1070,14 @@
     timelineOp('khoảng lặng', (song) => {
       const c = selectedClip();
       const idx = c ? song.clips.indexOf(c) + 1 : song.clips.length;
+      const keys = songTrackKeys(song);
+      const allOn = {};
+      for (const k of keys) allOn[k] = true;
       const rest = {
         id: clipId(), name: 'Lặng ' + bars + 'b', lengthBars: bars,
         muted: false, rest: true,
-        tracks: { lead: true, chords: true, arp: true, bass: true, drums: true },
-        notes: blankClipNotes()
+        tracks: allOn,
+        notes: blankClipNotes(keys)
       };
       song.clips.splice(idx, 0, rest);
       selectedClipId = rest.id;
@@ -1081,8 +1135,7 @@
   function renderTimelineLane() {
     const lanes = document.getElementById('clipLanes');
     const info = document.getElementById('clipInfo');
-    if (!lanes) return;
-    const song = state.currentSong;
+    if (!lanes) return;    const song = state.currentSong;
     if (!song) {
       lanes.innerHTML = '';
       if (info) info.textContent = '';
@@ -1122,9 +1175,9 @@
       const d = document.createElement('div');
       d.className = 'clip-block clip-section' + (c.id === selectedClipId ? ' clip-selected' : '') + (c.muted ? ' clip-muted' : '') + (c.rest ? ' clip-rest' : '');
       d.style.width = (c.lengthBars / total * 100) + '%';
-      const dots = TRACK_KEYS.map(k => {
+      const dots = songTrackKeys(song).map(k => {
         const on = !(c.tracks && c.tracks[k] === false);
-        return `<span class="clip-dot" style="background:${TRACK_COLORS[k]};opacity:${on ? 1 : 0.2};" title="${k}: ${on ? 'chơi' : 'nghỉ'}"></span>`;
+        return `<span class="clip-dot" style="background:${(TRACK_COLORS[k] || regFor(k).color)};opacity:${on ? 1 : 0.2};" title="${k}: ${on ? 'chơi' : 'nghỉ'}"></span>`;
       }).join('');
       d.innerHTML = `<span class="clip-name">${escapeHtml(c.name)}${c.rest ? ' ☕' : ''}${c.muted ? ' 🔇' : ''}</span>` +
         `<span class="clip-meta">${c.lengthBars}b • ${clipNoteCount(c)}n</span>` +
@@ -1146,14 +1199,29 @@
     }
     row.appendChild(body);
     lanes.appendChild(row);
+    renderTrackUI();
   }
 
   function syncClipTrackToggles(sel) {
-    for (const k of TRACK_KEYS) {
-      const box = document.getElementById('clipTrack_' + k);
-      if (!box) continue;
-      box.checked = !!(sel && sel.tracks && sel.tracks[k] !== false && !sel.rest);
-      box.disabled = !sel;
+    const box = document.getElementById('clipTrackBoxes');
+    if (!box) return;
+    const keys = songTrackKeys();
+    box.innerHTML = '';
+    for (const k of keys) {
+      const r = regFor(k);
+      const lab = document.createElement('label');
+      lab.style.cssText = 'display:flex; align-items:center; gap:3px; cursor:pointer;';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !!(sel && sel.tracks && sel.tracks[k] !== false && !sel.rest);
+      cb.disabled = !sel;
+      cb.title = r.label;
+      cb.addEventListener('change', (e) => setClipTrack(k, e.target.checked));
+      lab.appendChild(cb);
+      const tx = document.createElement('span');
+      tx.textContent = r.label;
+      lab.appendChild(tx);
+      box.appendChild(lab);
     }
   }
 
@@ -1204,9 +1272,9 @@
     }
     const spb = song.metadata.stepsPerBar || 16;
     const motifSteps = 2 * spb;
-    const motif = (song.tracks.lead.notes || [])
+    const motif = (((song.tracks.lead && song.tracks.lead.notes) || [])
       .filter(n => n.locked && n.step < motifSteps)
-      .sort((a, b) => a.step - b.step);
+      .sort((a, b) => a.step - b.step));
     if (!motif.length) {
       showToast('🌱 Hãy soạn/kéo vài nốt lead (viền vàng 🔒) trong 2 bars đầu rồi bấm lại', 4500);
       return;
@@ -1417,6 +1485,7 @@
       stampBaseVel(song);
       ensureClips(song, 'MIDI nhập');
       selectedClipId = null;
+      state.trackRoles = trackDefsFromSong(song);
       closeProgEditor();
       syncControlsFromState();
       Synth.loadSong(song);
@@ -1598,6 +1667,15 @@
     return JSON.parse(JSON.stringify(song));
   }
 
+  function trackDefsFromSong(song) {
+    if (!song) return null;
+    if (Array.isArray(song.metadata.trackDefs) && song.metadata.trackDefs.length) {
+      return song.metadata.trackDefs.map(d => ({ key: d.key, role: d.role }));
+    }
+    if (song.tracks) return Object.keys(song.tracks).map(k => ({ key: k, role: roleOfKey(k) }));
+    return null;
+  }
+
   function snapshotState() {
     if (state.currentSong) syncClipsFromFlat(state.currentSong);
     return {
@@ -1609,7 +1687,8 @@
         articulation: state.articulation, climaxCurve: state.climaxCurve,
         trackTarget: state.trackTarget, chaosLevel: state.chaosLevel,
         density: state.density, fadeInBars: state.fadeInBars, fadeOutBars: state.fadeOutBars,
-        variation: state.variation, variationTracks: Object.assign({}, state.variationTracks)
+        variation: state.variation, variationTracks: Object.assign({}, state.variationTracks),
+        trackRoles: state.trackRoles ? state.trackRoles.map(d => ({ key: d.key, role: d.role })) : null
       },
       label: '', time: 0
     };
@@ -1644,6 +1723,9 @@
     });
     if (snap.ui.variationTracks) state.variationTracks = Object.assign({ lead: 100, chords: 100, arp: 100, bass: 100, drums: 100 }, snap.ui.variationTracks);
     state.currentSong = cloneSong(snap.song);
+    state.trackRoles = snap.ui.trackRoles
+      ? snap.ui.trackRoles.map(d => ({ key: d.key, role: d.role }))
+      : trackDefsFromSong(state.currentSong);
     closeProgEditor();
     syncControlsFromState();
     Synth.loadSong(state.currentSong);
@@ -1847,7 +1929,7 @@
       btnTogglePurePiano.style.borderColor = 'var(--border-color)';
       btnTogglePurePiano.style.color = 'var(--text-muted)';
       btnTogglePurePiano.style.background = 'var(--bg-input)';
-      if (txtPurePiano) txtPurePiano.textContent = '🎛️ DÀN NHẠC 5 BÈ: BẬT';
+      if (txtPurePiano) txtPurePiano.textContent = `🎛️ DÀN NHẠC ${songTrackKeys().length} BÈ: BẬT`;
     }
   }
 
@@ -1886,15 +1968,297 @@
   }
 
 
+  function effectiveTrackRoles() {
+    if (Array.isArray(state.trackRoles) && state.trackRoles.length) return state.trackRoles;
+    return songTrackKeys().map(k => {
+      const td = ((state.currentSong && state.currentSong.metadata.trackDefs) || []).find(d => d.key === k);
+      return { key: k, role: td ? td.role : roleOfKey(k) };
+    });
+  }
+
+  function renderTrackTabs() {
+    const box = document.getElementById('trackTabButtons');
+    if (!box) return;
+    const keys = songTrackKeys();
+    if (!keys.includes(state.editingTrack)) state.editingTrack = keys[0] || 'lead';
+    box.innerHTML = '';
+    for (const k of keys) {
+      const r = regFor(k);
+      const b = document.createElement('button');
+      b.className = 'btn-track-tab' + (k === state.editingTrack ? ' active' : '');
+      b.dataset.track = k;
+      b.style.setProperty('--track-color', r.color);
+      b.textContent = `${r.icon} ${k === r.label.toLowerCase() ? r.label : k}`;
+      b.title = `${r.label} (${k})`;
+      b.addEventListener('click', () => {
+        box.querySelectorAll('.btn-track-tab').forEach(t => t.classList.remove('active'));
+        b.classList.add('active');
+        state.editingTrack = k;
+        renderPianoRoll(Synth.currentStep || 0);
+        showToast(`🎹 Đang soạn & chỉnh sửa bè: ${b.textContent.trim()}`);
+      });
+      box.appendChild(b);
+    }
+  }
+
+  const mixState = {};
+
+  function mixFor(key) {
+    if (!mixState[key]) {
+      const r = regFor(key);
+      mixState[key] = { vol: r.vol, pan: r.pan, muted: false, solo: false };
+    }
+    return mixState[key];
+  }
+
+  function renderMixer() {
+    const wrap = document.getElementById('mixerChannels');
+    if (!wrap) return;
+    const keys = songTrackKeys();
+    wrap.innerHTML = '';
+    for (const k of keys) {
+      const r = regFor(k);
+      const ms = mixFor(k);
+      if (Synth && Synth.ensureTrack) Synth.ensureTrack(k, ms.vol, ms.pan);
+      const ch = document.createElement('div');
+      ch.className = 'mixer-channel';
+      ch.dataset.track = k;
+      ch.innerHTML =
+        `<div class="channel-header">` +
+        `<span class="channel-name" style="color:${r.color};">${r.icon} ${k}</span>` +
+        `<div class="channel-toggles">` +
+        `<button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>` +
+        `<button class="btn-mini btn-dup" title="Nhân đôi bè này">⧉</button>` +
+        `<button class="btn-mini btn-del" title="Xóa bè này">✕</button>` +
+        `<button class="btn-mini btn-mute${ms.muted ? ' mute-active' : ''}" title="Mute">M</button>` +
+        `<button class="btn-mini btn-solo${ms.solo ? ' solo-active' : ''}" title="Solo">S</button>` +
+        `</div></div>` +
+        `<div class="channel-slider"><input type="range" class="vol-slider" min="0" max="1" step="0.01" value="${ms.vol}"></div>` +
+        `<div class="channel-pan" title="Pan trái/phải (L/R)"><span style="font-size:0.6rem; color:var(--text-dim);">L</span>` +
+        `<input type="range" class="pan-slider" min="-100" max="100" step="1" value="${ms.pan}">` +
+        `<span style="font-size:0.6rem; color:var(--text-dim);">R</span></div>`;
+      ch.querySelector('.btn-dice').addEventListener('click', () => {
+        if (!state.currentSong) {
+          showToast('⚠️ Chưa có bài nhạc! Hãy bấm Generate trước.');
+          return;
+        }
+        applyRegenToSong(0, state.currentSong.metadata.lengthBars - 1, [k]);
+      });
+      ch.querySelector('.btn-dup').addEventListener('click', () => duplicateTrack(k));
+      ch.querySelector('.btn-del').addEventListener('click', () => removeTrack(k));
+      ch.querySelector('.vol-slider').addEventListener('input', (e) => {
+        ms.vol = parseFloat(e.target.value);
+        if (Synth.ensureTrack) Synth.ensureTrack(k, ms.vol, ms.pan);
+        Synth.setTrackVolume(k, ms.vol);
+      });
+      ch.querySelector('.pan-slider').addEventListener('input', (e) => {
+        ms.pan = parseInt(e.target.value, 10);
+        if (Synth.ensureTrack) Synth.ensureTrack(k, ms.vol, ms.pan);
+        if (Synth.setTrackPan) Synth.setTrackPan(k, ms.pan);
+      });
+      ch.querySelector('.btn-mute').addEventListener('click', (e) => {
+        if (Synth.ensureTrack) Synth.ensureTrack(k, ms.vol, ms.pan);
+        const muted = Synth.toggleMute(k);
+        ms.muted = !!muted;
+        e.target.classList.toggle('mute-active', ms.muted);
+      });
+      ch.querySelector('.btn-solo').addEventListener('click', (e) => {
+        if (Synth.ensureTrack) Synth.ensureTrack(k, ms.vol, ms.pan);
+        const solo = Synth.toggleSolo(k);
+        ms.solo = !!solo;
+        e.target.classList.toggle('solo-active', ms.solo);
+      });
+      ch.addEventListener('click', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
+        state.editingTrack = k;
+        renderTrackTabs();
+        renderPianoRoll(Synth.currentStep || 0);
+      });
+      wrap.appendChild(ch);
+    }
+    const sel = document.getElementById('selectAddRole');
+    if (sel && !sel.options.length) {
+      for (const r of Object.keys(TRACK_REGISTRY)) {
+        const o = document.createElement('option');
+        o.value = r;
+        o.textContent = `${TRACK_REGISTRY[r].icon} ${TRACK_REGISTRY[r].label}`;
+        sel.appendChild(o);
+      }
+    }
+  }
+
+  function renderRegenChecks() {
+    const box = document.getElementById('regenTrackBoxes');
+    if (!box) return;
+    const prev = new Set([...box.querySelectorAll('.regen-track:checked')].map(c => c.value));
+    const first = !box.dataset.init;
+    box.dataset.init = '1';
+    box.innerHTML = '';
+    for (const k of songTrackKeys()) {
+      const r = regFor(k);
+      const lab = document.createElement('label');
+      lab.style.cssText = 'display:flex; align-items:center; gap:3px; cursor:pointer;';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'regen-track';
+      cb.value = k;
+      cb.checked = first ? roleOfKey(k) !== 'drums' : prev.has(k);
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode(' ' + r.label));
+      lab.title = k;
+      box.appendChild(lab);
+    }
+  }
+
+  function renderVarSliders() {
+    const box = document.getElementById('varTrackBoxes');
+    if (!box) return;
+    box.innerHTML = '';
+    const roles = [];
+    for (const k of songTrackKeys()) {
+      const r = roleOfKey(k);
+      if (!roles.includes(r)) roles.push(r);
+    }
+    for (const r of roles) {
+      const reg = TRACK_REGISTRY[r] || TRACK_REGISTRY.lead;
+      const lab = document.createElement('span');
+      lab.textContent = reg.label;
+      lab.title = r;
+      const wrap = document.createElement('span');
+      const s = document.createElement('input');
+      s.type = 'range';
+      s.min = '0'; s.max = '100';
+      s.value = (state.variationTracks && state.variationTracks[r] != null) ? state.variationTracks[r] : 100;
+      s.style.cssText = 'width:110px; vertical-align:middle;';
+      const v = document.createElement('b');
+      v.textContent = s.value + '%';
+      s.addEventListener('input', () => {
+        state.variationTracks[r] = parseInt(s.value, 10);
+        v.textContent = state.variationTracks[r] + '%';
+      });
+      s.addEventListener('change', () => generateNewSong());
+      wrap.appendChild(s);
+      wrap.appendChild(document.createTextNode(' '));
+      wrap.appendChild(v);
+      box.appendChild(lab);
+      box.appendChild(wrap);
+    }
+  }
+
+  function renderTrackUI() {
+    renderTrackTabs();
+    renderMixer();
+    renderRegenChecks();
+    renderVarSliders();
+  }
+
+  function trackRoleOf(key) {
+    const defs = effectiveTrackRoles().find(d => d.key === key);
+    if (def) return def.role;
+    const md = (state.currentSong && state.currentSong.metadata.trackDefs) || [];
+    const td = md.find(d => d.key === key);
+    return td ? td.role : roleOfKey(key);
+  }
+
+  function addTrack(role) {
+    if (!state.currentSong) {
+      showToast('⚠️ Chưa có bài nhạc! Hãy bấm Generate trước.');
+      return;
+    }
+    const keys = songTrackKeys();
+    if (keys.length >= 12) {
+      showToast('⚠️ Tối đa 12 bè');
+      return;
+    }
+    role = String(role || 'pad');
+    let n = 0, key = role;
+    while (keys.includes(key)) { n++; key = role + (n + 1); }
+    pushUndo('thêm bè');
+    const song = state.currentSong;
+    syncClipsFromFlat(song);
+    song.tracks[key] = { name: key, type: role, instrument: 'auto', color: regFor(key).color, notes: [] };
+    const defs = effectiveTrackRoles().concat([{ key, role }]);
+    state.trackRoles = defs;
+    if (song.metadata) song.metadata.trackDefs = defs.map(d => ({ key: d.key, role: d.role }));
+    for (const c of (song.clips || [])) {
+      if (!c.tracks) c.tracks = {};
+      if (c.tracks[key] == null) c.tracks[key] = true;
+      if (!c.notes) c.notes = {};
+      if (!Array.isArray(c.notes[key])) c.notes[key] = [];
+    }
+    const gen = generatorFromSong(song);
+    const res = gen.regenerateRegion(song, { fromBar: 0, toBar: song.metadata.lengthBars - 1, tracks: [key] });
+    const stat = spliceRegenResult(song, res);
+    if (song.tracks[key]) {
+      const r = regFor(key);
+      song.tracks[key].name = r.label + ' ' + key.replace(role, '');
+      song.tracks[key].type = role;
+      song.tracks[key].color = r.color;
+    }
+    state.editingTrack = key;
+    refreshSongUI();
+    renderTrackUI();
+    showToast(`➕ Đã thêm bè ${key} (${role}): +${stat.added} nốt`);
+  }
+
+  function removeTrack(key) {
+    const song = state.currentSong;
+    if (!song) return;
+    const keys = songTrackKeys();
+    if (keys.length <= 1) {
+      showToast('⚠️ Giữ lại ít nhất 1 bè');
+      return;
+    }
+    pushUndo('xóa bè');
+    syncClipsFromFlat(song);
+    delete song.tracks[key];
+    delete mixState[key];
+    for (const c of (song.clips || [])) {
+      if (c.tracks) delete c.tracks[key];
+      if (c.notes) delete c.notes[key];
+    }
+    state.trackRoles = effectiveTrackRoles().filter(d => d.key !== key);
+    if (song.metadata) song.metadata.trackDefs = state.trackRoles.map(d => ({ key: d.key, role: d.role }));
+    if (state.editingTrack === key) state.editingTrack = songTrackKeys()[0];
+    flattenTimeline(song);
+    refreshSongUI();
+    renderTrackUI();
+    showToast(`🗑 Đã xóa bè ${key}`);
+  }
+
+  function duplicateTrack(key) {
+    const song = state.currentSong;
+    if (!song || !song.tracks[key]) return;
+    const keys = songTrackKeys();
+    if (keys.length >= 12) {
+      showToast('⚠️ Tối đa 12 bè');
+      return;
+    }
+    const role = trackRoleOf(key);
+    let n = 2, nk = role + n;
+    while (keys.includes(nk)) { n++; nk = role + n; }
+    pushUndo('nhân bè');
+    syncClipsFromFlat(song);
+    song.tracks[nk] = {
+      name: song.tracks[key].name + ' 2',
+      type: song.tracks[key].type,
+      instrument: song.tracks[key].instrument,
+      color: regFor(nk).color,
+      notes: (song.tracks[key].notes || []).map(nn => Object.assign({}, nn))
+    };
+    const defs = effectiveTrackRoles().concat([{ key: nk, role }]);
+    state.trackRoles = defs;
+    if (song.metadata) song.metadata.trackDefs = defs.map(d => ({ key: d.key, role: d.role }));
+    syncClipsFromFlat(song);
+    refreshSongUI();
+    renderTrackUI();
+    showToast(`⧉ Đã nhân bè ${key} → ${nk}`);
+  }
+
   function syncVariationControls() {
     if (sliderVariation) sliderVariation.value = state.variation;
     if (valVariation) valVariation.textContent = `${state.variation}%`;
-    for (const k of ['lead', 'chords', 'arp', 'bass', 'drums']) {
-      const s = document.getElementById('sliderVar_' + k);
-      const v = document.getElementById('valVar_' + k);
-      if (s) s.value = (state.variationTracks && state.variationTracks[k] != null) ? state.variationTracks[k] : 100;
-      if (v) v.textContent = `${s ? s.value : 100}%`;
-    }
+    renderVarSliders();
   }
 
 
@@ -2603,6 +2967,7 @@
       climaxCurve: md.climaxCurve, chaosLevel: md.chaosLevel, density: md.density,
       fadeInBars: md.fadeInBars, fadeOutBars: md.fadeOutBars,
       variation: state.variation, variationTracks: Object.assign({}, state.variationTracks),
+      trackRoles: effectiveTrackRoles().map(d => ({ key: d.key, role: d.role })),
       trackTarget: md.trackTarget, seed: md.seed
     };
     const s = JSON.stringify(data);
@@ -2633,6 +2998,9 @@
     if (o.variationTracks) state.variationTracks = Object.assign({ lead: 100, chords: 100, arp: 100, bass: 100, drums: 100 }, o.variationTracks);
     state.fadeInBars = o.fadeInBars || 0; state.fadeOutBars = o.fadeOutBars || 0;
     if (o.trackTarget) state.trackTarget = o.trackTarget;
+    if (Array.isArray(o.trackRoles) && o.trackRoles.length) {
+      state.trackRoles = o.trackRoles.map(d => ({ key: d.key, role: d.role }));
+    }
     syncControlsFromState();
     const wasPlaying = Synth.isPlaying;
     if (wasPlaying) Synth.stop();
@@ -2643,7 +3011,7 @@
       articulation: state.articulation, climaxCurve: state.climaxCurve,
       useContour: false, contourPoints: null,
       fadeInBars: state.fadeInBars, fadeOutBars: state.fadeOutBars,
-      trackTarget: state.trackTarget, chaosLevel: state.chaosLevel,
+      trackTarget: state.trackTarget, trackRoles: state.trackRoles, chaosLevel: state.chaosLevel,
       density: state.density, variation: effectiveVariation(), humanize: true,
       loopMode: state.loopMode, finalHit: state.finalHit, seed: o.seed
     });
@@ -2651,6 +3019,7 @@
     stampBaseVel(state.currentSong);
     autoSliceSections(state.currentSong);
     selectedClipId = null;
+    state.trackRoles = trackDefsFromSong(state.currentSong);
     Synth.loadSong(state.currentSong);
     updateHeaderBadges();
     updateProgressionUI(state.currentSong.progression);
@@ -2686,7 +3055,7 @@
       motifStructure: state.motifStructure, articulation: state.articulation,
       climaxCurve: state.climaxCurve, chaosLevel: state.chaosLevel, density: state.density,
       fadeInBars: state.fadeInBars, fadeOutBars: state.fadeOutBars,
-      trackTarget: state.trackTarget, seed
+      trackTarget: state.trackTarget, trackRoles: state.trackRoles, seed
     });
     showToast(`📅 Seed hôm nay: ${seed} — ai nhập seed này cũng ra cùng bài!`, 5000);
   }
@@ -2710,7 +3079,8 @@
         articulation: state.articulation, climaxCurve: state.climaxCurve,
         trackTarget: state.trackTarget, chaosLevel: state.chaosLevel,
         density: state.density, fadeInBars: state.fadeInBars, fadeOutBars: state.fadeOutBars,
-        variation: state.variation, variationTracks: Object.assign({}, state.variationTracks)
+        variation: state.variation, variationTracks: Object.assign({}, state.variationTracks),
+        trackRoles: effectiveTrackRoles().map(d => ({ key: d.key, role: d.role }))
       },
       song: state.currentSong
     };
@@ -2782,6 +3152,9 @@
       state.fadeInBars = ui.fadeInBars || 0;
       state.fadeOutBars = ui.fadeOutBars || 0;
       state.currentSong = song;
+      state.trackRoles = ui.trackRoles && ui.trackRoles.length
+        ? ui.trackRoles.map(d => ({ key: d.key, role: d.role }))
+        : trackDefsFromSong(song);
       stampBaseVel(song);
       ensureClips(song);
       selectedClipId = null;
@@ -2878,6 +3251,7 @@
       climaxCurve: md.climaxCurve, chaosLevel: md.chaosLevel, density: md.density,
       fadeInBars: md.fadeInBars, fadeOutBars: md.fadeOutBars,
       variation: state.variation, variationTracks: Object.assign({}, state.variationTracks),
+      trackRoles: effectiveTrackRoles().map(d => ({ key: d.key, role: d.role })),
       trackTarget: md.trackTarget, seed: md.seed
     };
     const arr = getSeedGallery();
@@ -3062,6 +3436,7 @@
       fadeInBars: state.fadeInBars,
       fadeOutBars: state.fadeOutBars,
       trackTarget: state.trackTarget,
+      trackRoles: state.trackRoles,
       chaosLevel: state.chaosLevel,
       density: state.density,
       variation: effectiveVariation(),
@@ -3075,6 +3450,7 @@
     stampBaseVel(state.currentSong);
     autoSliceSections(state.currentSong);
     selectedClipId = null;
+    state.trackRoles = trackDefsFromSong(state.currentSong);
     Synth.loadSong(state.currentSong);
 
     updateHeaderBadges();
@@ -3308,6 +3684,7 @@
     stampBaseVel(state.currentSong);
     ensureClips(state.currentSong);
     selectedClipId = null;
+    state.trackRoles = trackDefsFromSong(state.currentSong);
     state.genre = item.genre;
     state.key = item.key;
     state.scale = item.scale;
@@ -3321,9 +3698,11 @@
     state.density = item.songData.metadata.density !== undefined ? item.songData.metadata.density : 75;
     if (item.songData.metadata.variation && typeof item.songData.metadata.variation === 'object') {
       const ev = item.songData.metadata.variation;
-      const mx = Math.max(ev.lead || 0, ev.chords || 0, ev.arp || 0, ev.bass || 0, ev.drums || 0, 0.01);
+      const vals = Object.values(ev).filter(v => typeof v === 'number');
+      const mx = Math.max(...vals, 0.01);
       state.variation = Math.round(mx * 100);
-      for (const k of ['lead', 'chords', 'arp', 'bass', 'drums']) {
+      for (const k of Object.keys(ev)) {
+        if (typeof ev[k] !== 'number') continue;
         state.variationTracks[k] = Math.round(((ev[k] != null ? ev[k] : mx) / mx) * 100);
       }
     }
@@ -3413,13 +3792,23 @@
     let cumulativeSteps = 0;
     const mergedProgression = [];
     const first = songs[0];
-    const mergedTracks = {
-      lead:   { name: 'Lead Melody', type: 'synth_lead', instrument: first.tracks.lead.instrument, color: '#00f2fe', notes: [] },
-      chords: { name: 'Harmony & Chords', type: 'poly_synth', instrument: first.tracks.chords.instrument, color: '#9b51e0', notes: [] },
-      arp:    { name: 'Arpeggio Ostinato', type: 'pluck_synth', instrument: first.tracks.arp.instrument, color: '#4facfe', notes: [] },
-      bass:   { name: 'Bassline', type: 'mono_bass', instrument: first.tracks.bass.instrument, color: '#f39c12', notes: [] },
-      drums:  { name: 'Drums & Percussion', type: 'drum_kit', instrument: 'standard_kit', color: '#e74c3c', notes: [] }
-    };
+    const allKeys = [];
+    for (const s of songs) {
+      for (const k of Object.keys(s.tracks || {})) {
+        if (!allKeys.includes(k)) allKeys.push(k);
+      }
+    }
+    const mergedTracks = {};
+    for (const k of allKeys) {
+      const src = first.tracks[k];
+      mergedTracks[k] = {
+        name: (src && src.name) || k,
+        type: (src && src.type) || k,
+        instrument: (src && src.instrument) || 'auto',
+        color: (src && src.color) || '#00f2fe',
+        notes: []
+      };
+    }
 
     for (const song of songs) {
       const spb = song.metadata.stepsPerBar || 16;
@@ -3515,6 +3904,7 @@
     selectedClipId = null;
 
     state.currentSong = mergedSong;    state.lengthBars = totalBars;
+    state.trackRoles = trackDefsFromSong(mergedSong);
     state.section = 'merged';
     selectSection.value = 'merged';
     if (inputCustomBars) inputCustomBars.value = totalBars;
@@ -3685,6 +4075,7 @@
     stampBaseVel(song);
     ensureClips(song, 'Bài trống');
     selectedClipId = null;
+    state.trackRoles = trackDefsFromSong(song);
     Synth.loadSong(song);
     updateHeaderBadges();
     updateProgressionUI(progression);
@@ -3763,6 +4154,7 @@
         fadeInBars: 0,
         fadeOutBars: 0,
         trackTarget: state.trackTarget,
+        trackRoles: state.trackRoles,
         chaosLevel: p.chaosLevel,
         density: p.density,
         variation: effectiveVariation(),
@@ -3800,6 +4192,10 @@
         fadeOutBars: 0,
         trackTarget: state.trackTarget,
         isPurePiano: state.trackTarget === 'pure_piano',
+        trackDefs: Object.keys(st.tracks).map(k => {
+          const td = ((segs[0].metadata.trackDefs) || []).find(d => d.key === k);
+          return { key: k, role: td ? td.role : roleOfKey(k) };
+        }),
         useContour: state.contourEnabled,
         contourPoints: state.contourPoints,
         loopMode: state.loopMode,
@@ -3823,6 +4219,7 @@
 
     state.currentSong = song;
     state.lengthBars = totalBars;
+    state.trackRoles = trackDefsFromSong(song);
     state.section = 'merged';
     selectSection.value = 'merged';
     if (inputCustomBars) inputCustomBars.value = totalBars;
@@ -4081,16 +4478,6 @@
       });
       sliderVariation.addEventListener('change', () => generateNewSong());
     }
-    for (const k of ['lead', 'chords', 'arp', 'bass', 'drums']) {
-      const s = document.getElementById('sliderVar_' + k);
-      if (!s) continue;
-      s.addEventListener('input', (e) => {
-        state.variationTracks[k] = parseInt(e.target.value, 10);
-        const v = document.getElementById('valVar_' + k);
-        if (v) v.textContent = `${state.variationTracks[k]}%`;
-      });
-      s.addEventListener('change', () => generateNewSong());
-    }
     document.querySelectorAll('[data-varpreset]').forEach(btn => {
       btn.addEventListener('click', () => {
         state.variation = parseInt(btn.dataset.varpreset, 10);
@@ -4161,6 +4548,11 @@
 
     const btnTimelineToggle = document.getElementById('btnTimelineToggle');
     if (btnTimelineToggle) btnTimelineToggle.addEventListener('click', toggleTimeline);
+    const btnAddTrack = document.getElementById('btnAddTrack');
+    const selectAddRole = document.getElementById('selectAddRole');
+    if (btnAddTrack) btnAddTrack.addEventListener('click', () => {
+      addTrack(selectAddRole ? selectAddRole.value : 'pad');
+    });
     try {
       setTimelineCollapsed(localStorage.getItem(TL_COLLAPSE_KEY) !== '0', false);
     } catch (e) {
@@ -4184,10 +4576,6 @@
     if (btnClipRight) btnClipRight.addEventListener('click', () => moveSelectedClip(1));
     if (btnClipMute) btnClipMute.addEventListener('click', toggleMuteSelectedClip);
     if (btnClipRename) btnClipRename.addEventListener('click', renameSelectedClip);
-    for (const k of ['lead', 'chords', 'arp', 'bass', 'drums']) {
-      const box = document.getElementById('clipTrack_' + k);
-      if (box) box.addEventListener('change', (e) => setClipTrack(k, e.target.checked));
-    }
 
     if (selectArrangerForm) {
       selectArrangerForm.addEventListener('change', updateArrangerInfo);
@@ -4303,18 +4691,6 @@
     if (btnVelDown) btnVelDown.addEventListener('click', () => shiftVelocity(-10));
     if (btnVelUp) btnVelUp.addEventListener('click', () => shiftVelocity(10));
 
-    document.querySelectorAll('.mixer-channel').forEach(channelEl => {
-      const btnDice = channelEl.querySelector('.btn-dice');
-      if (!btnDice) return;
-      btnDice.addEventListener('click', () => {
-        if (!state.currentSong) {
-          showToast('⚠️ Chưa có bài nhạc! Hãy bấm Generate trước.');
-          return;
-        }
-        applyRegenToSong(0, state.currentSong.metadata.lengthBars - 1, [channelEl.dataset.track]);
-      });
-    });
-
     window.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
       if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ' && !e.shiftKey) {
@@ -4365,9 +4741,10 @@
       } else if ((e.ctrlKey || e.metaKey) && e.code === 'Tab') {
         e.preventDefault();
         cycleTab(e.shiftKey ? -1 : 1);
-      } else if ((e.ctrlKey || e.metaKey) && ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad4', 'Numpad5'].includes(e.code)) {
+      } else if ((e.ctrlKey || e.metaKey) && ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad4', 'Numpad5', 'Numpad6', 'Numpad7', 'Numpad8', 'Numpad9'].includes(e.code)) {
         e.preventDefault();
-        selectEditingTrackByIndex(['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad4', 'Numpad5'].indexOf(e.code) % 5);
+        const order = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad4', 'Numpad5', 'Numpad6', 'Numpad7', 'Numpad8', 'Numpad9'];
+        selectEditingTrackByIndex(order.indexOf(e.code) % 9);
       } else if (e.code === 'Home') {
         e.preventDefault();
         if (state.currentSong) {
@@ -4389,32 +4766,13 @@
       }
     });
 
-    document.querySelectorAll('.mixer-channel').forEach(channelEl => {
-      const trackKey = channelEl.dataset.track;
-      const volSlider = channelEl.querySelector('.vol-slider');
-      const btnMute = channelEl.querySelector('.btn-mute');
-      const btnSolo = channelEl.querySelector('.btn-solo');
-
-      volSlider.addEventListener('input', (e) => {
-        Synth.setTrackVolume(trackKey, parseFloat(e.target.value));
-      });
-
-      const panSlider = channelEl.querySelector('.pan-slider');
-      if (panSlider && Synth.setTrackPan) {
-        panSlider.addEventListener('input', (e) => {
-          Synth.setTrackPan(trackKey, parseInt(e.target.value, 10));
-        });
-      }
-
-      btnMute.addEventListener('click', () => {
-        const isMuted = Synth.toggleMute(trackKey);
-        btnMute.classList.toggle('mute-active', isMuted);
-      });
-
-      btnSolo.addEventListener('click', () => {
-        const isSolo = Synth.toggleSolo(trackKey);
-        btnSolo.classList.toggle('solo-active', isSolo);
-      });
+    const mixerRack = document.querySelector('.mixer-rack');
+    if (mixerRack) mixerRack.addEventListener('click', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
+      const ch = e.target.closest('.mixer-channel');
+      if (!ch || !ch.dataset.track || !studioTrackTabs) return;
+      const tab = studioTrackTabs.querySelector(`[data-track="${ch.dataset.track}"]`);
+      if (tab) tab.click();
     });
 
     if (checkEnableContour) {
@@ -4605,18 +4963,6 @@
       });
     }
 
-    document.querySelectorAll('.mixer-channel').forEach(ch => {
-      ch.addEventListener('click', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
-        const trackKey = ch.dataset.track;
-        if (trackKey && studioTrackTabs) {
-          const tab = studioTrackTabs.querySelector(`[data-track="${trackKey}"]`);
-          if (tab) tab.click();
-        }
-      });
-    });
-
-
     function getPianoRollCoords(e) {
       const rect = pianoRollCanvas.getBoundingClientRect();
       if (!rect.width || !rect.height || !pianoRollCanvas.width || !pianoRollCanvas.height) return null;
@@ -4651,16 +4997,19 @@
 
       if (inst && (inst.includes('piano') || (state.currentSong && state.currentSong.metadata.isPurePiano))) {
         Synth._playAcousticPianoNote(midi, Synth.ctx.currentTime, duration, 0.9, bus, state.editingTrack === 'lead');
-      } else if (state.editingTrack === 'lead') {
-        Synth._playLeadSynth(midi, Synth.ctx.currentTime, duration, 0.9, bus, inst);
-      } else if (state.editingTrack === 'chords') {
-        Synth._playChordSynth(midi, Synth.ctx.currentTime, duration, 0.9, bus);
-      } else if (state.editingTrack === 'arp') {
-        Synth._playArpSynth(midi, Synth.ctx.currentTime, duration, 0.9, bus);
-      } else if (state.editingTrack === 'bass') {
-        Synth._playBassSynth(midi, Synth.ctx.currentTime, duration, 0.9, bus, (inst || '').includes('piano'));
       } else {
-        Synth._playDrumSynth(midi, Synth.ctx.currentTime, 0.9, bus);
+        const role = roleOfKey(state.editingTrack);
+        if (role === 'lead' || role === 'stab') {
+          Synth._playLeadSynth(midi, Synth.ctx.currentTime, duration, 0.9, bus, inst);
+        } else if (role === 'chords' || role === 'pad') {
+          Synth._playChordSynth(midi, Synth.ctx.currentTime, duration, 0.9, bus);
+        } else if (role === 'arp') {
+          Synth._playArpSynth(midi, Synth.ctx.currentTime, duration, 0.9, bus);
+        } else if (role === 'bass') {
+          Synth._playBassSynth(midi, Synth.ctx.currentTime, duration, 0.9, bus, (inst || '').includes('piano'));
+        } else {
+          Synth._playDrumSynth(midi, Synth.ctx.currentTime, 0.9, bus);
+        }
       }
     }
 
@@ -4957,7 +5306,7 @@
   }
 
   function selectEditingTrackByIndex(i) {
-    const keys = ['lead', 'chords', 'arp', 'bass', 'drums'];
+    const keys = songTrackKeys();
     if (i < 0 || i >= keys.length || !studioTrackTabs) return;
     const tab = studioTrackTabs.querySelector(`[data-track="${keys[i]}"]`);
     if (tab) tab.click();
@@ -5504,13 +5853,17 @@
 
     const trackColors = {
       lead: '#00f2fe',
+      stab: '#ff6b81',
       chords: '#9b51e0',
+      pad: '#a29bfe',
       arp: '#4facfe',
       bass: '#f39c12',
-      drums: '#e74c3c'
+      drums: '#e74c3c',
+      perc: '#fdcb6e'
     };
+    const trackColorFor = (k) => trackColors[k] || (TRACK_COLORS[roleOfKey(k)] || '#00f2fe');
 
-    const trackKeys = ['drums', 'bass', 'chords', 'arp', 'lead'];
+    const trackKeys = [...songTrackKeys()].reverse();
 
     if (state.showGhostNotes) {
       prCtx.globalAlpha = 0.32;
@@ -5518,7 +5871,7 @@
         if (tKey === state.editingTrack) continue;
         const track = state.currentSong.tracks[tKey];
         if (!track || !track.notes) continue;
-        const color = trackColors[tKey] || '#00f2fe';
+        const color = trackColorFor(tKey);
 
         for (const note of track.notes) {
           const x = note.step * stepWidth;
@@ -5545,7 +5898,7 @@
 
     const activeTrack = state.currentSong.tracks[state.editingTrack];
     if (activeTrack && activeTrack.notes) {
-      const baseColor = trackColors[state.editingTrack] || '#00f2fe';
+      const baseColor = trackColorFor(state.editingTrack);
 
       for (const note of activeTrack.notes) {
         const x = note.step * stepWidth;

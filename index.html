@@ -446,13 +446,7 @@
             </div>
             <details style="margin-top:4px; font-size:0.7rem; color:var(--text-muted);">
               <summary style="cursor:pointer;">Tỉ lệ từng bè (× với slider tổng)</summary>
-              <div style="display:grid; grid-template-columns:1fr auto; gap:2px 8px; align-items:center; margin-top:4px;">
-                <span>Lead</span><span><input type="range" id="sliderVar_lead" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_lead">100%</b></span>
-                <span>Chords</span><span><input type="range" id="sliderVar_chords" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_chords">100%</b></span>
-                <span>Arp</span><span><input type="range" id="sliderVar_arp" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_arp">100%</b></span>
-                <span>Bass</span><span><input type="range" id="sliderVar_bass" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_bass">100%</b></span>
-                <span>Drums</span><span><input type="range" id="sliderVar_drums" min="0" max="100" value="100" style="width:110px; vertical-align:middle;"> <b id="valVar_drums">100%</b></span>
-              </div>
+              <div id="varTrackBoxes" style="display:grid; grid-template-columns:1fr auto; gap:2px 8px; align-items:center; margin-top:4px;"></div>
             </details>
           </div>
 
@@ -562,11 +556,7 @@
           <div class="pianoroll-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding-bottom: 6px;">
             <div class="studio-track-tabs" id="studioTrackTabs" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
               <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 700; margin-right: 2px;">BÈ ĐANG SOẠN:</span>
-              <button class="btn-track-tab active" data-track="lead" style="--track-color:#00f2fe;">🎵 Lead</button>
-              <button class="btn-track-tab" data-track="chords" style="--track-color:#9b51e0;">🎹 Chords</button>
-              <button class="btn-track-tab" data-track="arp" style="--track-color:#4facfe;">✨ Arp</button>
-              <button class="btn-track-tab" data-track="bass" style="--track-color:#f39c12;">🎸 Bass</button>
-              <button class="btn-track-tab" data-track="drums" style="--track-color:#e74c3c;">🥁 Drums</button>
+              <span id="trackTabButtons" style="display:flex; gap:6px; flex-wrap:wrap;"></span>
             </div>
 
             <div class="studio-tools" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -605,11 +595,7 @@
                 <span>–</span>
                 <input type="number" id="inputRegenTo" min="1" value="4" style="width:52px; padding:4px 6px; background:var(--bg-input); border:1px solid var(--border-color); color:var(--accent-cyan); font-weight:bold; border-radius:4px; text-align:center;">
               </label>
-              <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" class="regen-track" value="lead" checked> Lead</label>
-              <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" class="regen-track" value="chords" checked> Chords</label>
-              <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" class="regen-track" value="arp" checked> Arp</label>
-              <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" class="regen-track" value="bass" checked> Bass</label>
-              <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" class="regen-track" value="drums"> Drums</label>
+              <span id="regenTrackBoxes" style="display:flex; gap:3px; flex-wrap:wrap;"></span>
               <button id="btnRegenRegion" class="btn-secondary" style="padding:4px 12px;">🎲 Gieo lại</button>
               <button id="btnNewTake" class="btn-secondary" style="padding:4px 10px;" title="Gieo take mới vào khay thử, nghe từng take rồi giữ bản ưng nhất">🎬 Take mới</button>
               <button id="btnMotif" class="btn-secondary" style="padding:4px 10px;" title="Lấy nốt lead đã khóa trong 2 bars đầu làm motif, phát triển thành cả bài">🌱 Motif→Bài</button>
@@ -643,11 +629,7 @@
               <div id="timelineBody">
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:4px;">
                 <span style="color:var(--text-dim);">Bè trong đoạn đang chọn:</span>
-                <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="clipTrack_lead" checked> Lead</label>
-                <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="clipTrack_chords" checked> Chords</label>
-                <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="clipTrack_arp" checked> Arp</label>
-                <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="clipTrack_bass" checked> Bass</label>
-                <label style="display:flex; align-items:center; gap:3px; cursor:pointer;"><input type="checkbox" id="clipTrack_drums" checked> Drums</label>
+                <span id="clipTrackBoxes" style="display:flex; gap:8px; flex-wrap:wrap;"></span>
               </div>
               <div id="clipLanes" style="margin-top:4px;"></div>
               <div style="font-size:0.65rem; color:var(--text-dim); margin-top:2px;">💡 Bấm chọn đoạn • kéo ngang để dời • đúp để đặt vùng gieo lại = đoạn đó • tắt bè để tạo build/drop • soạn nốt ở piano roll bên dưới</div>
@@ -661,99 +643,10 @@
 
         
         <div class="glass-panel mixer-rack">
-          <div class="mixer-channel" data-track="lead">
-            <div class="channel-header">
-              <span class="channel-name" style="color:#00f2fe;">🎵 Lead</span>
-              <div class="channel-toggles">
-                <button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>
-                <button class="btn-mini btn-mute" title="Mute">M</button>
-                <button class="btn-mini btn-solo" title="Solo">S</button>
-              </div>
-            </div>
-            <div class="channel-slider">
-              <input type="range" class="vol-slider" min="0" max="1" step="0.01" value="0.85">
-            </div>
-            <div class="channel-pan" title="Pan trái/phải (L/R)">
-              <span style="font-size:0.6rem; color:var(--text-dim);">L</span>
-              <input type="range" class="pan-slider" min="-100" max="100" step="1" value="0">
-              <span style="font-size:0.6rem; color:var(--text-dim);">R</span>
-            </div>
-          </div>
-
-          <div class="mixer-channel" data-track="chords">
-            <div class="channel-header">
-              <span class="channel-name" style="color:#9b51e0;">🎹 Chords</span>
-              <div class="channel-toggles">
-                <button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>
-                <button class="btn-mini btn-mute" title="Mute">M</button>
-                <button class="btn-mini btn-solo" title="Solo">S</button>
-              </div>
-            </div>
-            <div class="channel-slider">
-              <input type="range" class="vol-slider" min="0" max="1" step="0.01" value="0.70">
-            </div>
-            <div class="channel-pan" title="Pan trái/phải (L/R)">
-              <span style="font-size:0.6rem; color:var(--text-dim);">L</span>
-              <input type="range" class="pan-slider" min="-100" max="100" step="1" value="-15">
-              <span style="font-size:0.6rem; color:var(--text-dim);">R</span>
-            </div>
-          </div>
-
-          <div class="mixer-channel" data-track="arp">
-            <div class="channel-header">
-              <span class="channel-name" style="color:#4facfe;">✨ Arp</span>
-              <div class="channel-toggles">
-                <button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>
-                <button class="btn-mini btn-mute" title="Mute">M</button>
-                <button class="btn-mini btn-solo" title="Solo">S</button>
-              </div>
-            </div>
-            <div class="channel-slider">
-              <input type="range" class="vol-slider" min="0" max="1" step="0.01" value="0.75">
-            </div>
-            <div class="channel-pan" title="Pan trái/phải (L/R)">
-              <span style="font-size:0.6rem; color:var(--text-dim);">L</span>
-              <input type="range" class="pan-slider" min="-100" max="100" step="1" value="15">
-              <span style="font-size:0.6rem; color:var(--text-dim);">R</span>
-            </div>
-          </div>
-
-          <div class="mixer-channel" data-track="bass">
-            <div class="channel-header">
-              <span class="channel-name" style="color:#f39c12;">🎸 Bass</span>
-              <div class="channel-toggles">
-                <button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>
-                <button class="btn-mini btn-mute" title="Mute">M</button>
-                <button class="btn-mini btn-solo" title="Solo">S</button>
-              </div>
-            </div>
-            <div class="channel-slider">
-              <input type="range" class="vol-slider" min="0" max="1" step="0.01" value="0.90">
-            </div>
-            <div class="channel-pan" title="Pan trái/phải (L/R)">
-              <span style="font-size:0.6rem; color:var(--text-dim);">L</span>
-              <input type="range" class="pan-slider" min="-100" max="100" step="1" value="0">
-              <span style="font-size:0.6rem; color:var(--text-dim);">R</span>
-            </div>
-          </div>
-
-          <div class="mixer-channel" data-track="drums">
-            <div class="channel-header">
-              <span class="channel-name" style="color:#e74c3c;">🥁 Drums</span>
-              <div class="channel-toggles">
-                <button class="btn-mini btn-dice" title="Gieo lại toàn bè này (take mới)">🎲</button>
-                <button class="btn-mini btn-mute" title="Mute">M</button>
-                <button class="btn-mini btn-solo" title="Solo">S</button>
-              </div>
-            </div>
-            <div class="channel-slider">
-              <input type="range" class="vol-slider" min="0" max="1" step="0.01" value="0.95">
-            </div>
-            <div class="channel-pan" title="Pan trái/phải (L/R)">
-              <span style="font-size:0.6rem; color:var(--text-dim);">L</span>
-              <input type="range" class="pan-slider" min="-100" max="100" step="1" value="0">
-              <span style="font-size:0.6rem; color:var(--text-dim);">R</span>
-            </div>
+          <div id="mixerChannels" style="display:flex; gap:8px; flex:1; overflow-x:auto;"></div>
+          <div class="mixer-add" style="display:flex; flex-direction:column; gap:4px; align-items:center; justify-content:center; min-width:86px;">
+            <select id="selectAddRole" title="Vai trò bè mới" style="font-size:0.65rem; background:var(--bg-input); border:1px solid var(--border-color); color:var(--text-main); border-radius:4px; padding:2px;"></select>
+            <button id="btnAddTrack" class="btn-secondary" style="padding:3px 8px; font-size:0.68rem;" title="Thêm bè mới (gieo theo vai trò)">＋ Thêm bè</button>
           </div>
         </div>
 

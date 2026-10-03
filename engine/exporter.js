@@ -3,12 +3,29 @@
 (function(exports) {
   'use strict';
 
+  const ROLE_EXPORT = {
+    lead:   { role: 'lead', name: 'RinTune Lead', pan: 0, vol: 100, color: '#00f2fe' },
+    stab:   { role: 'lead', name: 'RinTune Stab', pan: 10, vol: 95, color: '#ff6b81' },
+    chords: { role: 'pad', name: 'RinTune Chords', pan: -15, vol: 80, color: '#9b51e0' },
+    pad:    { role: 'pad', name: 'RinTune Pad', pan: -10, vol: 75, color: '#a29bfe' },
+    arp:    { role: 'arp', name: 'RinTune Arp', pan: 15, vol: 85, color: '#4facfe' },
+    bass:   { role: 'bass', name: 'RinTune Bass', pan: 0, vol: 95, color: '#f39c12' },
+    drums:  { role: 'drums', name: 'RinTune Drums', pan: 0, vol: 100, color: '#e74c3c' },
+    perc:   { role: 'drums', name: 'RinTune Perc', pan: -12, vol: 85, color: '#fdcb6e' }
+  };
+
+  function roleOfExportKey(key) {
+    return String(key || '').replace(/[0-9]+$/, '');
+  }
+
   const ROLE_DEFAULTS = {
     lead:   { osc: [{ wave: 2, vol: 100 }, { wave: 2, vol: 80, fine: 7, pan: -10 }, { wave: 0, vol: 60, coarse: -12, pan: 10 }] },
+    stab:   { osc: [{ wave: 2, vol: 100 }, { wave: 2, vol: 85, fine: 8, pan: 10 }, { wave: 0, vol: 55, coarse: -12, pan: -10 }] },
     pad:    { osc: [{ wave: 2, vol: 70 }, { wave: 2, vol: 70, fine: -6, pan: -12 }, { wave: 0, vol: 55, pan: 12 }] },
     arp:    { osc: [{ wave: 3, vol: 85 }, { wave: 3, vol: 60, fine: 5, pan: -8 }, { wave: 0, vol: 50, pan: 8 }] },
     bass:   { osc: [{ wave: 0, vol: 100, coarse: -12 }, { wave: 1, vol: 70 }, { wave: 3, vol: 40, coarse: -12, pan: 0 }] },
-    drums:  { osc: [{ wave: 6, vol: 90 }, { wave: 0, vol: 80, coarse: -24 }, { wave: 3, vol: 30, coarse: -12 }] }
+    drums:  { osc: [{ wave: 6, vol: 90 }, { wave: 0, vol: 80, coarse: -24 }, { wave: 3, vol: 30, coarse: -12 }] },
+    perc:   { osc: [{ wave: 6, vol: 80 }, { wave: 0, vol: 70, coarse: -24 }, { wave: 3, vol: 25, coarse: -12 }] }
   };
 
   const GENRE_INSTRUMENTS = {
@@ -146,13 +163,15 @@
       xml += `  <song>\n`;
       xml += `    <trackcontainer width="600" height="300" x="5" y="5" visible="1" minimized="0" type="song">\n`;
 
-      const trackDefs = [
-        { key: 'lead', role: 'lead', name: 'RinTune Lead', pan: 0, vol: 100, color: '#00f2fe' },
-        { key: 'chords', role: 'pad', name: 'RinTune Chords', pan: -15, vol: 80, color: '#9b51e0' },
-        { key: 'arp', role: 'arp', name: 'RinTune Arp', pan: 15, vol: 85, color: '#4facfe' },
-        { key: 'bass', role: 'bass', name: 'RinTune Bass', pan: 0, vol: 95, color: '#f39c12' },
-        { key: 'drums', role: 'drums', name: 'RinTune Drums', pan: 0, vol: 100, color: '#e74c3c' }
-      ];
+      const trackDefs = Object.keys(tracks).map(k => {
+        const base = ROLE_EXPORT[roleOfExportKey(k)] || ROLE_EXPORT.lead;
+        const t = tracks[k] || {};
+        return {
+          key: k, role: base.role,
+          name: t.name || (k === roleOfExportKey(k) ? base.name : base.name + ' ' + k.replace(roleOfExportKey(k), '')),
+          pan: base.pan, vol: base.vol, color: t.color || base.color
+        };
+      });
 
       for (const def of trackDefs) {
         const track = tracks[def.key];
@@ -167,8 +186,9 @@
         xml += `      <track name="${def.name}" type="0" muted="0" solo="0">\n`;
         xml += `        <instrumenttrack pan="${outPan}" vol="${outVol}" pitch="0" basenote="57" fxch="0">\n`;
         if (soundfont) {
-          const gp = gmFor(track.instrument, def.key === 'drums');
-          xml += sf2InstrumentXml(soundfont, gp.bank, gp.patch, def.key === 'drums', '          ');
+          const isDr = (def.role === 'drums');
+          const gp = gmFor(track.instrument, isDr);
+          xml += sf2InstrumentXml(soundfont, gp.bank, gp.patch, isDr, '          ');
         } else {
           xml += triOscXml(recipe, '          ');
         }
@@ -290,24 +310,25 @@
       const ticksPerStep = ppq / 4; // 120 ticks per 16th note step
       const soloSet = mixSoloSet(mix);
 
-      const trackKeys = ['lead', 'chords', 'arp', 'bass', 'drums'];
+      const trackKeys = Object.keys(tracks);
       const trackChunks = [];
 
-      const channelMap = {
-        lead: 0,
-        chords: 1,
-        arp: 2,
-        bass: 3,
-        drums: 9
-      };
-
-      const programMap = {
-        lead: 80,    // Lead 1 (Square) or Synth Lead
-        chords: 89,  // Pad 2 (Warm)
-        arp: 81,     // Lead 2 (Sawtooth)
-        bass: 38,    // Synth Bass 1
-        drums: 0
-      };
+      const ROLE_CHANNEL = { lead: 0, stab: 4, chords: 1, pad: 5, arp: 2, bass: 3, drums: 9, perc: 10 };
+      const ROLE_PROGRAM = { lead: 80, stab: 81, chords: 89, pad: 89, arp: 81, bass: 38, drums: 0, perc: 0 };
+      const usedChannels = new Set();
+      const channelMap = {};
+      const programMap = {};
+      for (const k of trackKeys) {
+        const role = roleOfExportKey(k);
+        let ch = ROLE_CHANNEL[role] != null ? ROLE_CHANNEL[role] : -1;
+        if (ch < 0 || (usedChannels.has(ch) && role !== 'drums' && role !== 'perc')) {
+          ch = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15].find(c => !usedChannels.has(c));
+          if (ch == null) ch = 0;
+        }
+        usedChannels.add(ch);
+        channelMap[k] = ch;
+        programMap[k] = ROLE_PROGRAM[role] != null ? ROLE_PROGRAM[role] : 80;
+      }
 
       const tempoTrackEvents = [];
       const mpqn = Math.round(60000000 / bpm);

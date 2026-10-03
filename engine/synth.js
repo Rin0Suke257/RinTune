@@ -14,10 +14,13 @@
       this.trackBusses = {};
       this.trackStates = {
         lead:   { volume: 0.85, muted: false, solo: false, pan: 0 },
+        stab:   { volume: 0.80, muted: false, solo: false, pan: 10 },
         chords: { volume: 0.70, muted: false, solo: false, pan: -15 },
+        pad:    { volume: 0.60, muted: false, solo: false, pan: -10 },
         arp:    { volume: 0.75, muted: false, solo: false, pan: 15 },
         bass:   { volume: 0.90, muted: false, solo: false, pan: 0 },
-        drums:  { volume: 0.95, muted: false, solo: false, pan: 0 }
+        drums:  { volume: 0.95, muted: false, solo: false, pan: 0 },
+        perc:   { volume: 0.70, muted: false, solo: false, pan: -12 }
       };
       this.trackPanners = {};
 
@@ -82,21 +85,42 @@
       this.reverbNode.connect(this.reverbGain);
       this.reverbGain.connect(this.limiter);
 
-      const trackKeys = ['lead', 'chords', 'arp', 'bass', 'drums'];
+      const trackKeys = Object.keys(this.trackStates);
       for (const key of trackKeys) {
-        const gainNode = this.ctx.createGain();
-        const state = this.trackStates[key];
-        gainNode.gain.setValueAtTime(state.volume, this.ctx.currentTime);
-        const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
-        if (panner) {
-          panner.pan.setValueAtTime((state.pan || 0) / 100, this.ctx.currentTime);
-          gainNode.connect(panner);
-          panner.connect(this.limiter);
+        this._makeBus(key);
+      }
+      this._generateNoiseBuffer();
+    }
+
+    ensureTrack(trackKey, volume, pan) {
+      if (!trackKey) return;
+      if (!this.trackStates[trackKey]) {
+        this.trackStates[trackKey] = {
+          volume: volume != null ? volume : 0.8,
+          muted: false, solo: false, pan: pan != null ? pan : 0
+        };
+      } else {
+        if (volume != null) this.trackStates[trackKey].volume = volume;
+        if (pan != null) this.trackStates[trackKey].pan = pan;
+      }
+      if (this.ctx && !this.trackBusses[trackKey]) this._makeBus(trackKey);
+    }
+
+    _makeBus(key) {
+      if (!this.ctx || this.trackBusses[key]) return this.trackBusses[key];
+      const gainNode = this.ctx.createGain();
+      const state = this.trackStates[key] || { volume: 0.8, pan: 0 };
+      gainNode.gain.setValueAtTime(state.volume, this.ctx.currentTime);
+      const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+      if (panner) {
+        panner.pan.setValueAtTime((state.pan || 0) / 100, this.ctx.currentTime);
+        gainNode.connect(panner);
+        panner.connect(this.limiter);
         } else {
           gainNode.connect(this.limiter);
         }
 
-        if (key === 'lead' || key === 'chords' || key === 'arp') {
+        if (key === 'lead' || key === 'chords' || key === 'arp' || key === 'stab' || key === 'pad') {
           const sendGain = this.ctx.createGain();
           sendGain.gain.setValueAtTime(0.35, this.ctx.currentTime);
           gainNode.connect(sendGain);
@@ -106,9 +130,6 @@
         this.trackBusses[key] = gainNode;
         this.trackPanners[key] = panner;
       }
-
-      this._generateNoiseBuffer();
-    }
 
     _generateNoiseBuffer() {
       const bufferSize = this.ctx.sampleRate * 2; // 2 seconds of noise
@@ -236,13 +257,14 @@
       const hasAnySolo = Object.values(this.trackStates).some(s => s.solo);
 
       for (const [trackKey, track] of Object.entries(this.songData.tracks)) {
+        if (!this.trackStates[trackKey] && this.ctx) this.ensureTrack(trackKey);
         const state = this.trackStates[trackKey];
         if (!state) continue;
 
         const isAudible = hasAnySolo ? state.solo : !state.muted;
         if (!isAudible) continue;
 
-        const bus = this.trackBusses[trackKey];
+        const bus = this.trackBusses[trackKey] || (this.ctx ? this._makeBus(trackKey) : null);
         if (!bus) continue;
 
         const notesAtStep = track.notes.filter(n => Math.round(n.step) === stepIndex);
@@ -260,11 +282,14 @@
             continue;
           }
 
-          switch (trackKey) {
+          const role = String(trackKey).replace(/[0-9]+$/, '');
+          switch (role) {
             case 'lead':
+            case 'stab':
               this._playLeadSynth(note.midi, noteStartTime, noteDurationSec, velocityRatio, bus, track.instrument);
               break;
             case 'chords':
+            case 'pad':
               this._playChordSynth(note.midi, noteStartTime, noteDurationSec, velocityRatio, bus);
               break;
             case 'arp':
@@ -274,7 +299,11 @@
               this._playBassSynth(note.midi, noteStartTime, noteDurationSec, velocityRatio, bus, (track.instrument || '').includes('piano'));
               break;
             case 'drums':
+            case 'perc':
               this._playDrumSynth(note.midi, noteStartTime, velocityRatio, bus);
+              break;
+            default:
+              this._playLeadSynth(note.midi, noteStartTime, noteDurationSec, velocityRatio, bus, track.instrument);
               break;
           }
         }
