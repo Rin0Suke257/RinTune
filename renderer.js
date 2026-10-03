@@ -5295,12 +5295,14 @@
     syncClipsFromFlat(state.currentSong);
     const mmpXml = Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2);
     const leadClip = Exporter.generateLmmsMidiClip(state.currentSong, 'lead');
+    const midiBytes = Exporter.generateMidiFile(state.currentSong, getMix(), state.swing);
 
     showToast('🚀 Đang chuẩn bị kết nối LMMS...');
 
     if (window.rmgAPI && window.rmgAPI.launchLMMS) {
       const res = await window.rmgAPI.launchLMMS({
         mmpContent: mmpXml,
+        midiData: Array.from(midiBytes),
         trackClipXml: leadClip.xml,
         trackClipCount: leadClip.count
       });

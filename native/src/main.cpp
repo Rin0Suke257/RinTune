@@ -486,6 +486,16 @@ static json HandleLaunchLmms(const json& payload) {
     }
   }
 
+  std::wstring midPath = saveDir + L"\\Random_Song.mid";
+  bool haveMid = false;
+  if (payload.contains("midiData")) {
+    bool isText = false;
+    std::string text;
+    std::vector<uint8_t> bytes = ExtractBytes(payload["midiData"], isText, text);
+    std::string werr;
+    if (WriteFileBytesW(midPath, bytes.data(), bytes.size(), werr)) haveMid = true;
+  }
+
   if (IsLmmsRunning()) {
     bool verified = false;
     bool clipOk = false;
@@ -494,14 +504,15 @@ static json HandleLaunchLmms(const json& payload) {
     std::string msg = "Ban LMMS da duoc bat! ";
     if (clipOk) {
       int count = payload.value("trackClipCount", 0);
-      msg += "Da chen be Lead (" + std::to_string(count) + " not" + (verified ? ", da kiem tra" : "") + ") - mo piano-roll va Ctrl+V. Full bai nam o file du an ben duoi.";
+      msg += "Da chen be Lead (" + std::to_string(count) + " not" + (verified ? ", da kiem tra" : "") + ") - mo piano-roll va Ctrl+V. Full bai (sections) + MIDI automation nam o 2 file ben duoi.";
     } else {
-      msg += "Khong chep duoc clip - mo file du an ben duoi de lay full bai.";
+      msg += "Khong chep duoc clip - mo 2 file ben duoi de lay full bai (MMP sections + MIDI automation).";
     }
     return json{
       {"success", true},
       {"lmmsAlreadyRunning", true},
       {"filePath", WideToUtf8(mmpPath)},
+      {"midiPath", haveMid ? WideToUtf8(midPath) : ""},
       {"detectedPath", WideToUtf8(lmmsPath)},
       {"message", msg}
     };
@@ -510,7 +521,7 @@ static json HandleLaunchLmms(const json& payload) {
   if (lmmsPath.empty()) {
     return json{{"success", false},
       {"error", "Khong tim thay phan mem LMMS tren may tinh! File du an da duoc luu an toan tai: \"" +
-        WideToUtf8(mmpPath) + "\". Ban co the chon duong dan file lmms.exe thu cong trong ung dung."}};
+        WideToUtf8(mmpPath) + (haveMid ? "\" va \"" + WideToUtf8(midPath) : "") + "\". Ban co the chon duong dan file lmms.exe thu cong trong ung dung."}};
   }
 
   std::wstring cmd = L"\"" + lmmsPath + L"\" \"" + mmpPath + L"\"";
@@ -531,8 +542,9 @@ static json HandleLaunchLmms(const json& payload) {
     {"success", true},
     {"lmmsAlreadyRunning", false},
     {"filePath", WideToUtf8(mmpPath)},
+    {"midiPath", haveMid ? WideToUtf8(midPath) : ""},
     {"detectedPath", WideToUtf8(lmmsPath)},
-    {"message", "Da tao file du an va tu dong khoi chay LMMS (" + WideToUtf8(lmmsPath) + ") thanh cong!"}
+    {"message", std::string("Da tao file du an va tu dong khoi chay LMMS (") + WideToUtf8(lmmsPath) + ") thanh cong!" + (haveMid ? " File MIDI automation nam canh file MMP." : "")}
   };
 }
 

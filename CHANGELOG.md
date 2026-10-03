@@ -1,5 +1,9 @@
 # RinTune Changelog
 
+## Unreleased - Mo truc tiep LMMS du 2 file
+- Nut mo truc tiep ghi ca `.mmp` (sections) + `.mid` (CC automation) canh
+  nhau, toast bao duong dan ca 2
+
 ## Unreleased - MIDI automation theo doan
 - File .mid co CC7 Volume theo energy tung doan (+ ramp fade in/out) va CC10
   Pan theo be — mo trong LMMS hien lane Volume/Panning nhu MIDI xin
