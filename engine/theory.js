@@ -206,8 +206,12 @@
         ['IVmaj7', 'iv6', 'iii7', 'bIII°7', 'ii7', 'V7', 'Imaj7', 'Imaj7'], // Chromatic Luxury Voice Leading
         ['i', 'bII', 'bVII', 'V7'],                                          // Phrygian Math Break
         ['ii7', 'V7b9', 'Imaj7', 'VI7'],                                     // Jazz Fusion 2-5-1-6
-        ['IVmaj7', 'V7', 'Imaj7', 'vi7', 'ii7', 'V7', 'Imaj7', 'Imaj7']     // Anime Fusion Anthem
-      ]
+        ['IVmaj7', 'V7', 'Imaj7', 'vi7', 'ii7', 'V7', 'Imaj7', 'Imaj7'], // Anime Fusion Anthem
+        ['Imaj7', 'iii7', 'vi7', 'ii7'],                                     // Neo-Soul shimmer
+        ['V7sus4', 'V7', 'i7', 'i7']                                         // Turnaround snap
+      ],
+      trackProfile: { lead: 1.0, chords: 0.8, arp: 1.0, bass: 1.0, drums: 1.0 },
+      leadGrammar: { rest: 0.08, leapSemis: 10, chromatic: true }
     },
     'fiery_piano': {
       id: 'fiery_piano',
@@ -226,8 +230,12 @@
         ['i', 'VI', 'III', 'VII'],       // Emotional Climax Journey
         ['iv', 'v', 'VI', 'VII'],        // Rapid Tension Build
         ['i', 'VII', 'VI', 'V'],         // Passionate Andalusian Descent
-        ['VI', 'v', 'i', 'iv', 'VI', 'VII', 'i', 'i']
-      ]
+        ['VI', 'v', 'i', 'iv', 'VI', 'VII', 'i', 'i'],
+        ['i', 'viio', 'V7', 'i'],          // Diminished brilliance
+        ['i', 'iv', 'V7', 'VI']            // Deceptive fire
+      ],
+      trackProfile: { lead: 1.0, chords: 0.9, arp: 1.0, bass: 1.0, drums: 0.8 },
+      leadGrammar: { rest: 0.05, leapSemis: 12, chromatic: true }
     },
     'dark_fantasy': {
       id: 'dark_fantasy',
@@ -247,8 +255,11 @@
         ['i', 'iv', 'V7', 'i'],          // Classical Dramatic Minor
         ['i', 'bII', 'bVII', 'i'],       // Neapolitan Phrygian Climax
         ['i', 'bVI', 'bII', 'V'],        // Cursed Sorcery Tension
-        ['i', 'III', 'bII', 'V']         // Dark Souls Abyss Walker
-      ]
+        ['i', 'III', 'bII', 'V'],        // Dark Souls Abyss Walker
+        ['i', 'bII', 'V7', 'i']          // Neapolitan resolve
+      ],
+      trackProfile: { lead: 1.0, chords: 1.0, arp: 0.5, bass: 1.0, drums: 0.9 },
+      leadGrammar: { rest: 0.15, leapSemis: 8, chromatic: false }
     },
     'touhou': {
       id: 'touhou',
@@ -269,8 +280,12 @@
         ['i', 'VII', 'VI', 'V'],         // Andalusian climax (Am - G - F - E)
         ['VI', 'VII', 'v', 'i', 'VI', 'VII', 'i', 'i'],
         ['i', 'III', 'VII', 'VI'],       // UN Owen / Necrofantasia tension
-        ['iv', 'v', 'VI', 'VII', 'i', 'III', 'iv', 'V']
-      ]
+        ['iv', 'v', 'VI', 'VII', 'i', 'III', 'iv', 'V'],
+        ['i', 'VI', 'V7', 'i'],            // Secondary punch
+        ['VI', 'VII', 'V7sus4', 'V7']      // Pre-chorus lift
+      ],
+      trackProfile: { lead: 1.0, chords: 0.9, arp: 0.9, bass: 1.0, drums: 1.0 },
+      leadGrammar: { rest: 0.08, leapSemis: 10, chromatic: false }
     },
     'synthwave': {
       id: 'synthwave',
@@ -289,8 +304,12 @@
         ['i', 'v', 'VI', 'VII'],         // Midnight Drive (Fm - Cm - Db - Eb)
         ['VI', 'VII', 'i', 'i'],         // Retro Sunset
         ['i', 'bVII', 'v', 'VI'],        // Neon Highway
-        ['i', 'VI', 'iv', 'v']           // Dark Synthwave
-      ]
+        ['i', 'VI', 'iv', 'v'],           // Dark Synthwave
+        ['i', 'bVImaj7', 'bIII', 'bVII7'], // Neon maj7 glow
+        ['i7', 'iv7', 'v7', 'VI7']         // Minor groove
+      ],
+      trackProfile: { lead: 0.9, chords: 1.0, arp: 0.8, bass: 1.0, drums: 1.0 },
+      leadGrammar: { rest: 0.15, leapSemis: 6, chromatic: false }
     },
     'lofi': {
       id: 'lofi',
@@ -309,8 +328,11 @@
         ['Imaj7', 'VI7', 'ii7', 'V7'],   // Nostalgic Study loop
         ['iv7', 'i7', 'bVII7', 'bVI7'],  // Chill Late Night
         ['Imaj9', 'IVmaj7', 'iii7', 'vi7'],
-        ['i7', 'iv7', 'bVImaj7', 'V7b9']
-      ]
+        ['i7', 'iv7', 'bVImaj7', 'V7b9'],
+        ['bVImaj7', 'V7b9', 'i7', 'i7']  // Smoky resolve
+      ],
+      trackProfile: { lead: 0.7, chords: 1.0, arp: 0.3, bass: 0.8, drums: 0.8 },
+      leadGrammar: { rest: 0.30, leapSemis: 4, chromatic: false }
     },
     'chiptune': {
       id: 'chiptune',
@@ -329,8 +351,12 @@
         ['i', 'iv', 'VI', 'VII'],        // Boss / Dungeon stage
         ['I', 'V', 'vi', 'IV'],          // Pop Punk 8-bit
         ['vi', 'IV', 'I', 'V'],          // Adventure Anthem
-        ['i', 'VI', 'III', 'VII']
-      ]
+        ['i', 'VI', 'III', 'VII'],
+        ['I', 'iii', 'IV', 'V'],         // Sunny quest
+        ['i', 'V7', 'i', 'V7']           // Boss stabs
+      ],
+      trackProfile: { lead: 1.0, chords: 0.35, arp: 1.0, bass: 1.0, drums: 0.9 },
+      leadGrammar: { rest: 0.10, leapSemis: 8, chromatic: false }
     },
     'cyberpunk': {
       id: 'cyberpunk',
@@ -349,8 +375,11 @@
         ['i', 'iv', 'v', 'i'],           // Industrial Dark
         ['i', 'bII', 'bVII', 'i'],       // Cyber Combat
         ['i', 'bVI', 'bII', 'V'],        // Overdrive Climax
-        ['i', 'i', 'bII', 'bII']
-      ]
+        ['i', 'i', 'bII', 'bII'],
+        ['i', 'bII', 'V7b9', 'i']        // Chrome resolve
+      ],
+      trackProfile: { lead: 1.0, chords: 0.7, arp: 0.9, bass: 1.0, drums: 1.0 },
+      leadGrammar: { rest: 0.10, leapSemis: 8, chromatic: true }
     },
     'epic': {
       id: 'epic',
@@ -369,8 +398,11 @@
         ['i', 'VI', 'iv', 'V'],          // Dramatic Gothic
         ['i', 'iv', 'VI', 'V'],          // Heroic Sacrifice
         ['VI', 'VII', 'i', 'v'],         // Battle March
-        ['i', 'III', 'VII', 'VI']
-      ]
+        ['i', 'III', 'VII', 'VI'],
+        ['i', 'bVII', 'VI', 'V7']        // War horn cadence
+      ],
+      trackProfile: { lead: 1.0, chords: 1.0, arp: 0.6, bass: 1.0, drums: 1.0 },
+      leadGrammar: { rest: 0.12, leapSemis: 10, chromatic: false }
     },
     'cinematic': {
       id: 'cinematic',
@@ -388,8 +420,11 @@
         ['i', 'VI', 'III', 'VII'],       // Verse chua lanh (Hanh Trinh Ve Nha)
         ['i', 'VII', 'VI', 'V'],         // Chorus cao trao (leading-tone ve i)
         ['VI', 'VII', 'i', 'i'],         // Breakdown / Outro tram
-        ['i', 'iv', 'VI', 'V']           // Bien tau dramatic
-      ]
+        ['i', 'iv', 'VI', 'V'],          // Bien tau dramatic
+        ['i', 'iv', 'V7', 'i']           // Quiet resolve
+      ],
+      trackProfile: { lead: 1.0, chords: 1.0, arp: 0.6, bass: 1.0, drums: 0.8 },
+      leadGrammar: { rest: 0.18, leapSemis: 8, chromatic: false }
     },
     'anime': {
       id: 'anime',
@@ -408,8 +443,12 @@
         ['IV', 'V', 'I', 'vi'],          // J-Pop Standard
         ['I', 'V', 'vi', 'IV'],          // Anime Opening Anthem
         ['IV', 'iii', 'ii', 'I'],        // Sweet Melodic
-        ['vi', 'IV', 'V', 'I']
-      ]
+        ['vi', 'IV', 'V', 'I'],
+        ['Imaj7', 'iii7', 'vi7', 'IVmaj7'], // Sparkling chorus
+        ['I', 'iii', 'IV', 'V7sus4']        // Lift-off
+      ],
+      trackProfile: { lead: 1.0, chords: 0.9, arp: 0.8, bass: 1.0, drums: 1.0 },
+      leadGrammar: { rest: 0.10, leapSemis: 8, chromatic: false }
     }
   };
 

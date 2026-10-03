@@ -145,8 +145,18 @@
         densityMod = Math.max(30, density - 25);
       }
 
-      // 3. Generate Individual Tracks
+      // 3. Generate Individual Tracks (vai tro + mat do theo DNA tung genre)
       const isPurePiano = (trackTarget === 'pure_piano');
+      const prof = genreDef.trackProfile || {};
+      const profW = k => {
+        if (isPurePiano) return 1;
+        const v = prof[k];
+        return (v == null ? 1 : v);
+      };
+      const grammar = Object.assign(
+        { rest: 0, leapSemis: 9, chromatic: true },
+        genreDef.leadGrammar || {}
+      );
 
       const leadTrack = (trackTarget === 'all' || trackTarget === 'lead' || isPurePiano) ? this._generatePhraseBasedLead({
         progression,
@@ -164,9 +174,10 @@
         useContour,
         contourPoints,
         chaosLevel,
-        density: densityMod,
+        density: Math.max(0, Math.min(100, densityMod * profW('lead'))),
         velocityBoost,
-        humanize
+        humanize,
+        grammar
       }) : { name: 'Lead Melody', type: 'synth_lead', instrument: genreDef.leadStyle, color: '#00f2fe', notes: [] };
 
       if (isPurePiano) {
@@ -183,6 +194,7 @@
         stepsPerBar,
         section,
         climaxCurve,
+        density: Math.max(0, Math.min(100, densityMod * profW('chords'))),
         velocityBoost,
         humanize
       }) : { name: 'Harmony & Chords', type: 'poly_synth', instrument: 'analog_pad', color: '#9b51e0', notes: [] };
@@ -196,7 +208,7 @@
         stepsPerBar,
         section,
         climaxCurve,
-        density: densityMod,
+        density: Math.max(0, Math.min(100, densityMod * profW('arp'))),
         velocityBoost,
         humanize
       }) : { name: 'Arpeggio Ostinato', type: 'pluck_synth', instrument: 'sparkle_arp', color: '#4facfe', notes: [] };
@@ -216,7 +228,7 @@
         stepsPerBar,
         section,
         climaxCurve,
-        density: densityMod,
+        density: Math.max(0, Math.min(100, densityMod * profW('bass'))),
         chaosLevel,
         velocityBoost,
         humanize
@@ -235,7 +247,7 @@
         stepsPerBar,
         section,
         climaxCurve,
-        density: densityMod,
+        density: Math.max(0, Math.min(100, densityMod * profW('drums'))),
         chaosLevel,
         velocityBoost,
         humanize
@@ -390,6 +402,7 @@
         density: densityMod,
         velocityBoost,
         humanize: true,
+        grammar: Object.assign({ rest: 0, leapSemis: 9, chromatic: true }, genreDef.leadGrammar || {}),
         barStart: fromBar,
         barEnd: toBar
       };
@@ -733,6 +746,7 @@
      */
     _generatePhraseBasedLead(ctx) {
       const { progression, scaleNotes, key, scaleKey, genreDef, lengthBars, timeSignature = '4/4', stepsPerBar = 16, section, motifStructure, articulation, climaxCurve, useContour, contourPoints, chaosLevel, density, velocityBoost, humanize } = ctx;
+      const grammar = Object.assign({ rest: 0, leapSemis: 9, chromatic: true }, ctx.grammar || genreDef.leadGrammar || {});
       const notes = [];
       const rootMidi = Theory.noteToMidi(key, 4);
 
@@ -867,6 +881,12 @@
 
           if (globalStep >= totalSteps) break;
 
+          // Nghi nhip theo DNA genre (lofi thua, fiery day) - tru motif user + downbeat
+          if (!noteDef.isDownbeat && !ctx.seedPhrase && grammar.rest > 0 && this.rng.chance(grammar.rest)) {
+            stepCursor += noteDef.durationSteps;
+            continue;
+          }
+
           // Low Density Note Culling (Leave breathers & rests)
           if (!noteDef.isDownbeat && density < 60) {
             const skipChance = (60 - density) / 60;
@@ -925,7 +945,7 @@
               baseDegreeIndex = Math.max(0, Math.min(scaleNotes.length - 1, baseDegreeIndex));
               targetMidi = scaleNotes[baseDegreeIndex];
 
-              if (chaosLevel > 70 && this.rng.chance((chaosLevel - 70) / 100) && !noteDef.isDownbeat) {
+              if (grammar.chromatic !== false && chaosLevel > 70 && this.rng.chance((chaosLevel - 70) / 100) && !noteDef.isDownbeat) {
                 targetMidi += this.rng.choice([-1, 1]);
               } else if (noteDef.isDownbeat && !chordPcs.includes(targetMidi % 12) && this.rng.chance(Math.max(0.3, 1.0 - mutationChance))) {
                 const chordTonesInScale = scaleNotes.filter(m => chordPcs.includes(m % 12));
@@ -946,9 +966,10 @@
             }
           }
 
-          // Leap smoothing: keo buoc nhay lon ve gan not truoc (tru downbeat)
-          if (prevLeadMidi != null && !noteDef.isDownbeat && Math.abs(targetMidi - prevLeadMidi) > 9 && this.rng.chance(0.7)) {
-            const near = scaleNotes.filter(m => Math.abs(m - prevLeadMidi) <= 4);
+          // Leap smoothing theo DNA: keo buoc nhay lon ve gan not truoc (tru downbeat)
+          const leapCap = grammar.leapSemis || 9;
+          if (prevLeadMidi != null && !noteDef.isDownbeat && Math.abs(targetMidi - prevLeadMidi) > leapCap && this.rng.chance(0.7)) {
+            const near = scaleNotes.filter(m => Math.abs(m - prevLeadMidi) <= Math.max(2, Math.round(leapCap / 2)));
             if (near.length) targetMidi = this._findClosestNote(near, targetMidi);
           }
 
@@ -1167,7 +1188,7 @@
      * PROCEDURAL CHORD HARMONY ENGINE (DYNAMIC RHYTHMIC CHOP MUTATION & VOICE LEADING)
      */
     _generateChordTrack(ctx) {
-      const { progression, genreDef, lengthBars, timeSignature = '4/4', stepsPerBar = 16, section, climaxCurve, velocityBoost, humanize } = ctx;
+      const { progression, genreDef, lengthBars, timeSignature = '4/4', stepsPerBar = 16, section, climaxCurve, density = 100, velocityBoost, humanize } = ctx;
       const notes = [];
       const voicedProgression = Theory.optimizeVoiceLeading ? Theory.optimizeVoiceLeading(progression) : progression;
 
@@ -1213,6 +1234,8 @@
 
         for (const stepOffset of chopSteps) {
           if (stepOffset >= stepsPerBar) continue;
+          // Mat do theo DNA genre (chiptune thua, pad day du)
+          if (stepOffset !== 0 && this.rng.range(0, 100) > density) continue;
           let strumOffset = 0;
 
           for (const midi of voicedNotes) {

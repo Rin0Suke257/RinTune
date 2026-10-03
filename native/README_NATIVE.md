@@ -59,6 +59,9 @@ Copy ca thu muc `out\RMG` la chay duoc (portable, khong can cai dat).
 - Studio tools that su: Select (keo khung chon nhieu not, di chuyen nhom, Del/Ctrl+D/C/V,
   Shift+Arrow dich cao do), Draw, Knife (cat not), Erase + seek sua loi nhay playhead.
 - 11 styles (them Cinematic Journey: hoa am Hanh Trinh Ve Nha, engine giong epic).
+- Genre DNA rieng tung style: vong hoa am dac trung (7th/maj7/V7...), vai tro be
+  (trackProfile: lofi arp thua, chiptune khong pad...), ngu phap melody (rest,
+  leap, chromatic theo style).
 - Concerto mode: form Tutti-Solo-Dialogue-Cadenza ~104 bars, chuyen key
   (relative major + development), texture piano nghi/dap/doi tau.
 - Arp an nhap: cap quãng duoi lead, downbeat chord-tone, chromatic hiem, thua + accent groove.
