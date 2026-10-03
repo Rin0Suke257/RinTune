@@ -2,7 +2,7 @@
 #define AppVersion "2.1.0"
 
 [Setup]
-AppId={{8C1B4E2A-7F6C-4D8A-9E21-5C7A0B3D9F43}
+AppId={{D6FF3877-3D64-401A-9BE7-214E98E64216}
 AppName=RinTune Studio
 AppVersion={#AppVersion}
 AppVerName=RinTune Studio v{#AppVersion}
