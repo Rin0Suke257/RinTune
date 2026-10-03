@@ -1935,6 +1935,18 @@
     window.close();
   }
 
+  function confirmQuit() {
+    const m = document.getElementById('byeModal');
+    if (!m) { quitApp(); return; }
+    m.style.display = 'flex';
+  }
+
+  function rinEmptyHTML(msg) {
+    return '<div style="text-align:center; padding:14px 8px;">' +
+      '<img src="assets/Icon/mascot/Rin.png" alt="Rin" style="width:84px; image-rendering:pixelated;" onerror="this.style.display=\'none\'">' +
+      '<div style="font-size:0.72rem; color:var(--text-dim); margin-top:6px;">' + msg + '</div></div>';
+  }
+
   const THEME_KEY = 'rmg_theme_v1';
 
   function getThemeStore() {
@@ -2209,7 +2221,7 @@
       case 'exp-quick-mmp': quickExport('mmp'); break;
       case 'finish': finishSong(); break;
       case 'launch-lmms': handleLaunchLmms(); break;
-      case 'quit': quitApp(); break;
+      case 'quit': confirmQuit(); break;
       case 'undo': doUndo(); break;
       case 'redo': doRedo(); break;
       case 'tool-select': setTool('select'); break;
@@ -2370,7 +2382,7 @@
       const r = await window.rmgAPI.listFiles({ folder: 'export' });
       const files = (r && r.files) || [];
       if (!files.length) {
-        recentList.innerHTML = '<div style="font-size:0.72rem; color:var(--text-dim); text-align:center; padding:8px;">Chưa có file nào. Hãy xuất nhanh!</div>';
+        recentList.innerHTML = rinEmptyHTML('Chưa có file nào, Rin xin lỗi nhé~ Hãy xuất nhanh!');
         return;
       }
       for (const f of files.slice(0, 12)) {
@@ -2803,7 +2815,7 @@
     list.innerHTML = '';
     const arr = getSeedGallery();
     if (!arr.length) {
-      list.innerHTML = '<div style="font-size:0.72rem; color:var(--text-dim); text-align:center; padding:8px;">Chưa có seed nào. Gieo bài ưng rồi bấm Lưu.</div>';
+      list.innerHTML = rinEmptyHTML('Chưa có seed nào, Rin xin lỗi nhé~ Gieo bài ưng rồi bấm Lưu.');
       return;
     }
     for (const item of arr) {
@@ -3179,7 +3191,7 @@
     });
 
     if (!visible.length) {
-      historyList.innerHTML = '<div style="font-size:0.75rem; color:var(--text-dim); text-align:center; padding:12px;">Không có mục nào (đổi bộ lọc hoặc bấm Generate!).</div>';
+      historyList.innerHTML = rinEmptyHTML('Chỗ này chưa có gì, Rin xin lỗi nhé~ Đổi bộ lọc hoặc bấm Generate!');
       return;
     }
 
@@ -4114,6 +4126,13 @@
     if (btnNewTake) btnNewTake.addEventListener('click', newTake);
     if (btnKeepTake) btnKeepTake.addEventListener('click', () => endTakeSession(false));
     if (btnRevertTake) btnRevertTake.addEventListener('click', revertTakeSession);
+    const btnStay = document.getElementById('btnStay');
+    const btnBye = document.getElementById('btnBye');
+    if (btnStay) btnStay.addEventListener('click', () => {
+      const m = document.getElementById('byeModal');
+      if (m) m.style.display = 'none';
+    });
+    if (btnBye) btnBye.addEventListener('click', quitApp);
 
     const btnTimelineToggle = document.getElementById('btnTimelineToggle');
     if (btnTimelineToggle) btnTimelineToggle.addEventListener('click', toggleTimeline);

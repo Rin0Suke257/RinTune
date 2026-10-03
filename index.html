@@ -995,6 +995,18 @@
   
   <div class="toast-container" id="toastContainer"></div>
 
+  <div class="modal-overlay" id="byeModal" style="display:none;">
+    <div class="modal-box" style="width:340px; text-align:center;">
+      <img src="assets/Icon/mascot/Rin.png" alt="Rin" style="width:110px; image-rendering:pixelated;" onerror="this.style.display='none'">
+      <h3 style="margin:8px 0 4px; color:var(--accent-cyan);">Rin chào tạm biệt nhé!</h3>
+      <div style="font-size:0.74rem; color:var(--text-muted); margin-bottom:12px;">Bài nhạc và dữ liệu của bạn vẫn ở nguyên đó.</div>
+      <div class="modal-actions" style="justify-content:center;">
+        <button id="btnStay" class="btn-secondary">Ở lại</button>
+        <button id="btnBye" class="btn-secondary" style="border-color:var(--accent-gold); color:var(--accent-gold);">Tạm biệt</button>
+      </div>
+    </div>
+  </div>
+
   
   <script src="engine/theory.js"></script>
   <script src="engine/generator.js"></script>

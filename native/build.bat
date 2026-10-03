@@ -35,6 +35,8 @@ copy /y "%ROOT%\..\engine\*.js" "%OUT%\engine\" >nul
 mkdir "%OUT%\assets\Icon" 2>nul
 copy /y "%ROOT%\..\assets\Icon\*.png" "%OUT%\assets\Icon\" >nul
 copy /y "%ROOT%\..\assets\Icon\*.ico" "%OUT%\assets\Icon\" >nul
+mkdir "%OUT%\assets\Icon\mascot" 2>nul
+copy /y "%ROOT%\..\assets\Icon\mascot\Rin.png" "%OUT%\assets\Icon\mascot\" >nul
 
 echo.
 echo [OK] %OUT%\RinTune.exe

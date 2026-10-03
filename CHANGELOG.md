@@ -1,5 +1,9 @@
 # RinTune Changelog
 
+## Unreleased - Linh vat Rin
+- Rin cui chao o 3 trang thai trong (lich su, so seed, file xuat)
+- Modal tam biet khi bam Thoat (O lai / Tam biet, du lieu giu nguyen)
+
 ## Unreleased - Bo song ngu (ve Viet thuan)
 - Go sach i18n (khung + tu dien + nut VI/EN), app Viet 100% nhu cu
 
