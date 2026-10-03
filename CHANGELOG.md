@@ -1,5 +1,10 @@
 # RinTune Changelog
 
+## Unreleased - Q1: Motif-first
+- Motif chat (buoc nho + 1 leap + ket on dinh + khoang tho), B derive tu A,
+  bien tau sequence/inversion/fragment theo slot, mutation khoa theo vi tri
+  motif (cau lap lai giai giong nhau, thich nghi theo hop am)
+
 ## Unreleased - Phase 1: Arrangement sections that
 - Bai tu chia Intro/Verse/Break/Chorus/Outro theo do dai (break co drum
   dropout that), be vao/ra + velocity theo tung doan, tu slice thanh clips

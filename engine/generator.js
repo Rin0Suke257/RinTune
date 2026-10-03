@@ -425,7 +425,8 @@
         humanize,
         grammar,
         variation: VV,
-        zoneMap
+        zoneMap,
+        songSeed: this.options.seed
       }) : { name: 'Lead Melody', type: 'synth_lead', instrument: genreDef.leadStyle, color: '#00f2fe', notes: [] };
 
       if (isPurePiano) {
@@ -660,6 +661,7 @@
         grammar: Object.assign({ rest: 0, leapSemis: 9, chromatic: true }, genreDef.leadGrammar || {}),
         variation: VV,
         zoneMap,
+        songSeed: (md.seed != null ? md.seed : this.options.seed),
         barStart: fromBar,
         barEnd: toBar
       };
@@ -983,7 +985,11 @@
       const phraseA = ctx.seedPhrase
         ? this._tileBlueprint(ctx.seedPhrase, phraseSteps, stepsPerBar)
         : this._composeSeedPhrase(phraseSteps, scaleNotes, genreDef, density, chaosLevel, stepsPerBar, timeSignature);
-      const phraseB = this._composeSeedPhrase(phraseSteps, scaleNotes, genreDef, density, chaosLevel, stepsPerBar, timeSignature);
+      const loIdx = 0;
+      const hiIdx = scaleNotes.length - 1;
+      const phraseB = ctx.seedPhrase
+        ? this._composeSeedPhrase(phraseSteps, scaleNotes, genreDef, density, chaosLevel, stepsPerBar, timeSignature)
+        : this._developMotif(phraseA, 'sequence', { degrees: (this.rng.chance(0.5) ? 2 : -2), lo: loIdx, hi: hiIdx });
 
       let form = motifStructure;
       if (form === 'smart_adaptive') {
@@ -1017,18 +1023,22 @@
         if (form === '4bars_aabb') {
           const mod4 = phraseIndex % 4;
           if (mod4 === 0) activeBlueprint = phraseA;
-          else if (mod4 === 1) { activeBlueprint = phraseA; isVariation = true; transposeDegree = this.rng.choice([1, -1, 2]); }
+          else if (mod4 === 1) { activeBlueprint = this._developMotif(phraseA, 'sequence', { degrees: this.rng.choice([1, -1, 2]), lo: loIdx, hi: hiIdx }); isVariation = true; }
           else if (mod4 === 2) activeBlueprint = phraseB;
           else { activeBlueprint = phraseB; isVariation = true; forceCadenceResolve = true; }
         } else if (form === '8bars_abab') {
           const mod4 = phraseIndex % 4;
           if (mod4 === 0) activeBlueprint = phraseA;
           else if (mod4 === 1) activeBlueprint = phraseB;
-          else if (mod4 === 2) activeBlueprint = phraseA;
+          else if (mod4 === 2) {
+            activeBlueprint = (this._vChance(0.5, Vl) && !ctx.seedPhrase)
+              ? this._developMotif(phraseA, this.rng.choice(['sequence', 'inversion']), { degrees: 1, lo: loIdx, hi: hiIdx })
+              : phraseA;
+          }
           else { activeBlueprint = phraseB; isVariation = true; forceCadenceResolve = true; }
         } else if (form === 'qa_question_answer') {
           const isAnswer = (phraseIndex % 2 === 1);
-          if (isAnswer) { activeBlueprint = phraseA; isVariation = true; forceCadenceResolve = true; }
+          if (isAnswer) { activeBlueprint = this._developMotif(phraseA, 'sequence', { degrees: -1, lo: loIdx, hi: hiIdx }); isVariation = true; forceCadenceResolve = true; }
           else activeBlueprint = phraseA;
         } else if (form === '4bars_abac') {
           const mod4 = phraseIndex % 4;
@@ -1046,8 +1056,10 @@
           activeBlueprint = phraseA;
           const chord = progression[currentBar] || progression[0];
           transposeDegree = (chord.rootMidi % 12) - (rootMidi % 12);
+        } else if (!ctx.seedPhrase && this._vChance(0.6, Vl)) {
+          activeBlueprint = this._developMotif(phraseA, this.rng.choice(['sequence', 'sequence', 'inversion', 'fragment']), { degrees: this.rng.choice([1, -1, 2, -2]), lo: loIdx, hi: hiIdx });
         } else {
-          activeBlueprint = this._composeSeedPhrase(phraseSteps, scaleNotes, genreDef, density, chaosLevel, stepsPerBar, timeSignature);
+          activeBlueprint = phraseA;
         }
 
         if ((isFieryPiano || isSasakure) && isPeakClimax && (density > 50) && this._vChance(0.65, Vl)) {
@@ -1118,6 +1130,7 @@
           const chord = progression[currentNoteBar] || progression[0];
           const chordPcs = chord.notes.map(n => n % 12);
           const isLastNoteInPhrase = (i === activeBlueprint.length - 1);
+          const lockBase = (ctx.songSeed != null ? ctx.songSeed : '') + ':' + noteDef.stepOffset;
 
           let targetMidi;
           let baseDegreeIndex = Math.max(0, Math.min(scaleNotes.length - 1, noteDef.scaleIndex + transposeDegree));
@@ -1126,9 +1139,9 @@
             const contourY = this._getContourValueAtStep(globalStep, totalSteps, contourPoints); // 0.0 (bottom) to 1.0 (top)
             let contourDegree = Math.round(contourY * (scaleNotes.length - 1));
 
-            if (chaosLevel > 0 && this.rng.chance(mutationChance * 0.7) && !noteDef.isDownbeat) {
+            if (chaosLevel > 0 && !noteDef.isDownbeat && this._hash01('mut' + lockBase + ':c') < mutationChance * 0.7) {
               const maxChaosLeap = Math.round(1 + (chaosLevel / 100) * 3);
-              contourDegree += this.rng.choice([-maxChaosLeap, maxChaosLeap, -1, 1]);
+              contourDegree += [-maxChaosLeap, maxChaosLeap, -1, 1][Math.floor(this._hash01('amt' + lockBase + ':c') * 4)];
             }
 
             contourDegree = Math.max(0, Math.min(scaleNotes.length - 1, contourDegree));
@@ -1144,19 +1157,21 @@
             } else {
               if (isPeakClimax) baseDegreeIndex += 3;
 
-              if (this.rng.chance(mutationChance * 0.7) && !noteDef.isDownbeat) {
-                if (chaosLevel > 60 && this.rng.chance(0.4)) {
-                  baseDegreeIndex += this.rng.choice([-4, -3, 3, 4, 5]);
+              const lockKey = lockBase + ':' + transposeDegree;
+              if (!noteDef.isDownbeat && this._hash01('mut' + lockKey) < mutationChance * 0.7) {
+                const ha = this._hash01('amt' + lockKey);
+                if (chaosLevel > 60 && ha < 0.4) {
+                  baseDegreeIndex += [-4, -3, 3, 4, 5][Math.floor(this._hash01('amt2' + lockKey) * 5)];
                 } else {
-                  baseDegreeIndex += this.rng.choice([-1, 1, -2, 2]);
+                  baseDegreeIndex += [-1, 1, -2, 2][Math.floor(this._hash01('amt2' + lockKey) * 4)];
                 }
               }
 
               baseDegreeIndex = Math.max(0, Math.min(scaleNotes.length - 1, baseDegreeIndex));
               targetMidi = scaleNotes[baseDegreeIndex];
 
-              if (grammar.chromatic !== false && chaosLevel > 70 && this.rng.chance((chaosLevel - 70) / 100) && !noteDef.isDownbeat) {
-                targetMidi += this.rng.choice([-1, 1]);
+              if (grammar.chromatic !== false && chaosLevel > 70 && !noteDef.isDownbeat && this._hash01('chr' + lockKey) < (chaosLevel - 70) / 100) {
+                targetMidi += this._hash01('chr2' + lockKey) < 0.5 ? -1 : 1;
               } else if (noteDef.isDownbeat && !chordPcs.includes(targetMidi % 12) && this.rng.chance(Math.max(0.3, 1.0 - mutationChance))) {
                 const chordTonesInScale = scaleNotes.filter(m => chordPcs.includes(m % 12));
                 targetMidi = this._findClosestNote(chordTonesInScale, targetMidi);
@@ -1276,6 +1291,28 @@
       };
     }
 
+    _developMotif(blueprint, kind, opt = {}) {
+      if (!blueprint || !blueprint.length) return [];
+      const lo = opt.lo != null ? opt.lo : 0;
+      const hi = opt.hi != null ? opt.hi : 1e9;
+      const clampIdx = (v) => Math.max(lo, Math.min(hi, v));
+      const copy = blueprint.map(n => Object.assign({}, n));
+      if (kind === 'sequence') {
+        const d = opt.degrees || 0;
+        for (const n of copy) n.scaleIndex = clampIdx(n.scaleIndex + d);
+      } else if (kind === 'inversion') {
+        const anchor = copy[0].scaleIndex;
+        for (const n of copy) n.scaleIndex = clampIdx(2 * anchor - n.scaleIndex);
+      } else if (kind === 'fragment') {
+        const keep = Math.max(2, Math.ceil(copy.length / 2));
+        const cut = copy.slice(0, keep);
+        const lastEnd = Math.max(...copy.map(n => n.stepOffset + n.durationSteps));
+        cut[cut.length - 1].durationSteps = Math.max(1, lastEnd - cut[cut.length - 1].stepOffset);
+        return cut;
+      }
+      return copy;
+    }
+
     _composeSeedPhrase(totalSteps, scaleNotes, genreDef, density = 75, chaosLevel = 25, stepsPerBar = 16, timeSignature = '4/4') {
       let rhythmPool;
 
@@ -1343,8 +1380,12 @@
 
       const blueprint = [];
       let currentScaleIndex = Math.floor(scaleNotes.length * 0.45);
+      const homeIndex = currentScaleIndex;
+      const loIdx = Math.max(0, homeIndex - 4);
+      const hiIdx = Math.min(scaleNotes.length - 1, homeIndex + 5);
       let stepOffset = 0;
       const chaosFactor = chaosLevel / 100;
+      let leapsUsed = 0;
 
       while (stepOffset < totalSteps) {
         const chosenRhythm = this.rng.choice(rhythmPool) || [4, 4, 4, 4];
@@ -1353,17 +1394,14 @@
           const isDownbeat = (stepOffset % stepsPerBar === 0 || stepOffset % (stepsPerBar / 2) === 0);
 
           if (blueprint.length === 0) {
-            currentScaleIndex = Math.floor(scaleNotes.length * 0.45);
+            currentScaleIndex = homeIndex;
+          } else if (leapsUsed < 1 && blueprint.length >= 2 && this.rng.chance(0.3 + chaosFactor * 0.3)) {
+            const leapDelta = this.rng.choice([-4, -3, 3, 4, -2, 2]);
+            currentScaleIndex = Math.max(loIdx, Math.min(hiIdx, currentScaleIndex + leapDelta));
+            leapsUsed++;
           } else {
-            const leapChance = Math.min(0.8, 0.1 + chaosFactor * 0.7);
-            if (this.rng.chance(leapChance)) {
-              const maxLeap = Math.round(2 + chaosFactor * 5);
-              const leapDelta = this.rng.choice([-maxLeap, maxLeap, -2, 2, -3, 3]);
-              currentScaleIndex = Math.max(0, Math.min(scaleNotes.length - 1, currentScaleIndex + leapDelta));
-            } else {
-              const stepDelta = this.rng.choice([-1, 1, -1, 1, 0]);
-              currentScaleIndex = Math.max(0, Math.min(scaleNotes.length - 1, currentScaleIndex + stepDelta));
-            }
+            const stepDelta = this.rng.choice([-1, 1, -1, 1, 0, 1, -1, 2, -2]);
+            currentScaleIndex = Math.max(loIdx, Math.min(hiIdx, currentScaleIndex + stepDelta));
           }
 
           blueprint.push({
@@ -1375,7 +1413,13 @@
 
           stepOffset += dur;
           if (stepOffset >= totalSteps) break;
+          if (!isDownbeat && this.rng.chance(0.12)) stepOffset += 1;
         }
+      }
+      if (blueprint.length >= 2) {
+        const cands = [homeIndex - 2, homeIndex, homeIndex + 2, homeIndex + 4].filter(v => v >= loIdx && v <= hiIdx);
+        const pool = cands.length ? cands : [homeIndex];
+        blueprint[blueprint.length - 1].scaleIndex = pool.reduce((a, b) => Math.abs(b - homeIndex) < Math.abs(a - homeIndex) ? b : a);
       }
 
       return blueprint;
