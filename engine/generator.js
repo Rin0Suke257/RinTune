@@ -340,7 +340,7 @@
             chaosLevel: o.chaosLevel, density: D(role)
           }));
         case 'stab':
-          return Object.assign(this._generateStabTrack(Object.assign({}, base, { density: D(role) })), this._roleMeta(role, key, o.genreDef, o.isPurePiano));
+          return Object.assign(this._generateStabTrack(Object.assign({}, base, { density: D(role), leadScaleNotes: o.leadScaleNotes, leadNotes: o.leadNotes })), this._roleMeta(role, key, o.genreDef, o.isPurePiano));
         case 'pad':
           return Object.assign(this._generatePadTrack(base), this._roleMeta(role, key, o.genreDef, o.isPurePiano));
         case 'perc':
@@ -356,12 +356,47 @@
       const Vs = (ctx.variation && ctx.variation.stab != null) ? ctx.variation.stab : 0.7;
       const startBar = Math.max(0, ctx.barStart || 0);
       const endBar = (ctx.barEnd == null || ctx.barEnd < 0) ? (lengthBars - 1) : Math.min(lengthBars - 1, ctx.barEnd);
+      const leadAct = {};
+      for (const n of (ctx.leadNotes || [])) {
+        const b = Math.floor(n.step / stepsPerBar);
+        leadAct[b] = (leadAct[b] || 0) + 1;
+      }
+      const scale = ctx.leadScaleNotes || [];
+      const degOf = (midi) => {
+        let best = 0, bd = 1e9;
+        scale.forEach((m, i) => {
+          const d = Math.abs(m - midi);
+          if (d < bd) { bd = d; best = i; }
+        });
+        return best;
+      };
       for (let bar = startBar; bar <= endBar; bar++) {
+        const bs = bar * stepsPerBar;
         const chord = progression[bar] || progression[0];
         if (!chord) continue;
+        const climaxFactor = this._getClimaxFactor(bar, lengthBars, climaxCurve);
+        const busy = (leadAct[bar] || 0) >= 4;
+        if (busy && this._vChance(0.6, Vs)) continue;
+        const prevLead = (ctx.leadNotes || [])
+          .filter(n => Math.floor(n.step / stepsPerBar) === bar - 1)
+          .slice(0, 4);
+        if (!busy && prevLead.length >= 2 && scale.length && this._vChance(0.65, Vs)) {
+          for (const pl of prevLead) {
+            const off = pl.step - (bar - 1) * stepsPerBar;
+            if (off < 0 || off >= stepsPerBar) continue;
+            const dm = scale[Math.max(0, degOf(pl.midi) - 1)];
+            notes.push({
+              step: bs + off,
+              duration: Math.max(2, Math.min(4, pl.duration)),
+              midi: dm,
+              velocity: Math.max(40, Math.min(127, Math.round(105 * (0.7 + 0.35 * climaxFactor)) + velocityBoost)),
+              pan: 10
+            });
+          }
+          continue;
+        }
         const tones = (chord.voicedNotes || chord.notes || []).slice(0, 3).map(m => Math.min(96, m + 12));
         if (!tones.length) continue;
-        const climaxFactor = this._getClimaxFactor(bar, lengthBars, climaxCurve);
         const pat = this._variant(3, Vs);
         const half = Math.floor(stepsPerBar / 2);
         const hits = pat === 1 ? [0, Math.floor(stepsPerBar * 0.75)] : (pat === 2 ? [0] : [0, half]);
@@ -725,6 +760,7 @@
       };
       for (const def of roleDefs) {
         if (tracks[def.key]) continue;
+        if (this._roleOf(def.key) === 'stab') roleCtx.leadNotes = (tracks.lead && tracks.lead.notes) || [];
         tracks[def.key] = this._generateRoleTrack(def.role, def.key, roleCtx);
       }
 
@@ -890,7 +926,8 @@
         bassScaleNotes: Theory.getScaleNotes(md.key || 'A', scaleKey, 2, 3),
         densityMod: baseCtx.density,
         profW: () => 1,
-        isPurePiano: !!md.isPurePiano
+        isPurePiano: !!md.isPurePiano,
+        leadNotes: (song.tracks.lead && song.tracks.lead.notes) || []
       });
       try {
         for (const k of wanted) {

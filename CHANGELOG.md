@@ -1,5 +1,9 @@
 # RinTune Changelog
 
+## Unreleased - P4: Call-response
+- Stab doi dap lead: lead day thi stab nghi/punch thua, lead thua thi stab
+  tra loi bang motif lead dich giong; doan luan phien tang 3x
+
 ## Unreleased - P3: Bass walking + trong toi gian
 - Bass di bo (scalar walk xen pump root-fifth + approach chromatic) theo DNA
   tung genre; giam octave-pop; trong minimal (touhou/sasakure): kick/snare/
