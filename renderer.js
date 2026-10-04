@@ -1181,9 +1181,11 @@
       const d = document.createElement('div');
       d.className = 'clip-block clip-section' + (c.id === selectedClipId ? ' clip-selected' : '') + (c.muted ? ' clip-muted' : '') + (c.rest ? ' clip-rest' : '');
       d.style.width = (c.lengthBars / total * 100) + '%';
+      const visSet = new Set(visibleKeys());
       const dots = songTrackKeys(song).map(k => {
         const on = !(c.tracks && c.tracks[k] === false);
-        return `<span class="clip-dot" style="background:${(TRACK_COLORS[k] || regFor(k).color)};opacity:${on ? 1 : 0.2};" title="${k}: ${on ? 'chơi' : 'nghỉ'}"></span>`;
+        const shown = visSet.has(k);
+        return `<span class="clip-dot" style="background:${(TRACK_COLORS[k] || regFor(k).color)};opacity:${!shown ? 0.1 : (on ? 1 : 0.2)};" title="${k}: ${!shown ? 'ẩn' : (on ? 'chơi' : 'nghỉ')}"></span>`;
       }).join('');
       d.innerHTML = `<span class="clip-name">${escapeHtml(c.name)}${c.rest ? ' ☕' : ''}${c.muted ? ' 🔇' : ''}</span>` +
         `<span class="clip-meta">${c.lengthBars}b • ${clipNoteCount(c)}n</span>` +
@@ -1964,33 +1966,42 @@
       : (abHearing === 'A' ? 'Đang nghe A — bấm để nghe B' : 'Đang nghe B — bấm để nghe A');
   }
 
+  function visibleKeys() {
+    const all = songTrackKeys();
+    if (!all.length) return [];
+    let vis;
+    if (state.trackTarget === 'all') vis = all.slice();
+    else if (state.trackTarget === 'pure_piano') vis = all.filter(k => ['lead', 'arp', 'bass'].includes(roleOfKey(k)));
+    else vis = all.filter(k => roleOfKey(k) === state.trackTarget);
+    return vis.length ? vis : all.slice();
+  }
+
   function applyListenFilter(target, silent) {
     state.trackTarget = target;
     if (selectTrackTarget) selectTrackTarget.value = target;
-    if (Synth && Synth.trackStates) {
-      for (const k of Object.keys(Synth.trackStates)) Synth.trackStates[k].solo = false;
-    }
-    for (const k of Object.keys(mixState)) mixState[k].solo = false;
-    const keys = songTrackKeys();
-    let soloKeys = [];
-    if (target === 'pure_piano') {
-      soloKeys = keys.filter(k => ['lead', 'arp', 'bass'].includes(roleOfKey(k)));
-    } else if (target !== 'all') {
-      soloKeys = keys.filter(k => roleOfKey(k) === target);
-    }
-    for (const k of soloKeys) {
+    const vis = visibleKeys();
+    const all = songTrackKeys();
+    const partial = vis.length < all.length;
+    for (const k of all) {
+      const hide = partial && !vis.includes(k);
       if (Synth.ensureTrack) Synth.ensureTrack(k);
-      if (Synth.toggleSolo && !(Synth.trackStates[k] && Synth.trackStates[k].solo)) Synth.toggleSolo(k);
-      mixFor(k).solo = true;
+      if (Synth.trackStates[k]) Synth.trackStates[k].muted = hide;
+      mixFor(k).muted = hide;
+      if (!hide && Synth.trackStates[k]) Synth.trackStates[k].solo = false;
+      if (!hide) mixFor(k).solo = false;
     }
+    if (!vis.includes(state.editingTrack)) state.editingTrack = vis[0] || 'lead';
     syncPurePianoButton();
     updateHeaderBadges();
+    renderTrackTabs();
     renderMixer();
+    renderPianoRoll(Synth.currentStep || 0);
+    renderTimelineLane();
     if (silent) return;
-    if (!soloKeys.length) {
-      showToast('🎛️ Nghe + xuất: toàn bài!');
+    if (vis.length >= songTrackKeys().length) {
+      showToast('🎛️ Hiện + xuất: toàn bài!');
     } else {
-      showToast(`🎧 Chỉ nghe: ${soloKeys.join(', ').toUpperCase()} (xuất file cũng chỉ gồm các bè này — muốn cả bài thì chọn lại Dàn nhạc)!`);
+      showToast(`🎧 Chỉ hiện: ${vis.join(', ').toUpperCase()} (xuất file cũng chỉ gồm các bè này — muốn cả bài thì chọn lại Dàn nhạc)!`);
     }
   }
 
@@ -2056,7 +2067,7 @@
   function renderTrackTabs() {
     const box = document.getElementById('trackTabButtons');
     if (!box) return;
-    const keys = songTrackKeys();
+    const keys = visibleKeys();
     if (!keys.includes(state.editingTrack)) state.editingTrack = keys[0] || 'lead';
     box.innerHTML = '';
     for (const k of keys) {
@@ -3089,7 +3100,7 @@
       articulation: state.articulation, climaxCurve: state.climaxCurve,
       useContour: false, contourPoints: null,
       fadeInBars: state.fadeInBars, fadeOutBars: state.fadeOutBars,
-      trackTarget: state.trackTarget, trackRoles: state.trackTarget === 'all' ? state.trackRoles : null, chaosLevel: state.chaosLevel,
+      trackTarget: state.trackTarget, trackRoles: state.trackRoles, chaosLevel: state.chaosLevel,
       density: state.density, variation: effectiveVariation(), humanize: true,
       loopMode: state.loopMode, finalHit: state.finalHit, seed: o.seed
     });
@@ -3515,7 +3526,7 @@
       fadeInBars: state.fadeInBars,
       fadeOutBars: state.fadeOutBars,
       trackTarget: state.trackTarget,
-      trackRoles: state.trackTarget === 'all' ? state.trackRoles : null,
+      trackRoles: state.trackRoles,
       chaosLevel: state.chaosLevel,
       density: state.density,
       variation: effectiveVariation(),
@@ -4370,7 +4381,7 @@
         fadeInBars: 0,
         fadeOutBars: 0,
         trackTarget: state.trackTarget,
-        trackRoles: state.trackTarget === 'all' ? state.trackRoles : null,
+        trackRoles: state.trackRoles,
         chaosLevel: p.chaosLevel,
         density: p.density,
         variation: effectiveVariation(),
@@ -5512,7 +5523,7 @@
   }
 
   function selectEditingTrackByIndex(i) {
-    const keys = songTrackKeys();
+    const keys = visibleKeys();
     if (i < 0 || i >= keys.length || !studioTrackTabs) return;
     const tab = studioTrackTabs.querySelector(`[data-track="${keys[i]}"]`);
     if (tab) tab.click();
@@ -6069,7 +6080,7 @@
     };
     const trackColorFor = (k) => trackColors[k] || (TRACK_COLORS[roleOfKey(k)] || '#00f2fe');
 
-    const trackKeys = [...songTrackKeys()].reverse();
+    const trackKeys = [...visibleKeys()].reverse();
 
     if (state.showGhostNotes) {
       prCtx.globalAlpha = 0.32;
