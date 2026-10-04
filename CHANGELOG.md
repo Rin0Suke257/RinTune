@@ -1,5 +1,10 @@
 # RinTune Changelog
 
+## Unreleased - Phase 5: Trich Style v2 (rhythm DNA)
+- Trich tu bai: dotted, ornament, minimalKit, bassWalk, trackProfile, velMul,
+  dropout, ambitus; luu vao style rieng; engine tieu thu toan bo; vong lap
+  trich→gieo on dinh (dropout khop, profile giu dang)
+
 ## Unreleased - P4: Call-response
 - Stab doi dap lead: lead day thi stab nghi/punch thua, lead thua thi stab
   tra loi bang motif lead dich giong; doan luan phien tang 3x

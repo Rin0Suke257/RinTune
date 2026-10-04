@@ -381,6 +381,12 @@
       defaultKey: key, defaultScale: scale,
       allowedScales: [scale],
       drumGroove: 'standard', leadStyle: lead,
+      dottedBounce: (pendingDNA ? pendingDNA.dottedBounce : 0.3),
+      ornamentBias: (pendingDNA ? pendingDNA.ornamentBias : 1),
+      minimalKit: !!(pendingDNA && pendingDNA.minimalKit),
+      bassWalk: (pendingDNA ? pendingDNA.bassWalk : 0.4),
+      trackProfile: (pendingDNA ? pendingDNA.trackProfile : {}),
+      velMul: (pendingDNA ? pendingDNA.velMul : {}),
       defaultTimeSignature: ts,
       progressions: templates
     };
@@ -2643,7 +2649,7 @@
       case 'seed-paste': pasteSeed(); break;
       case 'seed-daily': dailySeed(); break;
       case 'seed-save': saveSeedToGallery(); break;
-      case 'genre-custom': openCustomGenreModal(); break;
+      case 'genre-custom': pendingDNA = null; openCustomGenreModal(); break;
       case 'genre-extract': extractStyleFromSong(); break;
       case 'help-open': if (helpModal) helpModal.style.display = 'flex'; break;
       case 'check-update': checkUpdate(); break;
@@ -4086,6 +4092,68 @@
   }
 
 
+  function analyzeRhythmDNA(song) {
+    const md = song.metadata || {};
+    const spb = md.stepsPerBar || 16;
+    const bars = md.lengthBars || 8;
+    const dna = { dottedBounce: 0.3, ornamentBias: 1, minimalKit: false, bassWalk: 0.4, trackProfile: {}, velMul: {}, dropout: {}, ambitus: {} };
+    const roleOf = (k) => String(k || '').replace(/[0-9]+$/, '');
+    const wins = Math.max(1, Math.floor(bars / 2));
+    const perBarAll = [];
+    let dotN = 0, dotD = 0, offN = 0, offD = 0;
+    for (const [key, track] of Object.entries(song.tracks || {})) {
+      const role = roleOf(key);
+      const ns = (track.notes || []).slice().sort((a, b) => a.step - b.step);
+      if (!ns.length) continue;
+      const mids = ns.map(n => n.midi);
+      const vels = ns.map(n => n.velocity || 90);
+      const sorted = vels.slice().sort((a, b) => a - b);
+      const med = sorted[Math.floor(sorted.length / 2)] || 90;
+      dna.velMul[role] = Math.max(0.5, Math.min(1.4, Math.round((med / 90) * 100) / 100));
+      dna.ambitus[role] = [Math.min(...mids), Math.max(...mids)];
+      const pb = ns.length / Math.max(1, bars);
+      perBarAll.push(pb);
+      dna.trackProfile[role] = pb;
+      let empty = 0;
+      for (let w = 0; w < wins; w++) {
+        const c = ns.filter(n => Math.floor(n.step / spb) >= w * 2 && Math.floor(n.step / spb) < w * 2 + 2).length;
+        if (c < 2) empty++;
+      }
+      dna.dropout[role] = Math.round((empty / wins) * 100) / 100;
+      for (let i = 1; i < ns.length; i++) {
+        const ioi = ns[i].step - ns[i - 1].step;
+        if (ioi >= 0.9 && ioi <= 4.1) {
+          dotD++;
+          if (ioi >= 2.9 && ioi <= 3.1) dotN++;
+        }
+        offD++;
+        if (Math.abs(ioi - Math.round(ioi)) > 0.01) offN++;
+        else if (Math.abs(ns[i].step % 1) > 0.01) offN++;
+      }
+      if (role === 'drums' || role === 'perc') {
+        const hasCrash = ns.some(n => n.midi === 49);
+        const hasTom = ns.some(n => [50, 47, 45].includes(n.midi));
+        if (!hasCrash && !hasTom) dna.minimalKit = true;
+      }
+      if (role === 'bass' && ns.length >= 8) {
+        let st = 0, mv = 0;
+        for (let i = 1; i < ns.length; i++) {
+          const d = Math.abs(ns[i].midi - ns[i - 1].midi);
+          if (d <= 2) st++; else mv++;
+        }
+        const raw = st / Math.max(1, st + mv);
+        dna.bassWalk = Math.max(0.15, Math.min(0.95, Math.round((raw / 0.45) * 100) / 100));
+      }
+    }
+    if (dotD > 0) dna.dottedBounce = Math.max(0.1, Math.min(0.6, Math.round((dotN / dotD) * 3 / 0.8 * 100) / 100));
+    if (offD > 0) dna.ornamentBias = Math.max(0.5, Math.min(1.5, Math.round((0.5 + (offN / offD) * 5) * 100) / 100));
+    const avgPb = perBarAll.length ? perBarAll.reduce((a, b) => a + b, 0) / perBarAll.length : 12;
+    for (const r of Object.keys(dna.trackProfile)) {
+      dna.trackProfile[r] = Math.max(0.5, Math.min(1.5, Math.round((dna.trackProfile[r] / (avgPb || 12)) * 100) / 100));
+    }
+    return dna;
+  }
+
   function analyzeSongStyle(song) {
     const md = song.metadata;
     const syms = (song.progression || []).map(c => c.symbol).filter(Boolean);
@@ -4109,6 +4177,8 @@
     };
   }
 
+  let pendingDNA = null;
+
   function extractStyleFromSong() {
     const song = state.currentSong;
     if (!song) {
@@ -4116,9 +4186,10 @@
       return;
     }
     const a = analyzeSongStyle(song);
+    pendingDNA = analyzeRhythmDNA(song);
     openCustomGenreModal();
     if (customName) customName.value = (`Style ${song.metadata.title || ''}`).replace(/^(RinTune_|RMG_)/, '').slice(0, 40);
-    if (customDesc) customDesc.value = `${a.bars} bars • ${a.noteCount} nốt • nên để density ~${a.density}`;
+    if (customDesc) customDesc.value = `${a.bars} bars \u2022 ${a.noteCount} n\u1ED1t \u2022 density ~${a.density} \u2022 dotted ${pendingDNA.dottedBounce} \u2022 orn \u00D7${pendingDNA.ornamentBias}`;
     if (customBpm) customBpm.value = a.bpm;
     if (customKey && [...customKey.options].some(o => o.value === a.key)) customKey.value = a.key;
     if (customScale && [...customScale.options].some(o => o.value === a.scale)) customScale.value = a.scale;
@@ -4677,7 +4748,7 @@
       });
     }
 
-    if (btnOpenCustomGenre) btnOpenCustomGenre.addEventListener('click', openCustomGenreModal);
+    if (btnOpenCustomGenre) btnOpenCustomGenre.addEventListener('click', () => { pendingDNA = null; openCustomGenreModal(); });
     if (btnCancelCustomGenre) btnCancelCustomGenre.addEventListener('click', closeCustomGenreModal);
     if (btnSaveCustomGenre) btnSaveCustomGenre.addEventListener('click', saveCustomGenre);
     if (genreModal) {

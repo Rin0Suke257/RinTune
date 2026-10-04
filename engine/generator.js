@@ -493,8 +493,13 @@
       return (z[role] == null ? 1 : z[role]);
     }
 
-    _gateOpen(zoneName, trackKey, seed) {
-      const p = this._gateP(zoneName, trackKey);
+    _gateOpen(zoneName, trackKey, seed, dropout) {
+      let p = this._gateP(zoneName, trackKey);
+      if (dropout && typeof dropout === 'object') {
+        const role = String(trackKey || '').replace(/[0-9]+$/, '');
+        const d = dropout[role];
+        if (typeof d === 'number' && d > 0) p = Math.max(0, p * (1 - Math.min(0.7, d * 0.4)));
+      }
       if (p >= 1) return true;
       if (p <= 0) return false;
       return this._hash01(String(seed) + '|' + zoneName + '|' + trackKey) < p;
@@ -509,12 +514,13 @@
       return (h >>> 0) / 4294967296;
     }
 
-    _resolveZoneGates(zoneMap, seed, keys) {
+    _resolveZoneGates(zoneMap, seed, keys, genreDef) {
       const list = (keys && keys.length ? keys : ['lead', 'chords', 'arp', 'bass', 'drums']);
+      const dropout = (genreDef && genreDef.dropout) || null;
       for (const z of zoneMap) {
         z.tracks = {};
         for (const k of list) {
-          z.tracks[k] = this._gateOpen(z.name, k, seed);
+          z.tracks[k] = this._gateOpen(z.name, k, seed, dropout);
         }
       }
       return zoneMap;
@@ -524,14 +530,29 @@
       return { intro: 0.88, verse: 1.0, chorus: 1.08, bridge: 1.02, break: 0.8, outro: 0.92 }[zoneName] || 1;
     }
 
-    _applyZoneVelocity(tracks, zoneMap, stepsPerBar) {
+    _applyZoneVelocity(tracks, zoneMap, stepsPerBar, genreDef) {
       if (!zoneMap || !zoneMap.length) return;
-      for (const t of tracks) {
-        if (!t || !t.notes) continue;
-        for (const n of t.notes) {
+      const vm = (genreDef && genreDef.velMul) || {};
+      const list = Array.isArray(tracks) ? tracks : Object.values(tracks || {});
+      const notesOf = (t) => Array.isArray(t) ? t : (t && t.notes);
+      for (const t of list) {
+        const arr = notesOf(t);
+        if (!arr) continue;
+        for (const n of arr) {
           const bar = Math.floor(n.step / stepsPerBar);
           const z = this._zoneAt(bar, zoneMap);
           n.velocity = Math.max(30, Math.min(127, Math.round(n.velocity * this._zoneVel(z.name))));
+        }
+      }
+      if (vm && typeof vm === 'object') {
+        for (const [key, track] of Object.entries(tracks)) {
+          const role = String(key).replace(/[0-9]+$/, '');
+          const f = vm[role];
+          const arr = notesOf(track);
+          if (!(f > 0) || !arr) continue;
+          for (const n of arr) {
+            n.velocity = Math.max(25, Math.min(127, Math.round(n.velocity * f)));
+          }
         }
       }
     }
@@ -607,7 +628,7 @@
       const isPurePiano = (trackTarget === 'pure_piano');
       const VV = this._resolveVariation(this.options.variation);
       const roleDefs = this._resolveTrackRoles(trackTarget, isPurePiano);
-      const zoneMap = this._resolveZoneGates(this._zoneMapFor(lengthBars, section, this.options.seed), this.options.seed, roleDefs.map(d => d.key));
+      const zoneMap = this._resolveZoneGates(this._zoneMapFor(lengthBars, section, this.options.seed), this.options.seed, roleDefs.map(d => d.key), genreDef);
       const progression = this._generateChordProgression(genreDef, key, scaleKey, lengthBars, section, zoneMap, this.options.seed);
 
       const leadScaleNotes = Theory.getScaleNotes(key, scaleKey, 4, 6);
@@ -781,7 +802,7 @@
         if (['chords', 'arp', 'pad'].includes(this._roleOf(k))) thinTargets[k] = tracks[k];
       }
       this._applyLeadThinning(thinTargets, leadKey && tracks[leadKey] ? tracks[leadKey].notes : null, stepsPerBar);
-      this._applyZoneVelocity(Object.values(tracks), zoneMap, stepsPerBar);
+      this._applyZoneVelocity(tracks, zoneMap, stepsPerBar, genreDef);
 
       this._applyFadeDynamics(Object.values(tracks), lengthBars, fadeInBars, fadeOutBars, stepsPerBar);
 
@@ -882,7 +903,7 @@
 
       const VV = this._resolveVariation(spec.variation != null ? spec.variation : (md.variation != null ? md.variation : this.options.variation));
       const gateSeed = (md.seed != null ? md.seed : this.options.seed);
-      const zoneMap = this._resolveZoneGates(this._zoneMapFor(totalBars, section, gateSeed), gateSeed);
+      const zoneMap = this._resolveZoneGates(this._zoneMapFor(totalBars, section, gateSeed), gateSeed, Object.keys(song.tracks || {}), genreDef);
 
       const baseCtx = {
         progression: song.progression,
@@ -946,7 +967,7 @@
         if (['chords', 'arp', 'pad'].includes(this._roleOf(k))) thinTargets[k] = out[k];
       }
       this._applyLeadThinning(thinTargets, leadRef, stepsPerBar);
-      this._applyZoneVelocity(Object.values(out).map(notes => ({ notes })), zoneMap, stepsPerBar);
+      this._applyZoneVelocity(out, zoneMap, stepsPerBar, genreDef);
 
       const fadeInBars = md.fadeInBars || 0;
       const fadeOutBars = md.fadeOutBars || 0;
@@ -1590,7 +1611,7 @@
 
       this._addLeadOrnaments(notes, {
         scaleNotes, stepsPerBar, lengthBars, climaxCurve,
-        Vl, zoneMap: ctx.zoneMap
+        Vl, zoneMap: ctx.zoneMap, ornamentBias: (genreDef && genreDef.ornamentBias) || 1
       });
 
       return {
@@ -1606,6 +1627,7 @@
       if (!notes || !notes.length || !o.scaleNotes || !o.scaleNotes.length) return notes;
       const spb = o.stepsPerBar || 16;
       const Vl = (o.Vl != null ? o.Vl : 0.7);
+      const OB = (o.ornamentBias != null ? o.ornamentBias : 1);
       const scale = o.scaleNotes;
       const degOf = (midi) => {
         let best = 0, bd = 1e9;
@@ -1623,14 +1645,14 @@
         const bar = Math.floor(n.step / spb);
         const climax = this._getClimaxFactor(bar, o.lengthBars || 8, o.climaxCurve);
         const idx = degOf(n.midi);
-        if (!isDown && n.duration >= 2 && n.step >= 0.5 && this._vChance(0.22, Vl)) {
+        if (!isDown && n.duration >= 2 && n.step >= 0.5 && this._vChance(Math.min(0.9, 0.22 * OB), Vl)) {
           const gm = (idx > 0) ? scale[idx - 1] : n.midi - 1;
           extra.push({
             step: n.step - 0.5, duration: 0.5, midi: gm,
             velocity: Math.max(35, (n.velocity || 90) - 20), pan: n.pan || 0
           });
         }
-        if (isDown && n.step >= 1.5 && (climax >= 0.6 || zoneStarts.has(bar)) && this._vChance(0.3, Vl)) {
+        if (isDown && n.step >= 1.5 && (climax >= 0.6 || zoneStarts.has(bar)) && this._vChance(Math.min(0.9, 0.3 * OB), Vl)) {
           for (let r = 3; r >= 1; r--) {
             const rm = scale[Math.max(0, idx - r)];
             if (rm == null || rm >= n.midi) continue;
@@ -1640,7 +1662,7 @@
             });
           }
         }
-        if (!isDown && n.duration >= 4 && this._vChance(0.2, Vl)) {
+        if (!isDown && n.duration >= 4 && this._vChance(Math.min(0.9, 0.2 * OB), Vl)) {
           const um = scale[Math.min(scale.length - 1, idx + 1)];
           if (um != null && um !== n.midi) {
             extra.push({
