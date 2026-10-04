@@ -159,6 +159,10 @@
     return (v == null ? 1 : v);
   }
 
+  function xmlEsc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
   function trimNotes(notes) {
     const out = notes.map(n => Object.assign({}, n)).sort((a, b) => a.step - b.step);
     const q = (s) => Math.round(s * 4) / 4;
@@ -230,7 +234,7 @@
         const outPan = Math.max(-100, Math.min(100, (m.pan != null ? m.pan : def.pan) | 0));
         const recipe = recipeFor(genreId, def.role);
 
-        xml += `      <track name="${def.name}" type="0" muted="0" solo="0">\n`;
+        xml += `      <track name="${xmlEsc(def.name)}" type="0" muted="0" solo="0">\n`;
         xml += `        <instrumenttrack pan="${outPan}" vol="${outVol}" pitch="0" basenote="57" fxch="0">\n`;
         if (soundfont) {
           const isDr = (def.role === 'drums');
@@ -258,7 +262,7 @@
             }
             if (cNotes.length > 0) {
               const posBase = startBar * (metadata.stepsPerBar || 16) * ticksPerStep;
-              xml += `        <pattern pos="${posBase}" steps="${clipBars * (metadata.stepsPerBar || 16)}" name="${def.name} - ${String(c.name || 'Part').replace(/"/g, '')}" muted="0" type="1">\n`;
+              xml += `        <pattern pos="${posBase}" steps="${clipBars * (metadata.stepsPerBar || 16)}" name="${xmlEsc(def.name)} - ${xmlEsc(c.name || 'Part')}" muted="0" type="1">\n`;
               const list = ox.trimOverlap ? trimNotes(cNotes) : cNotes;
               for (const note of list) {
                 const posTicks = Math.round(note.step * ticksPerStep) + Exporter._swingTicks(note.step, swing, ticksPerStep);
@@ -274,11 +278,11 @@
             startBar += clipBars;
           }
           if (!emitted) {
-            xml += `        <pattern pos="0" steps="16" name="${def.name} Clip" muted="0" type="1">\n`;
+            xml += `        <pattern pos="0" steps="16" name="${xmlEsc(def.name)} Clip" muted="0" type="1">\n`;
             xml += `        </pattern>\n`;
           }
         } else {
-          xml += `        <pattern pos="0" steps="16" name="${def.name} Clip" muted="0" type="1">\n`;
+          xml += `        <pattern pos="0" steps="16" name="${xmlEsc(def.name)} Clip" muted="0" type="1">\n`;
 
           const list = ox.trimOverlap ? trimNotes(track.notes) : track.notes;
           for (const note of list) {
@@ -316,8 +320,8 @@
         if (!track || !track.notes) continue;
         if (!mixAudible(mix, key, soloSet)) continue;
         if (levelOf(ox, key) <= 0) continue;
-        xml += `  <track name="${track.name}" type="0">\n`;
-        xml += `    <pattern pos="0" steps="16" name="${track.name}">\n`;
+        xml += `  <track name="${xmlEsc(track.name)}" type="0">\n`;
+        xml += `    <pattern pos="0" steps="16" name="${xmlEsc(track.name)}">\n`;
         const list = ox.trimOverlap ? trimNotes(track.notes) : track.notes;
         for (const note of list) {
           const posTicks = Math.round(note.step * ticksPerStep);
@@ -343,7 +347,7 @@
       const spb = (songData.metadata && songData.metadata.stepsPerBar) || 16;
       const bars = (songData.metadata && songData.metadata.lengthBars) || 8;
       const totalSteps = bars * spb;
-      const safeName = String((track && track.name) || trackKey).replace(/[<>&"]/g, '');
+      const safeName = xmlEsc((track && track.name) || trackKey);
       let xml = `<midiclip type="1" name="RinTune ${safeName}" autoresize="1" off="0" muted="0" steps="${totalSteps}" len="${totalSteps * ticksPerStep}" pos="-1">\n`;
       for (const note of notes) {
         const posTicks = Math.round(note.step * ticksPerStep);
