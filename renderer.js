@@ -1772,6 +1772,7 @@
     state.trackRoles = snap.ui.trackRoles
       ? snap.ui.trackRoles.map(d => ({ key: d.key, role: d.role }))
       : trackDefsFromSong(state.currentSong);
+    applyListenFilter(state.trackTarget || 'all', true);
     closeProgEditor();
     syncControlsFromState();
     Synth.loadSong(state.currentSong);
@@ -1963,86 +1964,34 @@
       : (abHearing === 'A' ? 'Đang nghe A — bấm để nghe B' : 'Đang nghe B — bấm để nghe A');
   }
 
-  function convertTrackMode(target) {
-    const song = state.currentSong;
-    if (!song) {
-      state.trackTarget = target;
-      if (selectTrackTarget) selectTrackTarget.value = target;
-      syncPurePianoButton();
-      updateHeaderBadges();
-      return;
-    }
-    if (target === 'pure_piano') {
-      pushUndo('sang piano');
-      syncClipsFromFlat(song);
-      const byKey = (k) => ((song.tracks[k] && song.tracks[k].notes) || []).map(n => Object.assign({}, n));
-      const hadDrums = (byKey('drums').length > 0) || Object.keys(song.tracks).some(k => roleOfKey(k) === 'drums' && (song.tracks[k].notes || []).length > 0);
-      song.tracks = {
-        lead: Object.assign({}, song.tracks.lead || { notes: [] }, { name: 'Piano Tay Phải (RH)', type: 'piano_track', instrument: 'grand_piano_lead', color: '#00f2fe', notes: byKey('lead') }),
-        arp: { name: 'Piano Tay Trái (LH)', type: 'piano_track', instrument: 'grand_piano_lead', color: '#4facfe', notes: byKey('arp').concat(byKey('chords')).sort((a, b) => a.step - b.step) },
-        bass: Object.assign({}, song.tracks.bass || { notes: [] }, { name: 'Piano Tay Trái (bass)', type: 'piano_track', instrument: 'grand_piano_lead', color: '#f39c12', notes: byKey('bass') })
-      };
-      const defs = [{ key: 'lead', role: 'lead' }, { key: 'arp', role: 'arp' }, { key: 'bass', role: 'bass' }];
-      state.trackRoles = defs;
-      song.metadata.trackDefs = defs.map(d => ({ key: d.key, role: d.role }));
-      song.metadata.isPurePiano = true;
-      for (const c of (song.clips || [])) {
-        const keep = {};
-        for (const k of Object.keys(c.notes || {})) {
-          if (k === 'lead' || k === 'bass') keep[k] = c.notes[k];
-        }
-        const lh = [];
-        for (const k of Object.keys(c.notes || {})) {
-          if (k === 'arp' || k === 'chords') lh.push(...c.notes[k]);
-        }
-        lh.sort((a, b) => a.step - b.step);
-        c.notes = { lead: keep.lead || [], arp: lh, bass: keep.bass || [] };
-        c.tracks = { lead: true, arp: true, bass: true };
-      }
-      state.trackTarget = 'pure_piano';
-      if (selectTrackTarget) selectTrackTarget.value = 'pure_piano';
-      if (state.editingTrack !== 'lead' && state.editingTrack !== 'arp' && state.editingTrack !== 'bass') state.editingTrack = 'lead';
-      syncPurePianoButton();
-      updateHeaderBadges();
-      flattenTimeline(song);
-      refreshSongUI();
-      renderTimelineLane();
-      showToast(hadDrums ? '🎹 Đã chuyển sang Thuần Piano (trống bỏ qua — Undo để lấy lại)!' : '🎹 Đã chuyển sang Thuần Piano, giữ nguyên nốt!');
-      return;
-    }
-    if (target === 'all') {
-      const missing = ['lead', 'chords', 'arp', 'bass', 'drums'].filter(k => !song.tracks[k]);
-      state.trackTarget = 'all';
-      song.metadata.isPurePiano = false;
-      if (selectTrackTarget) selectTrackTarget.value = 'all';
-      syncPurePianoButton();
-      updateHeaderBadges();
-      if (!missing.length) {
-        state.trackRoles = trackDefsFromSong(song);
-        refreshSongUI();
-        renderTimelineLane();
-        showToast('🎛️ Đã về chế độ Dàn nhạc (giữ nguyên bài)!');
-        return;
-      }
-      pushUndo('về dàn nhạc');
-      for (const k of missing) {
-        song.tracks[k] = { name: k, type: k, instrument: 'auto', color: (TRACK_COLORS[k] || '#00f2fe'), notes: [] };
-      }
-      state.trackRoles = trackDefsFromSong(song);
-      const gen = generatorFromSong(song);
-      const res = gen.regenerateRegion(song, { fromBar: 0, toBar: song.metadata.lengthBars - 1, tracks: missing });
-      spliceRegenResult(song, res);
-      flattenTimeline(song);
-      refreshSongUI();
-      renderTimelineLane();
-      showToast(`🎛️ Đã về Dàn nhạc: giữ nguyên bè cũ, gieo thêm ${missing.join(', ').toUpperCase()}!`);
-      return;
-    }
+  function applyListenFilter(target, silent) {
     state.trackTarget = target;
     if (selectTrackTarget) selectTrackTarget.value = target;
+    if (Synth && Synth.trackStates) {
+      for (const k of Object.keys(Synth.trackStates)) Synth.trackStates[k].solo = false;
+    }
+    for (const k of Object.keys(mixState)) mixState[k].solo = false;
+    const keys = songTrackKeys();
+    let soloKeys = [];
+    if (target === 'pure_piano') {
+      soloKeys = keys.filter(k => ['lead', 'arp', 'bass'].includes(roleOfKey(k)));
+    } else if (target !== 'all') {
+      soloKeys = keys.filter(k => roleOfKey(k) === target);
+    }
+    for (const k of soloKeys) {
+      if (Synth.ensureTrack) Synth.ensureTrack(k);
+      if (Synth.toggleSolo && !(Synth.trackStates[k] && Synth.trackStates[k].solo)) Synth.toggleSolo(k);
+      mixFor(k).solo = true;
+    }
     syncPurePianoButton();
     updateHeaderBadges();
-    showToast(`Chế độ gieo: ${target} — bấm Generate để gieo bài mới theo chế độ này (bài hiện tại giữ nguyên)`);
+    renderMixer();
+    if (silent) return;
+    if (!soloKeys.length) {
+      showToast('🎛️ Nghe + xuất: toàn bài!');
+    } else {
+      showToast(`🎧 Chỉ nghe: ${soloKeys.join(', ').toUpperCase()} (xuất file cũng chỉ gồm các bè này — muốn cả bài thì chọn lại Dàn nhạc)!`);
+    }
   }
 
   function syncPurePianoButton() {
@@ -3140,7 +3089,7 @@
       articulation: state.articulation, climaxCurve: state.climaxCurve,
       useContour: false, contourPoints: null,
       fadeInBars: state.fadeInBars, fadeOutBars: state.fadeOutBars,
-      trackTarget: state.trackTarget, trackRoles: state.trackRoles, chaosLevel: state.chaosLevel,
+      trackTarget: state.trackTarget, trackRoles: state.trackTarget === 'all' ? state.trackRoles : null, chaosLevel: state.chaosLevel,
       density: state.density, variation: effectiveVariation(), humanize: true,
       loopMode: state.loopMode, finalHit: state.finalHit, seed: o.seed
     });
@@ -3284,6 +3233,7 @@
       state.trackRoles = ui.trackRoles && ui.trackRoles.length
         ? ui.trackRoles.map(d => ({ key: d.key, role: d.role }))
         : trackDefsFromSong(song);
+      applyListenFilter(state.trackTarget || 'all', true);
       stampBaseVel(song);
       ensureClips(song);
       selectedClipId = null;
@@ -3565,7 +3515,7 @@
       fadeInBars: state.fadeInBars,
       fadeOutBars: state.fadeOutBars,
       trackTarget: state.trackTarget,
-      trackRoles: state.trackRoles,
+      trackRoles: state.trackTarget === 'all' ? state.trackRoles : null,
       chaosLevel: state.chaosLevel,
       density: state.density,
       variation: effectiveVariation(),
@@ -3816,6 +3766,7 @@
     state.trackRoles = trackDefsFromSong(state.currentSong);
     if (item.songData.metadata.trackTarget) state.trackTarget = item.songData.metadata.trackTarget;
     else state.trackTarget = item.songData.metadata.isPurePiano ? 'pure_piano' : 'all';
+    applyListenFilter(state.trackTarget, true);
     state.genre = item.genre;
     state.key = item.key;
     state.scale = item.scale;
@@ -4419,7 +4370,7 @@
         fadeInBars: 0,
         fadeOutBars: 0,
         trackTarget: state.trackTarget,
-        trackRoles: state.trackRoles,
+        trackRoles: state.trackTarget === 'all' ? state.trackRoles : null,
         chaosLevel: p.chaosLevel,
         density: p.density,
         variation: effectiveVariation(),
@@ -4573,12 +4524,12 @@
 
     if (btnTogglePurePiano) {
       btnTogglePurePiano.addEventListener('click', () => {
-        convertTrackMode(state.trackTarget === 'pure_piano' ? 'all' : 'pure_piano');
+        applyListenFilter(state.trackTarget === 'pure_piano' ? 'all' : 'pure_piano');
       });
     }
 
     selectTrackTarget.addEventListener('change', (e) => {
-      convertTrackMode(e.target.value);
+      applyListenFilter(e.target.value);
     });
 
     selectKey.addEventListener('change', (e) => {

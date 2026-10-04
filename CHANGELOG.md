@@ -1,5 +1,9 @@
 # RinTune Changelog
 
+## Unreleased - Audit ten-viec (dot 2)
+- Che do be thanh filter nghe + xuat (solo), khong pha bai; sua nut chet;
+  dong bo trackTarget/mixer UI
+
 ## Unreleased - Audit ten-viec
 - Import MIDI: kenh 5+ thanh be rieng (doan vai tro theo do cao), khong don
   vao lead; metadata trackDefs day du
