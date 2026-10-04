@@ -1473,7 +1473,26 @@
       }
     }
 
-    const key = state.key, scale = state.scale;
+    const KD = (typeof window !== 'undefined') ? window.RMGKeyDetect : null;
+    let key = state.key, scale = state.scale, keyFit = 0;
+    try {
+      if (KD && pitched.length >= 8) {
+        const pnotes = pitched.map(n => ({ midi: n.midi, duration: n.durTicks || 120 }));
+        if (parsed.keySig && (parsed.keySig.sf != null)) {
+          const r = KD.keySigToKey(parsed.keySig.sf, parsed.keySig.mi, pnotes);
+          key = r.key;
+          scale = Theory.SCALES[r.scale] ? r.scale : 'natural_minor';
+          keyFit = r.fit || 0;
+        } else {
+          const det = KD.detectKey(pnotes);
+          if (det && det.key) {
+            key = det.key;
+            scale = (det.fit >= 0.75 && Theory.SCALES[det.scale]) ? det.scale : 'chromatic';
+            keyFit = det.fit || 0;
+          }
+        }
+      }
+    } catch (e) {}
     const isMajor = ['major', 'lydian', 'mixolydian', 'pentatonic_major'].includes(scale);
     const keyPc = Theory.noteToMidi(Theory.normalizeNote(key), 4) % 12;
     const bassByBar = {};
@@ -1512,7 +1531,7 @@
         trackTarget: 'all', isPurePiano: false,
         trackDefs: importTrackDefs,
         useContour: false, contourPoints: null,
-        noteCount, seed: Math.random(),
+        noteCount, seed: Math.random(), keyFit,
         importedFrom: String(fileName || ''),
         createdAt: new Date().toISOString()
       },
@@ -1529,6 +1548,8 @@
       state.bpm = song.metadata.bpm;
       state.timeSignature = song.metadata.timeSignature;
       state.lengthBars = song.metadata.lengthBars;
+      state.key = song.metadata.key;
+      state.scale = song.metadata.scale;
       state.section = 'none';
       state.currentSong = song;
       stampBaseVel(song);
@@ -1543,7 +1564,7 @@
       renderPianoRoll(0);
       renderTimelineLane();
       pushToHistory(song);
-      showToast(`📂 Đã mở ${name}: ${song.metadata.lengthBars} bars, ${song.metadata.bpm} BPM [${song.metadata.timeSignature}], ${song.metadata.noteCount} nốt (key/scale theo thiết lập: ${song.metadata.key}/${song.metadata.scale})`, 5000);
+      showToast(`📂 Đã mở ${name}: ${song.metadata.lengthBars} bars, ${song.metadata.bpm} BPM [${song.metadata.timeSignature}], ${song.metadata.noteCount} nốt (tự dò key: ${song.metadata.key}/${song.metadata.scale})`, 5000);
     } catch (err) {
       showToast(`⚠️ Không mở được MIDI: ${err.message || err}`, 5000);
     }

@@ -4,6 +4,7 @@ const os = require('os');
 const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
 const T = require(__dirname + '/../../engine/theory.js').RMGTheory;
 const M = require(__dirname + '/../../engine/midi.js').RMGMidi;
+const KD = require(__dirname + '/../../engine/keydetect.js').RMGKeyDetect;
 const E = require(__dirname + '/../../engine/exporter.js').RMGExporter;
 
 function gmProgramToInstrument(prog) {
@@ -183,31 +184,19 @@ function buildSongFromMidi(parsed, fileName, ui) {
   };
 }
 
-function detectKey(tracks) {
-  const hist = new Array(12).fill(0);
-  let total = 0;
+function detectKey(tracks, keySig) {
+  const notes = [];
   for (const [k, t] of Object.entries(tracks)) {
     if (k === 'drums') continue;
-    for (const n of (t.notes || [])) {
-      const w = Math.max(1, n.duration || 1);
-      hist[n.midi % 12] += w;
-      total += w;
-    }
+    for (const n of (t.notes || [])) notes.push(n);
   }
-  const scales = ['natural_minor', 'harmonic_minor', 'touhou_yonanuki', 'dorian', 'major', 'mixolydian'];
-  let best = { root: 0, scale: 'natural_minor', score: -1 };
-  for (let root = 0; root < 12; root++) {
-    const rootName = T.NOTE_NAMES[root];
-    for (const sc of scales) {
-      let pcs;
-      try { pcs = new Set(T.getScaleNotes(rootName, sc, 4, 4).map(m => ((m % 12) + 12) % 12)); }
-      catch (e) { continue; }
-      let s = 0;
-      for (let pc = 0; pc < 12; pc++) if (pcs.has(pc)) s += hist[pc];
-      if (s > best.score) best = { root, scale: sc, score: s };
-    }
+  if (keySig && (keySig.sf != null)) {
+    const r = KD.keySigToKey(keySig.sf, keySig.mi, notes);
+    return { key: r.key, scale: (T.SCALES[r.scale] ? r.scale : (r.scale === 'major' ? 'major' : 'natural_minor')), fit: r.fit, via: 'keysig' };
   }
-  return { key: T.NOTE_NAMES[best.root], scale: best.scale, fit: total ? (best.score / total) : 0 };
+  const det = KD.detectKey(notes);
+  const scale = (det.fit >= 0.75 && T.SCALES[det.scale]) ? det.scale : 'chromatic';
+  return { key: det.key, scale, fit: det.fit, via: 'audio' };
 }
 
 function extractMotif(leadNotes, scaleNotes, spb) {
@@ -269,8 +258,8 @@ function main() {
   const buf = fs.readFileSync(inFile);
   const parsed = M.parseMidiFile(buf);
   const probe = buildSongFromMidi(parsed, path.basename(inFile), { genre: 'touhou', key: 'A', scale: 'natural_minor' });
-  const det = detectKey(probe.tracks);
-  console.log('DETECT key=' + det.key + ' scale=' + det.scale + ' fit=' + det.fit.toFixed(2) + ' bpm=' + (parsed.bpm || 120));
+  const det = detectKey(probe.tracks, parsed.keySig);
+  console.log('DETECT key=' + det.key + ' scale=' + det.scale + ' fit=' + det.fit.toFixed(2) + ' via=' + det.via + ' bpm=' + (parsed.bpm || 120));
 
   const song = buildSongFromMidi(parsed, path.basename(inFile), { genre: 'touhou', key: det.key, scale: det.scale });
   const spb = song.metadata.stepsPerBar || 16;

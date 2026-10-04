@@ -42,6 +42,7 @@
     let name = '';
     let tempoMpqn = 0;
     let timeSig = null;
+    let keySig = null;
     const programs = {};
     const lyrics = []; // [{tick, text}] (meta 0x05 + 0x01 karaoke blocks)
 
@@ -75,6 +76,9 @@
           tempoMpqn = (bytes[pos] << 16) | (bytes[pos + 1] << 8) | bytes[pos + 2];
         } else if (mtype === 0x58 && ll.value === 4 && !timeSig) {
           timeSig = { num: bytes[pos], denom: Math.pow(2, bytes[pos + 1]) };
+        } else if (mtype === 0x59 && ll.value === 2 && !keySig) {
+          const sf = bytes[pos] > 127 ? bytes[pos] - 256 : bytes[pos];
+          keySig = { sf, mi: bytes[pos + 1] };
         }
         pos += ll.value;
       } else if (status === 0xF0 || status === 0xF7) {
@@ -115,7 +119,7 @@
     }
 
     notes.sort((a, b) => a.startTick - b.startTick);
-    return { name, notes, lyrics, tempoMpqn, timeSig, programs };
+    return { name, notes, lyrics, tempoMpqn, timeSig, keySig, programs };
   }
 
 
@@ -144,15 +148,18 @@
 
     let mpqn = 0;
     let timeSig = null;
+    let keySig = null;
     for (const t of tracks) {
       if (!mpqn && t.tempoMpqn) mpqn = t.tempoMpqn;
       if (!timeSig && t.timeSig) timeSig = t.timeSig;
-      if (mpqn && timeSig) break;
+      if (!keySig && t.keySig) keySig = t.keySig;
+      if (mpqn && timeSig && keySig) break;
     }
     return {
       ticksPerQuarter: division || 480,
       bpm: mpqn ? Math.round(60000000 / mpqn) : 120,
       timeSignature: timeSig ? (timeSig.num + '/' + timeSig.denom) : '4/4',
+      keySig: keySig || null,
       tracks
     };
   }

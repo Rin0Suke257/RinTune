@@ -18,6 +18,20 @@
     return String(key || '').replace(/[0-9]+$/, '');
   }
 
+  const KEY_PC = { C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11 };
+  const PC_MAJOR_SF = { 0: 0, 7: 1, 2: 2, 9: 3, 4: 4, 11: 5, 6: 6, 5: -1, 10: -2, 3: -3, 8: -4, 1: -5 };
+  const MAJOR_LIKE = { major: 1, lydian: 1, mixolydian: 1, pentatonic_major: 1 };
+
+  function keySigFor(key, scale) {
+    const pc = KEY_PC[String(key || 'A')];
+    const root = (pc == null ? 9 : pc);
+    const major = !!MAJOR_LIKE[scale];
+    const tonic = major ? root : ((root + 3) % 12);
+    let sf = PC_MAJOR_SF[tonic];
+    if (sf == null) sf = 0;
+    return { sf: sf < 0 ? 256 + sf : sf, mi: major ? 0 : 1 };
+  }
+
   const ROLE_DEFAULTS = {
     lead:   { osc: [{ wave: 2, vol: 100 }, { wave: 2, vol: 80, fine: 7, pan: -10 }, { wave: 0, vol: 60, coarse: -12, pan: 10 }] },
     stab:   { osc: [{ wave: 2, vol: 100 }, { wave: 2, vol: 85, fine: 8, pan: 10 }, { wave: 0, vol: 55, coarse: -12, pan: -10 }] },
@@ -406,6 +420,12 @@
       tempoTrackEvents.push({
         time: 0,
         data: [0xFF, 0x58, 0x04, tsNum, tsDenomExp, 0x18, 0x08]
+      });
+
+      const ks = keySigFor(metadata.key, metadata.scale);
+      tempoTrackEvents.push({
+        time: 0,
+        data: [0xFF, 0x59, 0x02, ks.sf, ks.mi]
       });
 
       const titleBytes = Exporter._strToBytes(metadata.title || 'RinTune Music');
