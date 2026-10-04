@@ -1,5 +1,14 @@
 # RinTune Changelog
 
+## Unreleased - Audit ten-viec
+- Import MIDI: kenh 5+ thanh be rieng (doan vai tro theo do cao), khong don
+  vao lead; metadata trackDefs day du
+- Nut Piano/Dan nhac: convert bai hien tai (giu not), khong gieo lai;
+  sua loi updatePurePianoButtonUI vo hinh (nut chet); dong bo trackTarget
+  khi tai lich su
+- Lich su: nut Ghep noi theo muc noi vao cuoi bai dang lam + nut Ghep tat ca;
+  Ep style gieo lai moi be tru lead; menu Arranger doi ten dieu huong
+
 ## Unreleased - Phase 5: Trich Style v2 (rhythm DNA)
 - Trich tu bai: dotted, ornament, minimalKit, bassWalk, trackProfile, velMul,
   dropout, ambitus; luu vao style rieng; engine tieu thu toan bo; vong lap

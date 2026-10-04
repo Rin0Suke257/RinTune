@@ -1362,9 +1362,28 @@
     }
     if (!pitched.length && !drumNotes.length) throw new Error('File MIDI không có nốt nhạc nào');
 
+    const chanSum = {}, chanCnt = {};
+    for (const n of pitched) {
+      chanSum[n.channel] = (chanSum[n.channel] || 0) + n.midi;
+      chanCnt[n.channel] = (chanCnt[n.channel] || 0) + 1;
+    }
+    const avgMidiByChan = {};
+    for (const ch of Object.keys(chanSum)) avgMidiByChan[ch] = chanSum[ch] / chanCnt[ch];
+
     const order = ['lead', 'chords', 'arp', 'bass'];
     const chanMap = {};
-    chanOrder.forEach((ch, i) => { chanMap[ch] = i < order.length ? order[i] : 'lead'; });
+    const extraRoles = {};
+    chanOrder.forEach((ch, i) => {
+      if (i < order.length) {
+        chanMap[ch] = order[i];
+      } else {
+        const key = 'ch' + ch;
+        const avg = avgMidiByChan[ch] || 60;
+        const role = avg >= 72 ? 'stab' : (avg >= 60 ? 'lead' : (avg >= 48 ? 'pad' : 'bass'));
+        chanMap[ch] = key;
+        extraRoles[key] = role;
+      }
+    });
 
     const chanProg = {};
     for (const t of parsed.tracks) {
@@ -1392,6 +1411,22 @@
       bass: mkTrack('Bassline (import)', 'mono_bass', instFor('bass', 'sub_saw_bass'), '#f39c12'),
       drums: mkTrack('Drums (import)', 'drum_kit', 'standard_kit', '#e74c3c')
     };
+    const CHAN_ROLE_META = {
+      stab: ['Stab (import)', 'stab_hit', 'leadStyle', '#ff6b81'],
+      lead: ['Lead (import)', 'synth_lead', 'leadStyle', '#00f2fe'],
+      pad: ['Pad (import)', 'soft_pad', 'analog_pad', '#a29bfe'],
+      bass: ['Bass (import)', 'mono_bass', 'sub_saw_bass', '#f39c12']
+    };
+    const chanOfKey = {};
+    for (const ch of chanOrder) chanOfKey[chanMap[ch]] = ch;
+    for (const [key, role] of Object.entries(extraRoles)) {
+      const meta = CHAN_ROLE_META[role] || CHAN_ROLE_META.lead;
+      const ch = chanOfKey[key];
+      let inst = meta[2];
+      if (meta[2] === 'leadStyle') inst = gDef.leadStyle || 'square_lead';
+      if (ch != null && chanProg[ch] != null) inst = gmProgramToInstrument(chanProg[ch]) || inst;
+      tracks[key] = mkTrack((midiTitle ? midiTitle + ' ' : '') + meta[0], meta[1], inst, meta[3]);
+    }
 
     let endTick = 0;
     const conv = (n) => {
@@ -1456,6 +1491,10 @@
 
     const base = String(fileName || 'song.mid').replace(/\.[^.]+$/, '');
     const noteCount = Object.values(tracks).reduce((a, t) => a + t.notes.length, 0);
+    const importTrackDefs = Object.keys(tracks).map(k => ({
+      key: k,
+      role: extraRoles[k] || ({ lead: 'lead', chords: 'chords', arp: 'arp', bass: 'bass', drums: 'drums' }[k] || 'lead')
+    }));
     return {
       metadata: {
         title: (`RinTune_Imported_${base}`).replace(/[^\w\-]/g, '_').slice(0, 80),
@@ -1468,6 +1507,7 @@
         chaosLevel: state.chaosLevel, density: state.density,
         fadeInBars: 0, fadeOutBars: 0,
         trackTarget: 'all', isPurePiano: false,
+        trackDefs: importTrackDefs,
         useContour: false, contourPoints: null,
         noteCount, seed: Math.random(),
         importedFrom: String(fileName || ''),
@@ -1921,6 +1961,88 @@
     btnAB.classList.toggle('ab-on', !!abSlotA);
     btnAB.title = !abSlotA ? 'A/B: bấm để ghim bản A (double-click ghim lại)'
       : (abHearing === 'A' ? 'Đang nghe A — bấm để nghe B' : 'Đang nghe B — bấm để nghe A');
+  }
+
+  function convertTrackMode(target) {
+    const song = state.currentSong;
+    if (!song) {
+      state.trackTarget = target;
+      if (selectTrackTarget) selectTrackTarget.value = target;
+      syncPurePianoButton();
+      updateHeaderBadges();
+      return;
+    }
+    if (target === 'pure_piano') {
+      pushUndo('sang piano');
+      syncClipsFromFlat(song);
+      const byKey = (k) => ((song.tracks[k] && song.tracks[k].notes) || []).map(n => Object.assign({}, n));
+      const hadDrums = (byKey('drums').length > 0) || Object.keys(song.tracks).some(k => roleOfKey(k) === 'drums' && (song.tracks[k].notes || []).length > 0);
+      song.tracks = {
+        lead: Object.assign({}, song.tracks.lead || { notes: [] }, { name: 'Piano Tay Phải (RH)', type: 'piano_track', instrument: 'grand_piano_lead', color: '#00f2fe', notes: byKey('lead') }),
+        arp: { name: 'Piano Tay Trái (LH)', type: 'piano_track', instrument: 'grand_piano_lead', color: '#4facfe', notes: byKey('arp').concat(byKey('chords')).sort((a, b) => a.step - b.step) },
+        bass: Object.assign({}, song.tracks.bass || { notes: [] }, { name: 'Piano Tay Trái (bass)', type: 'piano_track', instrument: 'grand_piano_lead', color: '#f39c12', notes: byKey('bass') })
+      };
+      const defs = [{ key: 'lead', role: 'lead' }, { key: 'arp', role: 'arp' }, { key: 'bass', role: 'bass' }];
+      state.trackRoles = defs;
+      song.metadata.trackDefs = defs.map(d => ({ key: d.key, role: d.role }));
+      song.metadata.isPurePiano = true;
+      for (const c of (song.clips || [])) {
+        const keep = {};
+        for (const k of Object.keys(c.notes || {})) {
+          if (k === 'lead' || k === 'bass') keep[k] = c.notes[k];
+        }
+        const lh = [];
+        for (const k of Object.keys(c.notes || {})) {
+          if (k === 'arp' || k === 'chords') lh.push(...c.notes[k]);
+        }
+        lh.sort((a, b) => a.step - b.step);
+        c.notes = { lead: keep.lead || [], arp: lh, bass: keep.bass || [] };
+        c.tracks = { lead: true, arp: true, bass: true };
+      }
+      state.trackTarget = 'pure_piano';
+      if (selectTrackTarget) selectTrackTarget.value = 'pure_piano';
+      if (state.editingTrack !== 'lead' && state.editingTrack !== 'arp' && state.editingTrack !== 'bass') state.editingTrack = 'lead';
+      syncPurePianoButton();
+      updateHeaderBadges();
+      flattenTimeline(song);
+      refreshSongUI();
+      renderTimelineLane();
+      showToast(hadDrums ? '🎹 Đã chuyển sang Thuần Piano (trống bỏ qua — Undo để lấy lại)!' : '🎹 Đã chuyển sang Thuần Piano, giữ nguyên nốt!');
+      return;
+    }
+    if (target === 'all') {
+      const missing = ['lead', 'chords', 'arp', 'bass', 'drums'].filter(k => !song.tracks[k]);
+      state.trackTarget = 'all';
+      song.metadata.isPurePiano = false;
+      if (selectTrackTarget) selectTrackTarget.value = 'all';
+      syncPurePianoButton();
+      updateHeaderBadges();
+      if (!missing.length) {
+        state.trackRoles = trackDefsFromSong(song);
+        refreshSongUI();
+        renderTimelineLane();
+        showToast('🎛️ Đã về chế độ Dàn nhạc (giữ nguyên bài)!');
+        return;
+      }
+      pushUndo('về dàn nhạc');
+      for (const k of missing) {
+        song.tracks[k] = { name: k, type: k, instrument: 'auto', color: (TRACK_COLORS[k] || '#00f2fe'), notes: [] };
+      }
+      state.trackRoles = trackDefsFromSong(song);
+      const gen = generatorFromSong(song);
+      const res = gen.regenerateRegion(song, { fromBar: 0, toBar: song.metadata.lengthBars - 1, tracks: missing });
+      spliceRegenResult(song, res);
+      flattenTimeline(song);
+      refreshSongUI();
+      renderTimelineLane();
+      showToast(`🎛️ Đã về Dàn nhạc: giữ nguyên bè cũ, gieo thêm ${missing.join(', ').toUpperCase()}!`);
+      return;
+    }
+    state.trackTarget = target;
+    if (selectTrackTarget) selectTrackTarget.value = target;
+    syncPurePianoButton();
+    updateHeaderBadges();
+    showToast(`Chế độ gieo: ${target} — bấm Generate để gieo bài mới theo chế độ này (bài hiện tại giữ nguyên)`);
   }
 
   function syncPurePianoButton() {
@@ -2947,9 +3069,10 @@
     song.metadata.genre = target;
     song.metadata.genreName = gDef.name;
     const gen = generatorFromSong(song);
+    const backing = songTrackKeys(song).filter(k => roleOfKey(k) !== 'lead');
     const res = gen.regenerateRegion(song, {
       fromBar: 0, toBar: song.metadata.lengthBars - 1,
-      tracks: ['chords', 'arp', 'bass', 'drums']
+      tracks: backing.length ? backing : ['chords', 'arp', 'bass', 'drums']
     });
     const stat = spliceRegenResult(song, res);
     Synth.loadSong(song);
@@ -3631,7 +3754,7 @@
           <button class="btn-history-action btn-act-continue" data-id="${item.id}" title="Tạo phân đoạn tiếp nối bài hát">
             🔗 Tạo tiếp nối
           </button>
-          <button class="btn-history-action btn-act-merge" data-id="${item.id}" title="Ghép nối đoạn này với các đoạn khác">
+          <button class="btn-history-action btn-act-merge" data-id="${item.id}" title="Ghép đoạn này vào cuối bài đang làm">
             ➕ Ghép nối
           </button>
           <button class="btn-history-action btn-act-del" data-id="${item.id}" title="Xóa">
@@ -3670,7 +3793,7 @@
 
       el.querySelector('.btn-act-merge').addEventListener('click', (e) => {
         e.stopPropagation();
-        mergeAllHistoryItems();
+        mergeHistoryItemToCurrent(item);
       });
 
       el.querySelector('.btn-act-del').addEventListener('click', (e) => {
@@ -3691,6 +3814,8 @@
     ensureClips(state.currentSong);
     selectedClipId = null;
     state.trackRoles = trackDefsFromSong(state.currentSong);
+    if (item.songData.metadata.trackTarget) state.trackTarget = item.songData.metadata.trackTarget;
+    else state.trackTarget = item.songData.metadata.isPurePiano ? 'pure_piano' : 'all';
     state.genre = item.genre;
     state.key = item.key;
     state.scale = item.scale;
@@ -3853,6 +3978,75 @@
 
 
 
+
+  function mergeHistoryItemToCurrent(item) {
+    const song = state.currentSong;
+    if (!song || !item || !item.songData) {
+      showToast('⚠️ Chưa có bài nhạc để ghép!');
+      return;
+    }
+    pushUndo('ghép đoạn');
+    syncClipsFromFlat(song);
+    const st = stitchSongDatas([song, item.songData]);
+    const totalBars = st.totalBars;
+    const md = song.metadata;
+    const keySet = [];
+    for (const k of Object.keys(st.tracks)) keySet.push(k);
+    const mergedSong = {
+      metadata: {
+        title: `RinTune_Merged_${md.key}_${totalBars}Bars_${Date.now() % 10000}`,
+        genre: md.genre, genreName: md.genreName,
+        key: md.key, scale: md.scale, scaleName: md.scaleName,
+        bpm: md.bpm, timeSignature: md.timeSignature || '4/4',
+        stepsPerBar: md.stepsPerBar || 16, lengthBars: totalBars,
+        section: 'merged',
+        motifStructure: md.motifStructure || 'none',
+        articulation: md.articulation || 'auto',
+        climaxCurve: md.climaxCurve || 'none',
+        chaosLevel: md.chaosLevel != null ? md.chaosLevel : 25,
+        density: md.density != null ? md.density : 75,
+        fadeInBars: 0, fadeOutBars: 0,
+        trackTarget: md.trackTarget || 'all',
+        isPurePiano: !!md.isPurePiano,
+        trackDefs: keySet.map(k => {
+          const td = ((md.trackDefs) || []).find(d => d.key === k);
+          return { key: k, role: td ? td.role : roleOfKey(k) };
+        }),
+        variation: md.variation,
+        useContour: !!md.useContour, contourPoints: md.contourPoints || null,
+        loopMode: state.loopMode,
+        noteCount: Object.values(st.tracks).reduce((a, t) => a + t.notes.length, 0),
+        seed: Math.random(),
+        createdAt: new Date().toISOString()
+      },
+      progression: st.progression,
+      tracks: st.tracks
+    };
+    Generator.MusicGenerator.prototype.arrangeFinal(mergedSong, { finalHit: state.finalHit });
+    const curSecs = (song.clips || []).map(c => ({ name: c.name, bars: c.lengthBars }));
+    curSecs.push({
+      name: String((item.customTitle || item.title || item.section || 'Đoạn')).replace(/^(RinTune_|RMG_)/, '').slice(0, 24),
+      bars: (item.songData.metadata && item.songData.metadata.lengthBars) || 8
+    });
+    sliceFlatToClips(mergedSong, curSecs);
+    flattenTimeline(mergedSong);
+    selectedClipId = null;
+    state.currentSong = mergedSong;
+    state.lengthBars = totalBars;
+    state.trackRoles = trackDefsFromSong(mergedSong);
+    state.section = 'merged';
+    if (selectSection) selectSection.value = 'merged';
+    if (inputCustomBars) inputCustomBars.value = totalBars;
+    if (sliderBars) sliderBars.value = Math.min(64, totalBars);
+    if (valBars) valBars.textContent = `${totalBars} Bars`;
+    Synth.loadSong(mergedSong);
+    updateHeaderBadges();
+    updateProgressionUI(st.progression);
+    renderPianoRoll();
+    renderTimelineLane();
+    pushToHistory(mergedSong);
+    showToast(`➕ Đã ghép "${curSecs[curSecs.length - 1].name}" vào cuối bài (${totalBars} bars)!`, 5000);
+  }
 
   function mergeAllHistoryItems() {
     if (songHistory.length < 2) {
@@ -4377,26 +4571,14 @@
       });
     }
 
-    function updatePurePianoButtonUI() {
-      syncPurePianoButton();
-    }
-
     if (btnTogglePurePiano) {
       btnTogglePurePiano.addEventListener('click', () => {
-        state.trackTarget = (state.trackTarget === 'pure_piano') ? 'all' : 'pure_piano';
-        if (selectTrackTarget) selectTrackTarget.value = state.trackTarget;
-        updatePurePianoButtonUI();
-        updateHeaderBadges();
-        generateNewSong();
-        showToast(state.trackTarget === 'pure_piano' ? '🎹 Đã BẬT chế độ Thuần Concert Grand Piano 2 Tay!' : '🎛️ Đã BẬT chế độ Dàn nhạc đầy đủ 5 Bè!');
+        convertTrackMode(state.trackTarget === 'pure_piano' ? 'all' : 'pure_piano');
       });
     }
 
     selectTrackTarget.addEventListener('change', (e) => {
-      state.trackTarget = e.target.value;
-      updatePurePianoButtonUI();
-      updateHeaderBadges();
-      generateNewSong();
+      convertTrackMode(e.target.value);
     });
 
     selectKey.addEventListener('change', (e) => {
@@ -4704,6 +4886,8 @@
       });
     }
     if (btnBatchMidi) btnBatchMidi.addEventListener('click', batchExportMidi);
+    const btnMergeAll = document.getElementById('btnMergeAll');
+    if (btnMergeAll) btnMergeAll.addEventListener('click', mergeAllHistoryItems);
 
     if (btnFinish) btnFinish.addEventListener('click', finishSong);
     if (btnTransferStyle) btnTransferStyle.addEventListener('click', transferStyle);
