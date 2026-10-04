@@ -46,7 +46,8 @@
     finalHit: true,
     swing: 0,
     historyFilter: 'all',
-    tool: 'draw'
+    tool: 'draw',
+    expSettings: null
   };
 
   const undoStack = [];
@@ -2238,6 +2239,7 @@
     renderMixer();
     renderRegenChecks();
     renderVarSliders();
+    syncExpControls();
   }
 
   function trackRoleOf(key) {
@@ -2341,6 +2343,118 @@
     refreshSongUI();
     renderTrackUI();
     showToast(`⧉ Đã nhân bè ${key} → ${nk}`);
+  }
+
+  function expSettings() {
+    if (!state.expSettings) {
+      try {
+        const saved = JSON.parse(localStorage.getItem('rintune_expset_v1') || 'null');
+        if (saved && typeof saved === 'object') state.expSettings = saved;
+      } catch (e) {}
+    }
+    if (!state.expSettings) state.expSettings = { master: 75, velocity: 100, trim: true, cc: true, tracks: {} };
+    const es = state.expSettings;
+    if (es.master == null) es.master = 75;
+    if (es.velocity == null) es.velocity = 100;
+    if (es.trim == null) es.trim = true;
+    if (es.cc == null) es.cc = true;
+    if (!es.tracks) es.tracks = {};
+    return es;
+  }
+
+  function saveExpSettings() {
+    try { localStorage.setItem('rintune_expset_v1', JSON.stringify(state.expSettings)); } catch (e) {}
+  }
+
+  function expTrackState(key) {
+    const es = expSettings();
+    if (!es.tracks[key]) {
+      const r = regFor(key);
+      es.tracks[key] = { level: 100, off: false };
+    }
+    return es.tracks[key];
+  }
+
+  function exportOpts() {
+    const es = expSettings();
+    const levels = {};
+    for (const k of songTrackKeys()) {
+      const t = expTrackState(k);
+      levels[k] = t.off ? 0 : (t.level / 100);
+    }
+    return {
+      master: es.master / 100,
+      vel: es.velocity / 100,
+      trimOverlap: !!es.trim,
+      cc: !!es.cc,
+      levels
+    };
+  }
+
+  function renderExpTracks() {
+    const box = document.getElementById('expTrackBoxes');
+    if (!box) return;
+    box.innerHTML = '';
+    for (const k of songTrackKeys()) {
+      const r = regFor(k);
+      const t = expTrackState(k);
+      const lab = document.createElement('span');
+      lab.textContent = `${r.icon} ${r.label}`;
+      lab.title = k;
+      const ctl = document.createElement('span');
+      const s = document.createElement('input');
+      s.type = 'range';
+      s.min = '0'; s.max = '150';
+      s.value = t.level;
+      s.style.cssText = 'width:80px; vertical-align:middle;';
+      const v = document.createElement('b');
+      v.style.minWidth = '36px';
+      v.style.display = 'inline-block';
+      v.textContent = t.level + '%';
+      s.addEventListener('input', () => {
+        t.level = parseInt(s.value, 10);
+        v.textContent = t.level + '%';
+        saveExpSettings();
+      });
+      const off = document.createElement('button');
+      off.className = 'btn-mini';
+      off.textContent = t.off ? '✕' : '✓';
+      off.title = t.off ? 'Bỏ qua bè này khi xuất (bấm để gồm lại)' : 'Gồm bè này khi xuất (bấm để bỏ qua)';
+      off.style.borderColor = t.off ? 'var(--accent-red)' : 'var(--accent-green)';
+      off.addEventListener('click', () => {
+        t.off = !t.off;
+        saveExpSettings();
+        renderExpTracks();
+      });
+      ctl.appendChild(s);
+      ctl.appendChild(document.createTextNode(' '));
+      ctl.appendChild(v);
+      ctl.appendChild(document.createTextNode(' '));
+      ctl.appendChild(off);
+      const nm = document.createElement('span');
+      nm.textContent = k;
+      nm.style.cssText = 'font-size:0.62rem; color:var(--text-dim);';
+      box.appendChild(lab);
+      box.appendChild(ctl);
+      box.appendChild(nm);
+    }
+  }
+
+  function syncExpControls() {
+    const es = expSettings();
+    const m = document.getElementById('expMaster');
+    const vm = document.getElementById('valExpMaster');
+    if (m) m.value = es.master;
+    if (vm) vm.textContent = es.master + '%';
+    const v = document.getElementById('expVel');
+    const vv = document.getElementById('valExpVel');
+    if (v) v.value = es.velocity;
+    if (vv) vv.textContent = es.velocity + '%';
+    const tr = document.getElementById('expTrim');
+    if (tr) tr.checked = !!es.trim;
+    const cc = document.getElementById('expCC');
+    if (cc) cc.checked = !!es.cc;
+    renderExpTracks();
   }
 
   function syncVariationControls() {
@@ -2887,8 +3001,8 @@
     try {
       if (window.rmgAPI && window.rmgAPI.saveFileDirect) {
         const data = isMidi
-          ? Array.from(Exporter.generateMidiFile(state.currentSong, getMix(), state.swing))
-          : Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2);
+          ? Array.from(Exporter.generateMidiFile(state.currentSong, getMix(), state.swing, exportOpts()))
+          : Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2, exportOpts());
         const r = await window.rmgAPI.saveFileDirect({ folder: 'export', fileName, data });
         if (r && r.success) {
           showToast(`⚡ Đã xuất nhanh: ${r.filePath}`, 4000);
@@ -2993,12 +3107,12 @@
         const done = [];
         const mid = await window.rmgAPI.saveFileDirect({
           folder: 'export', fileName: base + '.mid',
-          data: Array.from(Exporter.generateMidiFile(song, getMix(), state.swing))
+          data: Array.from(Exporter.generateMidiFile(song, getMix(), state.swing, exportOpts()))
         });
         if (mid && mid.success) done.push(mid.filePath);
         const mmp = await window.rmgAPI.saveFileDirect({
           folder: 'export', fileName: base + '.mmp',
-          data: Exporter.generateLmmsProject(song, getMix(), state.swing, sf2)
+          data: Exporter.generateLmmsProject(song, getMix(), state.swing, sf2, exportOpts())
         });
         if (mmp && mmp.success) done.push(mmp.filePath);
         if (done.length) {
@@ -3459,7 +3573,7 @@
     for (const item of songHistory) {
       if (!item.songData) continue;
       try {
-        const bytes = Exporter.generateMidiFile(item.songData, null, 0);
+        const bytes = Exporter.generateMidiFile(item.songData, null, 0, exportOpts());
         const name = sanitizeFileName(item.customTitle || item.title) + '.mid';
         const r = await window.rmgAPI.saveFileDirect({ folder: 'export', fileName: name, data: Array.from(bytes) });
         if (r && r.success) ok++;
@@ -4702,6 +4816,30 @@
       });
     });
 
+    const expMaster = document.getElementById('expMaster');
+    const expVel = document.getElementById('expVel');
+    const expTrim = document.getElementById('expTrim');
+    const expCC = document.getElementById('expCC');
+    if (expMaster) expMaster.addEventListener('input', (e) => {
+      expSettings().master = parseInt(e.target.value, 10);
+      saveExpSettings();
+      syncExpControls();
+    });
+    if (expVel) expVel.addEventListener('input', (e) => {
+      expSettings().velocity = parseInt(e.target.value, 10);
+      saveExpSettings();
+      syncExpControls();
+    });
+    if (expTrim) expTrim.addEventListener('change', (e) => {
+      expSettings().trim = !!e.target.checked;
+      saveExpSettings();
+    });
+    if (expCC) expCC.addEventListener('change', (e) => {
+      expSettings().cc = !!e.target.checked;
+      saveExpSettings();
+    });
+    syncExpControls();
+
     if (sliderSwing) {
       sliderSwing.addEventListener('input', (e) => {
         state.swing = Math.max(0, Math.min(60, parseInt(e.target.value, 10) || 0));
@@ -5768,7 +5906,7 @@
   async function handleCopyClip() {
     if (!state.currentSong) return;
     const tKey = state.editingTrack || 'lead';
-    const clip = Exporter.generateLmmsMidiClip(state.currentSong, tKey);
+    const clip = Exporter.generateLmmsMidiClip(state.currentSong, tKey, exportOpts());
     if (!clip.count) {
       showToast(`⚠️ Bè ${tKey.toUpperCase()} chưa có nốt nào để chép`);
       return;
@@ -5801,7 +5939,7 @@
 
   async function handleSaveMidi() {
     if (!state.currentSong) return;
-    const midiBytes = Exporter.generateMidiFile(state.currentSong, getMix(), state.swing);
+    const midiBytes = Exporter.generateMidiFile(state.currentSong, getMix(), state.swing, exportOpts());
     const defaultName = `${state.currentSong.metadata.title}.mid`;
 
     if (window.rmgAPI && window.rmgAPI.saveFile) {
@@ -5830,7 +5968,7 @@
     if (!state.currentSong) return;
     const sf2 = await resolveSf2();
     syncClipsFromFlat(state.currentSong);
-    const mmpXml = Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2);
+    const mmpXml = Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2, exportOpts());
     const defaultName = `${state.currentSong.metadata.title}.mmp`;
 
     if (window.rmgAPI && window.rmgAPI.saveFile) {
@@ -5859,9 +5997,9 @@
     if (!state.currentSong) return;
     const sf2 = await resolveSf2();
     syncClipsFromFlat(state.currentSong);
-    const mmpXml = Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2);
-    const leadClip = Exporter.generateLmmsMidiClip(state.currentSong, 'lead');
-    const midiBytes = Exporter.generateMidiFile(state.currentSong, getMix(), state.swing);
+    const mmpXml = Exporter.generateLmmsProject(state.currentSong, getMix(), state.swing, sf2, exportOpts());
+    const leadClip = Exporter.generateLmmsMidiClip(state.currentSong, 'lead', exportOpts());
+    const midiBytes = Exporter.generateMidiFile(state.currentSong, getMix(), state.swing, exportOpts());
 
     showToast('🚀 Đang chuẩn bị kết nối LMMS...');
 

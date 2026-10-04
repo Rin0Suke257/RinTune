@@ -143,9 +143,53 @@
     return !mix[key].muted;
   }
 
+  function normOpts(opts) {
+    const o = opts || {};
+    return {
+      master: (o.master != null ? o.master : 1),
+      vel: (o.vel != null ? o.vel : 1),
+      trimOverlap: !!o.trimOverlap,
+      cc: o.cc !== false,
+      levels: (o.levels && typeof o.levels === 'object') ? o.levels : {}
+    };
+  }
+
+  function levelOf(opts, key) {
+    const v = opts.levels[key];
+    return (v == null ? 1 : v);
+  }
+
+  function trimNotes(notes) {
+    const out = notes.map(n => Object.assign({}, n)).sort((a, b) => a.step - b.step);
+    const q = (s) => Math.round(s * 4) / 4;
+    const lastIdx = {};
+    const deduped = [];
+    for (const n of out) {
+      const k = q(n.step) + '|' + n.midi;
+      if (k in lastIdx) {
+        const prev = deduped[lastIdx[k]];
+        prev.velocity = Math.max(prev.velocity || 0, n.velocity || 0);
+        prev.duration = Math.max(prev.duration || 0, n.duration || 0);
+        continue;
+      }
+      lastIdx[k] = deduped.length;
+      deduped.push(n);
+    }
+    const lastNote = {};
+    for (const n of deduped) {
+      const k = n.midi;
+      const prev = lastNote[k];
+      if (prev && n.step > prev.step && n.step < prev.step + Math.max(0.5, prev.duration || 1)) {
+        prev.duration = Math.max(0.5, n.step - prev.step);
+      }
+      lastNote[k] = n;
+    }
+    return deduped;
+  }
+
   class Exporter {
 
-    static generateLmmsProject(songData, mix = null, swing = 0, soundfont = null) {
+    static generateLmmsProject(songData, mix = null, swing = 0, soundfont = null, opts = null) {
       const { metadata, tracks } = songData;
       const bpm = metadata.bpm || 140;
       const lengthBars = metadata.lengthBars || 16;
@@ -172,14 +216,17 @@
           pan: base.pan, vol: base.vol, color: t.color || base.color
         };
       });
+      const ox = normOpts(opts);
 
       for (const def of trackDefs) {
         const track = tracks[def.key];
         if (!track) continue;
         if (!mixAudible(mix, def.key, soloSet)) continue;
+        const lvl = levelOf(ox, def.key);
+        if (lvl <= 0) continue;
 
         const m = (mix && mix[def.key]) || {};
-        const outVol = Math.max(0, Math.min(100, Math.round((m.volume != null ? m.volume : def.vol / 100) * 100)));
+        const outVol = Math.max(0, Math.min(100, Math.round((m.volume != null ? m.volume : def.vol / 100) * 100 * ox.master * lvl)));
         const outPan = Math.max(-100, Math.min(100, (m.pan != null ? m.pan : def.pan) | 0));
         const recipe = recipeFor(genreId, def.role);
 
@@ -212,11 +259,12 @@
             if (cNotes.length > 0) {
               const posBase = startBar * (metadata.stepsPerBar || 16) * ticksPerStep;
               xml += `        <pattern pos="${posBase}" steps="${clipBars * (metadata.stepsPerBar || 16)}" name="${def.name} - ${String(c.name || 'Part').replace(/"/g, '')}" muted="0" type="1">\n`;
-              for (const note of cNotes) {
+              const list = ox.trimOverlap ? trimNotes(cNotes) : cNotes;
+              for (const note of list) {
                 const posTicks = Math.round(note.step * ticksPerStep) + Exporter._swingTicks(note.step, swing, ticksPerStep);
                 const lenTicks = Math.max(ticksPerStep, Math.round(note.duration * ticksPerStep));
                 const key = note.midi;
-                const vol = Math.min(100, Math.round((note.velocity || 90) * (100 / 127)));
+                const vol = Math.min(100, Math.round((note.velocity || 90) * (100 / 127) * ox.vel));
                 const pan = note.pan || 0;
                 xml += `          <note pos="${posTicks}" len="${lenTicks}" key="${key}" vol="${vol}" pan="${pan}"/>\n`;
               }
@@ -232,11 +280,12 @@
         } else {
           xml += `        <pattern pos="0" steps="16" name="${def.name} Clip" muted="0" type="1">\n`;
 
-          for (const note of track.notes) {
+          const list = ox.trimOverlap ? trimNotes(track.notes) : track.notes;
+          for (const note of list) {
             const posTicks = Math.round(note.step * ticksPerStep) + Exporter._swingTicks(note.step, swing, ticksPerStep);
             const lenTicks = Math.max(ticksPerStep, Math.round(note.duration * ticksPerStep));
             const key = note.midi;
-            const vol = Math.min(100, Math.round((note.velocity || 90) * (100 / 127)));
+            const vol = Math.min(100, Math.round((note.velocity || 90) * (100 / 127) * ox.vel));
             const pan = note.pan || 0;
 
             xml += `          <note pos="${posTicks}" len="${lenTicks}" key="${key}" vol="${vol}" pan="${pan}"/>\n`;
@@ -255,8 +304,9 @@
     }
 
 
-    static generateLmmsClipboardClip(songData, mix = null) {
+    static generateLmmsClipboardClip(songData, mix = null, opts = null) {
       const { tracks } = songData;
+      const ox = normOpts(opts);
       const ticksPerStep = 12;
       const soloSet = mixSoloSet(mix);
       let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
@@ -265,12 +315,14 @@
       for (const [key, track] of Object.entries(tracks)) {
         if (!track || !track.notes) continue;
         if (!mixAudible(mix, key, soloSet)) continue;
+        if (levelOf(ox, key) <= 0) continue;
         xml += `  <track name="${track.name}" type="0">\n`;
         xml += `    <pattern pos="0" steps="16" name="${track.name}">\n`;
-        for (const note of track.notes) {
+        const list = ox.trimOverlap ? trimNotes(track.notes) : track.notes;
+        for (const note of list) {
           const posTicks = Math.round(note.step * ticksPerStep);
           const lenTicks = Math.max(ticksPerStep, Math.round(note.duration * ticksPerStep));
-          const vol = Math.min(100, Math.round((note.velocity || 90) * (100 / 127)));
+          const vol = Math.min(100, Math.round((note.velocity || 90) * (100 / 127) * ox.vel * levelOf(ox, key)));
           xml += `      <note pos="${posTicks}" len="${lenTicks}" key="${note.midi}" vol="${vol}" pan="${note.pan || 0}"/>\n`;
         }
         xml += `    </pattern>\n`;
@@ -282,10 +334,12 @@
     }
 
 
-    static generateLmmsMidiClip(songData, trackKey) {
+    static generateLmmsMidiClip(songData, trackKey, opts = null) {
+      const ox = normOpts(opts);
       const ticksPerStep = 12;
       const track = songData.tracks ? songData.tracks[trackKey] : null;
-      const notes = (track && track.notes ? track.notes.slice() : []).sort((a, b) => a.step - b.step);
+      const lvl = levelOf(ox, trackKey);
+      const notes = (track && track.notes ? (ox.trimOverlap ? trimNotes(track.notes) : track.notes.slice()) : []).sort((a, b) => a.step - b.step);
       const spb = (songData.metadata && songData.metadata.stepsPerBar) || 16;
       const bars = (songData.metadata && songData.metadata.lengthBars) || 8;
       const totalSteps = bars * spb;
@@ -294,7 +348,7 @@
       for (const note of notes) {
         const posTicks = Math.round(note.step * ticksPerStep);
         const lenTicks = Math.max(ticksPerStep, Math.round(note.duration * ticksPerStep));
-        const vol = Math.max(1, Math.min(100, Math.round((note.velocity || 90) * (100 / 127))));
+        const vol = Math.max(1, Math.min(100, Math.round((note.velocity || 90) * (100 / 127) * ox.vel * lvl)));
         const key = Math.max(0, Math.min(127, note.midi));
         xml += `  <note key="${key}" vol="${vol}" pan="${note.pan || 0}" len="${lenTicks}" pos="${posTicks}" type="0"/>\n`;
       }
@@ -303,8 +357,9 @@
     }
 
 
-    static generateMidiFile(songData, mix = null, swing = 0) {
+    static generateMidiFile(songData, mix = null, swing = 0, opts = null) {
       const { metadata, tracks } = songData;
+      const ox = normOpts(opts);
       const bpm = metadata.bpm || 140;
       const ppq = 480;
       const ticksPerStep = ppq / 4; // 120 ticks per 16th note step
@@ -362,10 +417,12 @@
         const track = tracks[trackKey];
         if (!track || !track.notes) continue;
         if (!mixAudible(mix, trackKey, soloSet)) continue;
+        if (levelOf(ox, trackKey) <= 0) continue;
 
         const ch = channelMap[trackKey];
         const prog = programMap[trackKey];
         const rawEvents = [];
+        const lvl = levelOf(ox, trackKey);
 
         const nameBytes = Exporter._strToBytes(track.name);
         rawEvents.push({ time: 0, priority: 0, data: [0xFF, 0x03, nameBytes.length, ...nameBytes] });
@@ -375,35 +432,37 @@
         }
 
         const trackPan = Math.max(0, Math.min(127, Math.round(64 + ((track.notes[0] && track.notes[0].pan) || 0) * 0.64)));
-        rawEvents.push({ time: 0, priority: 3, data: [0xB0 | ch, 10, trackPan] });
+        if (ox.cc) rawEvents.push({ time: 0, priority: 3, data: [0xB0 | ch, 10, trackPan] });
         const zones = (metadata.sectionMap && metadata.sectionMap.length)
           ? metadata.sectionMap
           : [{ name: 'verse', from: 0, bars: metadata.lengthBars || 8, energy: 0.8 }];
         const spb = metadata.stepsPerBar || 16;
+        const ccScale = Math.max(0.2, Math.min(1.3, ox.master * lvl));
         for (const z of zones) {
           const zt = (z.from || 0) * spb * ticksPerStep;
-          const vol = Math.max(0, Math.min(127, Math.round(70 + (z.energy != null ? z.energy : 0.8) * 57)));
-          rawEvents.push({ time: zt, priority: 3, data: [0xB0 | ch, 7, vol] });
+          const vol = Math.max(0, Math.min(127, Math.round(70 + (z.energy != null ? z.energy : 0.8) * 57) * ccScale));
+          if (ox.cc) rawEvents.push({ time: zt, priority: 3, data: [0xB0 | ch, 7, vol] });
         }
-        if (metadata.fadeInBars > 0) {
+        if (metadata.fadeInBars > 0 && ox.cc) {
           const fz = zones[0] || { energy: 0.8 };
-          const v0 = Math.max(0, Math.min(127, Math.round(70 + (fz.energy != null ? fz.energy : 0.8) * 57)));
+          const v0 = Math.max(0, Math.min(127, Math.round(70 + (fz.energy != null ? fz.energy : 0.8) * 57) * ccScale));
           rawEvents.push({ time: 0, priority: 3, data: [0xB0 | ch, 7, 40] });
           rawEvents.push({ time: Math.round(metadata.fadeInBars * spb * ticksPerStep / 2), priority: 3, data: [0xB0 | ch, 7, Math.round((40 + v0) / 2)] });
         }
-        if (metadata.fadeOutBars > 0) {
+        if (metadata.fadeOutBars > 0 && ox.cc) {
           const totalSteps = (metadata.lengthBars || 8) * spb;
           const fStart = Math.max(0, totalSteps - metadata.fadeOutBars * spb) * ticksPerStep;
           rawEvents.push({ time: Math.round(fStart), priority: 3, data: [0xB0 | ch, 7, 80] });
           rawEvents.push({ time: Math.round(totalSteps * ticksPerStep), priority: 3, data: [0xB0 | ch, 7, 30] });
         }
 
-        for (const note of track.notes) {
+        const list = ox.trimOverlap ? trimNotes(track.notes) : track.notes;
+        for (const note of list) {
           const sw = Exporter._swingTicks(note.step, swing, ticksPerStep);
           const startTick = Math.round(note.step * ticksPerStep) + sw;
           const endTick = Math.round((note.step + Math.max(1, note.duration)) * ticksPerStep) + sw;
           const key = Math.max(0, Math.min(127, note.midi));
-          const vel = Math.max(1, Math.min(127, note.velocity || 90));
+          const vel = Math.max(1, Math.min(127, Math.round((note.velocity || 90) * ox.vel * lvl)));
 
           if (trackKey === 'lead' && note.lyric) {
             const lyricBytes = Exporter._strToBytes(note.lyric);

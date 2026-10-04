@@ -723,6 +723,16 @@
           </label>
           <span id="sfStatus" style="color:var(--text-dim);">(chưa có)</span>
         </div>
+        <details id="expSettings" style="margin-top:4px; font-size:0.7rem; color:var(--text-muted);">
+          <summary style="cursor:pointer;">🎚️ Cài đặt xuất (gain từng bè, dynamics, cắt đè)</summary>
+          <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-top:4px;">
+            <label>Gain tổng <input type="range" id="expMaster" min="30" max="120" value="75" style="width:90px; vertical-align:middle;"> <b id="valExpMaster">75%</b></label>
+            <label>Velocity <input type="range" id="expVel" min="50" max="120" value="100" style="width:90px; vertical-align:middle;"> <b id="valExpVel">100%</b></label>
+            <label style="cursor:pointer;"><input type="checkbox" id="expTrim" checked> Cắt nốt đè</label>
+            <label style="cursor:pointer;" title="Ghi CC7/CC10 automation vào MIDI"><input type="checkbox" id="expCC" checked> CC MIDI</label>
+          </div>
+          <div id="expTrackBoxes" style="display:grid; grid-template-columns:auto auto auto; gap:2px 10px; align-items:center; margin-top:4px;"></div>
+        </details>
         <div style="margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
           <span>🌱 Seed:</span>
           <button id="btnCopySeed" class="btn-secondary" style="padding:2px 10px; font-size:0.7rem;" title="Copy seed bài này để chia sẻ">Copy</button>

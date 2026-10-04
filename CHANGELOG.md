@@ -1,5 +1,11 @@
 # RinTune Changelog
 
+## Unreleased - Cai dat xuat + gain staging
+- Khung Cai dat xuat: gain tong, velocity, cat not de, CC MIDI, gain/mute
+  tung be (nho localStorage); moi duong xuat di qua setting
+- Gain staging lai: track vol theo setting, gop unison, cat overlap (tru
+  grace 32nd), het not de cau truc trong LMMS
+
 ## Unreleased - Audit ten-viec (dot 2)
 - Che do be thanh filter nghe + xuat (solo), khong pha bai; sua nut chet;
   dong bo trackTarget/mixer UI
