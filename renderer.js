@@ -3264,7 +3264,7 @@
   }
 
   const APP_VERSION = '2.1.0';
-  const UPDATE_CHECK_URL = ''; // VD: 'https://api.github.com/OWNER/RinTune/releases/latest'
+  const UPDATE_CHECK_URL = 'https://api.github.com/Rin0Suke257/RinTune/releases/latest';
   const SF2_URL = 'https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/main/GeneralUser-GS.sf2';
   const SF2_NAME = 'GeneralUser-GS.sf2';
 
