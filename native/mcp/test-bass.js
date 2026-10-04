@@ -1,4 +1,5 @@
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
+const path = require("path");
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
 const g = new G.MusicGenerator({ genre: 'touhou', key: 'A', lengthBars: 8, seed: 100 });
 const s = g.generate();
 const r1 = g.regenerateRegion(s, { fromBar: 0, toBar: 7, tracks: ['bass'], seed: 1 });

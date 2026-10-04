@@ -1,8 +1,9 @@
 // Gieo theme game chua lanh 120 bars: Intro 8 - Verse 32 - Chorus 32 - Verse 32 - Outro 16
+const os = require("os");
 const path = require('path');
 const fs = require('fs');
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
-const E = require('D:/RMG/engine/exporter.js').RMGExporter;
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
+const E = require(__dirname + '/../../engine/exporter.js').RMGExporter;
 
 const CTX = { genre: 'lofi', key: 'F', scale: 'major', bpm: 75, timeSignature: '4/4', motifStructure: 'smart_adaptive', articulation: 'auto', chaosLevel: 15, density: 65, humanize: true, trackTarget: 'all' };
 const PARTS = [
@@ -52,7 +53,7 @@ const song = {
   progression, tracks
 };
 
-const outDir = 'C:/Users/PC/Desktop';
+const outDir = path.join(os.homedir(), 'Desktop');
 fs.writeFileSync(path.join(outDir, 'Cozy_Hometown_Theme.mid'), Buffer.from(E.Exporter.generateMidiFile(song)));
 fs.writeFileSync(path.join(outDir, 'Cozy_Hometown_Theme.mmp'), E.Exporter.generateLmmsProject(song), 'utf8');
 const mins = (totalBars * 16 * (60 / 75 / 4)).toFixed(1);

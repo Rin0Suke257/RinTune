@@ -1,6 +1,7 @@
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
-const E = require('D:/RMG/engine/exporter.js').RMGExporter;
-const T = require('D:/RMG/engine/theory.js').RMGTheory;
+const path = require("path");
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
+const E = require(__dirname + '/../../engine/exporter.js').RMGExporter;
+const T = require(__dirname + '/../../engine/theory.js').RMGTheory;
 const noTs = Object.entries(T.GENRES).filter(([k, g]) => !g.defaultTimeSignature).map(([k]) => k);
 console.log('MISSING_TS=' + JSON.stringify(noTs));
 for (const genre of ['touhou', 'fiery_piano', 'lofi', 'sasakure_uk', 'synthwave']) {

@@ -1,5 +1,6 @@
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
-const E = require('D:/RMG/engine/exporter.js').RMGExporter;
+const path = require("path");
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
+const E = require(__dirname + '/../../engine/exporter.js').RMGExporter;
 const g = new G.MusicGenerator({ genre: 'touhou', key: 'A', lengthBars: 4, seed: 8 });
 const s = g.generate();
 for (const t of ['lead', 'bass', 'drums']) {

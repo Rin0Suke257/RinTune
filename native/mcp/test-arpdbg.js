@@ -1,4 +1,5 @@
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
+const path = require("path");
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
 const proto = G.MusicGenerator.prototype;
 const origFit = proto._fitArp;
 let calls = [];

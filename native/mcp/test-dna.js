@@ -1,4 +1,5 @@
-const T = require('D:/RMG/engine/theory.js').RMGTheory;
+const path = require("path");
+const T = require(__dirname + '/../../engine/theory.js').RMGTheory;
 let bad = [];
 for (const [id, g] of Object.entries(T.GENRES)) {
   if (!g.trackProfile || !g.leadGrammar) bad.push(id + ':missing DNA');

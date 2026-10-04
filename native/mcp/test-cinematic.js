@@ -1,6 +1,7 @@
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
-const T = require('D:/RMG/engine/theory.js').RMGTheory;
-const E = require('D:/RMG/engine/exporter.js').RMGExporter;
+const path = require("path");
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
+const T = require(__dirname + '/../../engine/theory.js').RMGTheory;
+const E = require(__dirname + '/../../engine/exporter.js').RMGExporter;
 console.log('HAS_CINEMATIC=' + !!T.GENRES['cinematic']);
 const g = new G.MusicGenerator({ genre: 'cinematic', key: 'D', scale: 'natural_minor', bpm: 100, lengthBars: 8, seed: 9 });
 const s = g.generate();

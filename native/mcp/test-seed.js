@@ -1,4 +1,5 @@
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
+const path = require("path");
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
 function sig(s) {
   const parts = [];
   for (const [k, t] of Object.entries(s.tracks)) {

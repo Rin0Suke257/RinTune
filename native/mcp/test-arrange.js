@@ -1,6 +1,7 @@
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
-const E = require('D:/RMG/engine/exporter.js').RMGExporter;
-const T = require('D:/RMG/engine/theory.js').RMGTheory;
+const path = require("path");
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
+const E = require(__dirname + '/../../engine/exporter.js').RMGExporter;
+const T = require(__dirname + '/../../engine/theory.js').RMGTheory;
 
 let g = new G.MusicGenerator({ genre: 'touhou', key: 'A', lengthBars: 16, seed: 42 });
 let s = g.generate();

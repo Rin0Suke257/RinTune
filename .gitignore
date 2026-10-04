@@ -1,8 +1,7 @@
 # Build outputs
 native/out/
 native/obj/
-native/packages/webview2.zip
-native/packages/inno-setup.exe
+native/packages/
 # Node
 native/mcp/node_modules/
 native/mcp/dist/
@@ -16,3 +15,4 @@ native/*.log
 Thumbs.db
 Desktop.ini
 .vs/
+native/packages/

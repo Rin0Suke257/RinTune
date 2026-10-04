@@ -1,5 +1,6 @@
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
-const T = require('D:/RMG/engine/theory.js').RMGTheory;
+const path = require("path");
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
+const T = require(__dirname + '/../../engine/theory.js').RMGTheory;
 T.GENRES['custom_1'] = {
   id: 'custom_1', name: 'Vina Test', description: 'test',
   defaultBpm: 130, bpmRange: [110, 150], defaultKey: 'G', defaultScale: 'major',

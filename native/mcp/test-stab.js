@@ -1,4 +1,5 @@
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
+const path = require("path");
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
 const g = new G.MusicGenerator({ genre: 'fiery_piano', key: 'A', lengthBars: 8, seed: 123 });
 const s = g.generate();
 const last = s.progression[7];

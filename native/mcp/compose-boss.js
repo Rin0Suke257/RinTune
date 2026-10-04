@@ -1,8 +1,9 @@
 // Boss fight theme: Touhou ZUN style, A minor-ish, 175 BPM
+const os = require("os");
 const path = require('path');
 const fs = require('fs');
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
-const E = require('D:/RMG/engine/exporter.js').RMGExporter;
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
+const E = require(__dirname + '/../../engine/exporter.js').RMGExporter;
 
 const CTX = { genre: 'touhou', key: 'A', scale: 'touhou_yonanuki', bpm: 175, timeSignature: '4/4', motifStructure: 'smart_adaptive', articulation: 'touhou_fast', chaosLevel: 35, density: 90, humanize: true, trackTarget: 'all' };
 const PARTS = [
@@ -52,7 +53,7 @@ const song = {
   progression, tracks
 };
 
-const outDir = 'C:/Users/PC/Desktop';
+const outDir = path.join(os.homedir(), 'Desktop');
 fs.writeFileSync(path.join(outDir, 'Boss_Fight_Fury.mid'), Buffer.from(E.Exporter.generateMidiFile(song)));
 fs.writeFileSync(path.join(outDir, 'Boss_Fight_Fury.mmp'), E.Exporter.generateLmmsProject(song), 'utf8');
 const secs = totalBars * 16 * (60 / 175 / 4);

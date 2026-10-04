@@ -1,6 +1,7 @@
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
-const E = require('D:/RMG/engine/exporter.js').RMGExporter;
-const M = require('D:/RMG/engine/midi.js').RMGMidi;
+const path = require("path");
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
+const E = require(__dirname + '/../../engine/exporter.js').RMGExporter;
+const M = require(__dirname + '/../../engine/midi.js').RMGMidi;
 const g = new G.MusicGenerator({ genre: 'anime', key: 'G', lengthBars: 4, timeSignature: '6/8', seed: 21 });
 const s = g.generate();
 const bytes = E.Exporter.generateMidiFile(s);

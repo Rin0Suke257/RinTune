@@ -1,9 +1,10 @@
 // Hanh Trinh Ve Nha - cinematic D minor 100 BPM, 120 bars, hoa am tu viet
+const os = require("os");
 const path = require('path');
 const fs = require('fs');
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
-const E = require('D:/RMG/engine/exporter.js').RMGExporter;
-const T = require('D:/RMG/engine/theory.js').RMGTheory;
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
+const E = require(__dirname + '/../../engine/exporter.js').RMGExporter;
+const T = require(__dirname + '/../../engine/theory.js').RMGTheory;
 
 // Dang ky genre custom theo doan (id 'epic' de giu engine cinematic, progression tu viet)
 const PARTS = [
@@ -74,7 +75,7 @@ const song = {
 segs[0].gen._arrangeEnsemble(song, { finalHit: false });
 song.metadata.noteCount = Object.values(tracks).reduce((a, t) => a + t.notes.length, 0);
 
-const outDir = 'C:/Users/PC/Desktop';
+const outDir = path.join(os.homedir(), 'Desktop');
 fs.writeFileSync(path.join(outDir, 'Hanh_Trinh_Ve_Nha.mid'), Buffer.from(E.Exporter.generateMidiFile(song)));
 fs.writeFileSync(path.join(outDir, 'Hanh_Trinh_Ve_Nha.mmp'), E.Exporter.generateLmmsProject(song), 'utf8');
 const secs = Math.round(totalBars * 16 * (60 / 100 / 4));

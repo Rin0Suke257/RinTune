@@ -1,11 +1,13 @@
 /** Demo: AI client noi vao MCP-RMG da cai dat, sinh + xuat nhac that */
+const os = require("os");
 const path = require('path');
 const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
 const { StdioClientTransport } = require('@modelcontextprotocol/sdk/client/stdio.js');
 
 async function main() {
+  const mcpExe = path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'), 'RinTune', 'mcp', 'RinTune-MCP.exe');
   const transport = new StdioClientTransport({
-    command: 'D:/RMG-App/mcp/MCP-RMG.exe', args: []
+    command: mcpExe, args: []
   });
   const client = new Client({ name: 'rmg-ai-demo', version: '1.0.0' });
   await client.connect(transport);
@@ -22,7 +24,7 @@ async function main() {
   console.log('SONG=' + s.title);
   console.log('NOTES=' + s.noteCount + ' TRACKS=' + JSON.stringify(s.tracks));
 
-  const desk = 'C:/Users/PC/Desktop/RMG_AI_Demo';
+  const desk = path.join(os.homedir(), 'Desktop', 'RMG_AI_Demo');
   const midi = await client.callTool({ name: 'export_midi', arguments: { songId: s.songId, outPath: desk + '.mid' } });
   const mmp = await client.callTool({ name: 'export_mmp', arguments: { songId: s.songId, outPath: desk + '.mmp' } });
   console.log('MIDI=' + midi.content[0].text);

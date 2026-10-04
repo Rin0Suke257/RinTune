@@ -1,4 +1,5 @@
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
+const path = require("path");
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
 for (const genre of ['fiery_piano', 'touhou', 'lofi', 'synthwave', 'chiptune', 'dark_fantasy', 'epic', 'cyberpunk', 'anime']) {
   const g = new G.MusicGenerator({ genre, key: 'A', lengthBars: 8, seed: 21 });
   const s = g.generate();

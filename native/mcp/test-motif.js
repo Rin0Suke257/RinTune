@@ -1,5 +1,6 @@
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
-const T = require('D:/RMG/engine/theory.js').RMGTheory;
+const path = require("path");
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
+const T = require(__dirname + '/../../engine/theory.js').RMGTheory;
 
 let g = new G.MusicGenerator({ genre: 'touhou', key: 'A', lengthBars: 8, useContour: true, contourPoints: [{ x: 0, y: 0.2 }, { x: 0.5, y: 0.9 }, { x: 1, y: 0.2 }], seed: 3 });
 let s = g.generate();

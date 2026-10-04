@@ -31,7 +31,11 @@ Copy ca thu muc `out\RinTune` la chay duoc (portable, khong can cai dat).
   neu chua chay thi `CreateProcess` mo project `Random_Song.mmp`
   (luu trong `%LOCALAPPDATA%\RMG\projects`).
 - `native\res\` — icon + version info + manifest (PerMonitorV2 DPI).
-- `native\packages\` — WebView2 SDK (NuGet, da tai san, static link, khong can DLL di kem).
+- `native\packages\` — WebView2 SDK (NuGet, static link, khong can DLL di kem).
+  Khong co trong git (nang): tai `Microsoft.Web.WebView2` nupkg tu nuget.org,
+  giai nen vao `native\packages\Microsoft.Web.WebView2` (giu cau truc
+  `build\native\include`, `build\native\x64`, ...). Inno Setup 6 lay tai
+  jrsoftware.org (can `ISCC.exe` trong PATH hoac `C:\Program Files (x86)\Inno Setup 6\`).
 - `native\thirdparty\json.hpp` — parse message JS↔C++ (nlohmann/json).
 
 ## Soan nhac that (progression / vung / khoa not)

@@ -1,5 +1,6 @@
-const G = require('D:/RMG/engine/generator.js').RMGGenerator;
-const E = require('D:/RMG/engine/exporter.js').RMGExporter;
+const path = require("path");
+const G = require(__dirname + '/../../engine/generator.js').RMGGenerator;
+const E = require(__dirname + '/../../engine/exporter.js').RMGExporter;
 const g = new G.MusicGenerator({ genre: 'epic', key: 'D', scale: 'natural_minor', bpm: 120, lengthBars: 16, seed: 11 });
 const s = g.generate();
 const before = Object.fromEntries(Object.entries(s.tracks).map(([k, t]) => [k, t.notes.length]));

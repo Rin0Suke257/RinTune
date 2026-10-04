@@ -1,4 +1,5 @@
-const S = require('D:/RMG/engine/synth.js').RMGSynth;
+const path = require("path");
+const S = require(__dirname + '/../../engine/synth.js').RMGSynth;
 const s = new S.SynthEngine();
 console.log('MIX=' + JSON.stringify(s.getTrackMix()));
 s.setTrackPan('arp', 200);
