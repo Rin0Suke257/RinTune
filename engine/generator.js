@@ -680,6 +680,7 @@
         humanize,
         grammar,
         variation: VV,
+        seedPhrase: this.options.seedPhrase || null,
         zoneMap,
         songSeed: this.options.seed
       }) : { name: 'Lead Melody', type: 'synth_lead', instrument: genreDef.leadStyle, color: '#00f2fe', notes: [] };
