@@ -19,11 +19,11 @@ BEGIN
     BEGIN
       VALUE "CompanyName",      "Rin0suke257"
       VALUE "FileDescription",  "RinTune Studio"
-      VALUE "FileVersion",      "2.1.0.0"
+      VALUE "FileVersion",      "2.1.1.0"
       VALUE "InternalName",     "RinTune"
       VALUE "OriginalFilename", "RinTune.exe"
       VALUE "ProductName",      "RinTune Studio"
-      VALUE "ProductVersion",   "2.1.0.0"
+      VALUE "ProductVersion",   "2.1.1.0"
     END
   END
   BLOCK "VarFileInfo"

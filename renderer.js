@@ -3263,7 +3263,7 @@
     showToast(`📅 Seed hôm nay: ${seed} — ai nhập seed này cũng ra cùng bài!`, 5000);
   }
 
-  const APP_VERSION = '2.1.0';
+  const APP_VERSION = '2.1.1';
   const UPDATE_CHECK_URL = 'https://api.github.com/repos/Rin0Suke257/RinTune/releases/latest';
   const SF2_URL = 'https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/main/GeneralUser-GS.sf2';
   const SF2_NAME = 'GeneralUser-GS.sf2';

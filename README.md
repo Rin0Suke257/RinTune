@@ -13,7 +13,7 @@ plus an MCP server so AI assistants can compose through it.
 
 1. `Microsoft.Web.WebView2` NuGet → extract to `native/packages/Microsoft.Web.WebView2`
 2. Inno Setup 6 (`ISCC.exe`)
-3. Run `native\build-all.bat` → `native\out\Setup_RinTune_2.1.0.exe`
+3. Run `native\build-all.bat` → `native\out\Setup_RinTune_2.1.1.exe`
 
 Details: `native/README_NATIVE.md`. Engine tests (Node, no app needed): `native\test-all.bat`.
 

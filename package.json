@@ -1,6 +1,6 @@
 {
   "name": "rmg",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "RinTune Studio - LMMS Random Music Generator Standalone App by Rin0suke257",
   "main": "main.js",
   "scripts": {

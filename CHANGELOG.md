@@ -1,5 +1,10 @@
 # RinTune Changelog
 
+## v2.1.1 - Va MMP vo XML + URL cap nhat
+- MMP: ten be co dau & (Harmony & Chords, Drums & Percussion) lam vo XML,
+  LMMS tu choi load; da escape & < > " moi cho ghi ten
+- Sua URL kiem tra cap nhat (thieu /repos/ -> API 404)
+
 ## Unreleased - Cai dat xuat + gain staging
 - Khung Cai dat xuat: gain tong, velocity, cat not de, CC MIDI, gain/mute
   tung be (nho localStorage); moi duong xuat di qua setting
